@@ -22,7 +22,7 @@ class Core:
 
     def check_if_installed(self, url):
         for addon in self.config['Addons']:
-            if addon['URL'] == url:
+            if addon['URL'] == url or addon['Name'] == url:
                 return addon
 
     def cleanup(self, directories):
@@ -67,7 +67,8 @@ class Core:
         old = self.check_if_installed(url)
         if old:
             self.cleanup(old['Directories'])
-            self.config['Addons'][:] = [d for d in self.config['Addons'] if d.get('URL') != url]
+            self.config['Addons'][:] = [d for d in self.config['Addons'] if d.get('URL') != url
+                                        and d.get('Name') != url]
             self.save()
             return old['Name'], old['InstalledVersion']
         return False, False
@@ -75,7 +76,7 @@ class Core:
     def update_addon(self, url):
         old = self.check_if_installed(url)
         if old:
-            new = self.parse_url(url)
+            new = self.parse_url(old['URL'])
             new.get_current_version()
             oldversion = old['InstalledVersion']
             if new.currentVersion != old['InstalledVersion']:

@@ -14,8 +14,8 @@ class GUI:
                                          epilog='Supported URLs: https://www.curseforge.com/wow/addons/<addon_name>, '
                                                 'https://www.wowinterface.com/downloads/<addon_name>, ElvUI, ElvUI:Dev')
         parser.add_argument('-a', '--add', help='Install add-ons', metavar='URL')
-        parser.add_argument('-r', '--remove', help='Remove add-ons', metavar='URL')
-        parser.add_argument('-u', '--update', help='Update add-ons', metavar='URL')
+        parser.add_argument('-r', '--remove', help='Remove add-ons', metavar='URL/Name')
+        parser.add_argument('-u', '--update', help='Update add-ons', metavar='URL/Name')
         parser.add_argument('-l', '--list', help='Show installed add-ons', action='store_true')
 
         self.args = parser.parse_args()
