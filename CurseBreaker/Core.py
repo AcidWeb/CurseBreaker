@@ -7,12 +7,12 @@ from .ElvUI import ElvUIAddon
 
 class Core:
     def __init__(self):
-        self.path = 'C:\\Users\\pawel\\Desktop\\Interface\\AddOns'
+        self.path = 'Interface\\AddOns'
         if os.path.isfile('CurseBreaker.json'):
             with open('CurseBreaker.json', 'r') as f:
                 self.config = json.load(f)
         else:
-            self.config = {'Addons': []}
+            self.config = {'Addons': [], 'URLCache': {}}
             self.save()
 
     def save(self):
@@ -31,7 +31,12 @@ class Core:
 
     def parse_url(self, url):
         if url.startswith('https://www.curseforge.com/wow/addons/'):
-            return CurseForgeAddon(url)
+            if url in self.config['URLCache']:
+                url = self.config['URLCache'][url]
+            parser = CurseForgeAddon(url)
+            if hasattr(parser, 'redirectUrl'):
+                self.config['URLCache'][url] = parser.redirectUrl
+            return parser
         elif url.lower() == 'elvui':
             return ElvUIAddon('master')
         elif url.lower() == 'elvui:dev':

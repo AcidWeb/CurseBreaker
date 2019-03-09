@@ -8,10 +8,12 @@ from bs4 import BeautifulSoup
 class CurseForgeAddon:
     def __init__(self, url):
         try:
-            soup = BeautifulSoup(requests.get(url).content, 'html.parser')
-            for link in soup.findAll('a', href=True, text='Visit Project Page'):
-                url = link['href'] + '/files'
-                break
+            if url.startswith('https://www.curseforge.com/wow/addons/'):
+                soup = BeautifulSoup(requests.get(url).content, 'html.parser')
+                for link in soup.findAll('a', href=True, text='Visit Project Page'):
+                    url = link['href'] + '/files'
+                    break
+                self.redirectUrl = url
             self.soup = BeautifulSoup(requests.get(url).content, 'html.parser')
             self.name = self.soup.title.string.split(' - ')[1].strip()
             self.downloadUrl = url + '/latest'
