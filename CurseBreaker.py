@@ -1,52 +1,80 @@
 import os
+import sys
 import argparse
 from colorama import init, Fore, Style
+from terminaltables import SingleTable
 from CurseBreaker import __version__
 from CurseBreaker.Core import Core
 
-init()
-parser = argparse.ArgumentParser()
-parser.add_argument('-a', '--add', help='Install addon', metavar='URL')
-parser.add_argument('-r', '--remove', help='Remove addon', metavar='URL')
-parser.add_argument('-u', '--update', help='Update single addon', metavar='URL')
-args = parser.parse_args()
 
-if __name__ == '__main__':
-    app = Core()
-    print(f'{Fore.LIGHTBLACK_EX}~~~ {Fore.LIGHTGREEN_EX}CurseBreaker '
-          f'{Fore.LIGHTBLACK_EX}v{__version__} ~~~{Style.RESET_ALL}\n')
+class GUI:
+    def __init__(self):
+        parser = argparse.ArgumentParser(description='All options support comma separated lists. '
+                                                     'When started without arguments program will update all add-ons.',
+                                         epilog='Supported URLs: https://www.curseforge.com/wow/addons/<addon_name>,'
+                                                ' ElvUI, ElvUI:Dev')
+        parser.add_argument('-a', '--add', help='Install add-ons', metavar='URL')
+        parser.add_argument('-r', '--remove', help='Remove add-ons', metavar='URL')
+        parser.add_argument('-u', '--update', help='Update add-ons', metavar='URL')
 
-    if not os.path.exists('Wow.exe') or not os.path.exists('Interface\\AddOns'):
-        print(f'{Fore.RED}This executable should be placed in WoW directory!{Style.RESET_ALL}')
-        exit(1)
+        self.args = parser.parse_args()
+        self.core = Core()
+        self.table = [['Status', 'Name', 'Version']]
+        self.gui = SingleTable(self.table)
+        self.gui.title = f'{Fore.LIGHTGREEN_EX}CurseBreaker {Fore.LIGHTBLACK_EX}v{__version__}{Style.RESET_ALL}'
+        self.gui.justify_columns[0] = 'center'
 
-    if args.add:
-        addons = args.add.split(',')
-        for addon in addons:
-            name, version = app.add_addon(addon)
-            if version:
-                print(f'{Fore.GREEN}Installed{Style.RESET_ALL} | {version} | {name}')
-            else:
-                print(f'{Fore.LIGHTBLACK_EX}Already installed{Style.RESET_ALL} | {name}')
-    elif args.remove:
-        addons = args.remove.split(',')
-        for addon in addons:
-            name, version = app.del_addon(addon)
-            if name:
-                print(f'{Fore.RED}Uninstalled{Style.RESET_ALL} | {version} | {name}')
-            else:
-                print(f'{Fore.LIGHTBLACK_EX}Not installed{Style.RESET_ALL} | {addon}')
-    else:
-        if args.update:
-            addons = args.update.split(',')
-        else:
-            addons = sorted(app.config['Addons'], key=lambda k: k['Name'].lower())
-        for addon in addons:
-            name, versionnew, versionold = app.update_addon(addon if isinstance(addon, str) else addon['URL'])
-            if versionold:
-                if versionold == versionnew:
-                    print(f'{Fore.GREEN}Up-to-date{Style.RESET_ALL} | {versionold} | {name}')
+        init()
+        sys.tracebacklimit = 0
+        os.system('cls')
+        print(self.gui.table)
+
+    def start(self):
+        if not os.path.exists('Wow.exe') or not os.path.exists('Interface\\AddOns'):
+            print(f'{Fore.LIGHTBLACK_EX}~~~ {Fore.LIGHTGREEN_EX}CurseBreaker '
+                  f'{Fore.LIGHTBLACK_EX}v{__version__} ~~~{Style.RESET_ALL}\n'
+                  f'{Fore.RED}This executable should be placed in WoW directory!{Style.RESET_ALL}')
+            exit(1)
+
+        if self.args.add:
+            addons = self.args.add.split(',')
+            for addon in addons:
+                name, version = self.core.add_addon(addon)
+                if version:
+                    self.table.append([f'{Fore.GREEN}Installed{Style.RESET_ALL}', name, version])
                 else:
-                    print(f'{Fore.YELLOW}Updated{Style.RESET_ALL} | {versionold} >>> {versionnew} | {name}')
+                    self.table.append([f'{Fore.LIGHTBLACK_EX}Already installed{Style.RESET_ALL}', name, ''])
+            os.system('cls')
+            print(self.gui.table)
+        elif self.args.remove:
+            addons = self.args.remove.split(',')
+            for addon in addons:
+                name, version = self.core.del_addon(addon)
+                if name:
+                    self.table.append([f'{Fore.RED}Uninstalled{Style.RESET_ALL}', name, version])
+                else:
+                    self.table.append([f'{Fore.LIGHTBLACK_EX}Not installed{Style.RESET_ALL}', addon, ''])
+            os.system('cls')
+            print(self.gui.table)
+        else:
+            if self.args.update:
+                addons = self.args.update.split(',')
             else:
-                print(f' {Fore.LIGHTBLACK_EX}Not installed{Style.RESET_ALL} | {addon}')
+                addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
+            for addon in addons:
+                name, versionnew, versionold = self.core.update_addon(addon if isinstance(addon, str) else addon['URL'])
+                if versionold:
+                    if versionold == versionnew:
+                        self.table.append([f'{Fore.GREEN}Up-to-date{Style.RESET_ALL}', name, versionold])
+                    else:
+                        self.table.append([f'{Fore.YELLOW}Updated{Style.RESET_ALL}', name,
+                                           f'{versionold} {Fore.LIGHTBLACK_EX}>>>{Style.RESET_ALL} {versionnew}'])
+                else:
+                    self.table.append([f'{Fore.LIGHTBLACK_EX}Not installed{Style.RESET_ALL}', addon, ''])
+                os.system('cls')
+                print(self.gui.table)
+
+
+if __name__ == "__main__":
+    app = GUI()
+    app.start()

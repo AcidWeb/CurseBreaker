@@ -21,7 +21,7 @@ class CurseForgeAddon:
             self.archive = None
             self.directories = []
         except Exception:
-            raise RuntimeError('Failed to parse CurseForge page')
+            raise RuntimeError('Failed to parse CurseForge page. Check if URL is correct.')
 
     def get_current_version(self):
         try:
@@ -38,7 +38,7 @@ class CurseForgeAddon:
                             0].strip()
                         break
         except Exception:
-            raise RuntimeError('Failed to download the archive')
+            raise RuntimeError('Failed to parse CurseForge page. Check if URL is correct.')
 
     def get_addon(self):
         try:
@@ -48,7 +48,7 @@ class CurseForgeAddon:
                     self.directories.append(os.path.dirname(file))
             self.directories = list(set(self.directories))
         except Exception:
-            raise RuntimeError('Failed to download archive')
+            raise RuntimeError('Failed to download the archive.')
 
     def install(self, path):
         self.get_addon()

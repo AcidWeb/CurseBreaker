@@ -18,13 +18,13 @@ class ElvUIAddon:
             self.directories = []
             self.branch = branch
         except Exception:
-            raise RuntimeError('Failed to parse ElvUI GitLab page')
+            raise RuntimeError('Failed to parse ElvUI GitLab page.')
 
     def get_current_version(self):
         try:
             self.currentVersion = self.soup.find('div', attrs={'class': 'label label-monospace'}).contents[0].strip()
         except Exception:
-            raise RuntimeError('Failed to parse ElvUI GitLab page')
+            raise RuntimeError('Failed to parse ElvUI GitLab page.')
 
     def get_addon(self):
         try:
@@ -34,7 +34,7 @@ class ElvUIAddon:
                 if file_info.is_dir() and file_info.filename.count('/') == 2 and '.gitlab' not in file_info.filename:
                     self.directories.append(file_info.filename.split('/')[1])
         except Exception:
-            raise RuntimeError('Failed to download the archive')
+            raise RuntimeError('Failed to download the archive.')
 
     def install(self, path):
         self.get_addon()

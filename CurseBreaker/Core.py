@@ -42,7 +42,7 @@ class Core:
         elif url.lower() == 'elvui:dev':
             return ElvUIAddon('development')
         else:
-            raise NotImplementedError('Provided URL is not supported')
+            raise NotImplementedError('Provided URL is not supported.')
 
     def add_addon(self, url):
         addon = self.check_if_installed(url)
