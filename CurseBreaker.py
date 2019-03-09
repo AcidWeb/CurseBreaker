@@ -40,7 +40,7 @@ if __name__ == '__main__':
         if args.update:
             addons = args.update.split(',')
         else:
-            addons = app.config['Addons']
+            addons = sorted(app.config['Addons'], key=lambda k: k['Name'].lower())
         for addon in addons:
             name, versionnew, versionold = app.update_addon(addon if isinstance(addon, str) else addon['URL'])
             if versionold:
