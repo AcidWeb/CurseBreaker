@@ -3,6 +3,7 @@ import json
 import shutil
 from .CurseForge import CurseForgeAddon
 from .ElvUI import ElvUIAddon
+from .WoWInterface import WoWInterfaceAddon
 
 
 class Core:
@@ -37,6 +38,8 @@ class Core:
             if hasattr(parser, 'redirectUrl'):
                 self.config['URLCache'][url] = parser.redirectUrl
             return parser
+        if url.startswith('https://www.wowinterface.com/downloads/'):
+            return WoWInterfaceAddon(url)
         elif url.lower() == 'elvui':
             return ElvUIAddon('master')
         elif url.lower() == 'elvui:dev':

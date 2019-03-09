@@ -11,8 +11,8 @@ class GUI:
     def __init__(self):
         parser = argparse.ArgumentParser(description='All options support comma separated lists. '
                                                      'When started without arguments program will update all add-ons.',
-                                         epilog='Supported URLs: https://www.curseforge.com/wow/addons/<addon_name>,'
-                                                ' ElvUI, ElvUI:Dev')
+                                         epilog='Supported URLs: https://www.curseforge.com/wow/addons/<addon_name>, '
+                                                'https://www.wowinterface.com/downloads/<addon_name>, ElvUI, ElvUI:Dev')
         parser.add_argument('-a', '--add', help='Install add-ons', metavar='URL')
         parser.add_argument('-r', '--remove', help='Remove add-ons', metavar='URL')
         parser.add_argument('-u', '--update', help='Update add-ons', metavar='URL')

@@ -34,8 +34,8 @@ class CurseForgeAddon:
             if not self.currentVersion:
                 for row in table.find_all('tr', attrs={'class': 'project-file-list-item'}):
                     if 'Beta' in str(row.find('td', attrs={'class': 'project-file-release-type'})):
-                        self.currentVersion = row.find('a', attrs={'class': 'overflow-tip twitch-link'}).contents[
-                            0].strip()
+                        self.currentVersion = row.find('a', attrs={'class': 'overflow-tip twitch-link'}).contents[0]\
+                            .strip()
                         break
         except Exception:
             raise RuntimeError('Failed to parse CurseForge page. Check if URL is correct.')
