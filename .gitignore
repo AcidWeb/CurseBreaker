@@ -1,5 +1,8 @@
 .idea/
 __pycache__/
 Interface/
+build/
+dist/
 /CurseBreaker.json
 /Wow.exe
+/CurseBreaker.spec

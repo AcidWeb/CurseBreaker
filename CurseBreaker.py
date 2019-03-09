@@ -3,8 +3,8 @@ import sys
 import argparse
 from colorama import init, Fore
 from terminaltables import SingleTable
-from CurseBreaker import __version__
-from CurseBreaker.Core import Core
+from CB import __version__
+from CB.Core import Core
 
 
 class GUI:
@@ -27,15 +27,17 @@ class GUI:
 
         init()
         sys.tracebacklimit = 0
-        os.system('cls')
-        print(self.gui.table)
 
     def start(self):
         if not os.path.exists('Wow.exe') or not os.path.exists('Interface\\AddOns'):
             print(f'{Fore.LIGHTBLACK_EX}~~~ {Fore.LIGHTGREEN_EX}CurseBreaker '
                   f'{Fore.LIGHTBLACK_EX}v{__version__} ~~~{Fore.RESET}\n'
                   f'{Fore.RED}This executable should be placed in WoW directory!{Fore.RESET}')
-            exit(1)
+            os.remove('CurseBreaker.json')
+            os.system('pause')
+            sys.exit(1)
+        os.system('cls')
+        print(self.gui.table)
 
         if self.args.add:
             addons = self.args.add.split(',')
@@ -80,8 +82,11 @@ class GUI:
                     self.table.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
                 os.system('cls')
                 print(self.gui.table)
+        os.system('pause')
 
 
 if __name__ == "__main__":
+    if getattr(sys, 'frozen', False):
+        os.chdir(os.path.dirname(os.path.abspath(sys.executable)))
     app = GUI()
     app.start()
