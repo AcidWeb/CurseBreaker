@@ -49,8 +49,8 @@ class GUI:
                     self.table.append([f'{Fore.GREEN}Installed{Fore.RESET}', name, version])
                 else:
                     self.table.append([f'{Fore.LIGHTBLACK_EX}Already installed{Fore.RESET}', name, ''])
-            os.system('cls')
-            print(self.gui.table)
+                os.system('cls')
+                print(self.gui.table)
         elif self.args.remove:
             addons = self.args.remove.split(',')
             for addon in addons:
@@ -59,8 +59,8 @@ class GUI:
                     self.table.append([f'{Fore.RED}Uninstalled{Fore.RESET}', name, version])
                 else:
                     self.table.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
-            os.system('cls')
-            print(self.gui.table)
+                os.system('cls')
+                print(self.gui.table)
         elif self.args.list:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
             for addon in addons:
