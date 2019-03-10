@@ -126,3 +126,14 @@ class Core:
                     zipf.write(os.path.join(root, f))
                     pbar.update(1)
         zipf.close()
+
+    def find_orphans(self):
+        orphans = []
+        directories = []
+        for addon in self.config['Addons']:
+            for directory in addon['Directories']:
+                directories.append(directory)
+        for directory in os.listdir(self.path):
+            if directory not in directories:
+                orphans.append(directory)
+        return orphans

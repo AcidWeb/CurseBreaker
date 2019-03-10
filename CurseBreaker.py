@@ -14,11 +14,13 @@ class GUI:
                                                      'When started without arguments program will update all add-ons.',
                                          epilog='Supported URLs: https://www.curseforge.com/wow/addons/<addon_name>, '
                                                 'https://www.wowinterface.com/downloads/<addon_name>, ElvUI, ElvUI:Dev')
-        parser.add_argument('-a', '--add', help='Install add-ons', metavar='URL')
-        parser.add_argument('-r', '--remove', help='Remove add-ons', metavar='URL/Name')
-        parser.add_argument('-u', '--update', help='Update add-ons', metavar='URL/Name')
-        parser.add_argument('-l', '--list', help='Show installed add-ons', action='store_true')
-        parser.add_argument('-b', '--backup', help='Enable/disable WTF backup', action='store_true')
+        mainoptions = parser.add_mutually_exclusive_group()
+        mainoptions.add_argument('-a', '--add', help='Install add-ons', metavar='URL')
+        mainoptions.add_argument('-r', '--remove', help='Remove add-ons', metavar='URL/Name')
+        mainoptions.add_argument('-u', '--update', help='Update add-ons', metavar='URL/Name')
+        mainoptions.add_argument('-l', '--list', help='Show installed add-ons', action='store_true')
+        mainoptions.add_argument('-o', '--orphan', help='Show list of orphaned add-on directories', action='store_true')
+        mainoptions.add_argument('-b', '--backup', help='Enable/disable WTF backup', action='store_true')
         parser.add_argument('-d', '--debug', help='Display more verbose errors', action='store_true')
 
         self.args = parser.parse_args()
@@ -35,7 +37,7 @@ class GUI:
         print(f'{Fore.LIGHTBLACK_EX}~~~ {Fore.LIGHTGREEN_EX}CurseBreaker '
               f'{Fore.LIGHTBLACK_EX}v{__version__} ~~~{Fore.RESET}\n')
         if not os.path.isfile('Wow.exe') or not os.path.isdir('Interface\\AddOns') or not os.path.isdir('WTF'):
-            print(f'{Fore.LIGHTRED_EX}This executable should be placed in WoW directory!{Fore.RESET}')
+            print(f'{Fore.LIGHTRED_EX}This executable should be placed in WoW directory!{Fore.RESET}\n')
             os.system('pause')
             sys.exit(1)
         else:
@@ -61,6 +63,11 @@ class GUI:
                     self.table.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
                 os.system('cls')
                 print(self.gui.table)
+        elif self.args.orphan:
+            orphans = self.core.find_orphans()
+            print(f'{Fore.LIGHTGREEN_EX}Directories that are not part of any installed add-on:{Fore.RESET}')
+            for orphan in sorted(orphans):
+                print(orphan)
         elif self.args.list:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
             for addon in addons:
@@ -96,6 +103,7 @@ class GUI:
         if self.core.backup_check():
             print(f'\n{Fore.LIGHTGREEN_EX}Backing up WTF directory:{Fore.RESET}')
             self.core.backup_wtf(self.gui.table_width)
+        print('')
         os.system('pause')
 
 
@@ -110,9 +118,8 @@ if __name__ == '__main__':
         if app.args.debug:
             sys.tracebacklimit = 1000
             traceback.print_exc()
-            sys.exit(1)
         else:
             print(f'{Fore.LIGHTRED_EX}{str(e)}{Fore.RESET}')
-            os.system('pause')
-            sys.exit(1)
+        os.system('pause')
+        sys.exit(1)
 
