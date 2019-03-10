@@ -24,18 +24,19 @@ class GUI:
         self.gui = SingleTable(self.table)
         self.gui.title = f'{Fore.LIGHTGREEN_EX}CurseBreaker {Fore.LIGHTBLACK_EX}v{__version__}{Fore.RESET}'
         self.gui.justify_columns[0] = 'center'
-
-        init()
         sys.tracebacklimit = 0
+        init()
 
     def start(self):
         if not os.path.exists('Wow.exe') or not os.path.exists('Interface\\AddOns'):
             print(f'{Fore.LIGHTBLACK_EX}~~~ {Fore.LIGHTGREEN_EX}CurseBreaker '
                   f'{Fore.LIGHTBLACK_EX}v{__version__} ~~~{Fore.RESET}\n'
-                  f'{Fore.RED}This executable should be placed in WoW directory!{Fore.RESET}')
+                  f'{Fore.LIGHTRED_EX}This executable should be placed in WoW directory!{Fore.RESET}')
             os.remove('CurseBreaker.json')
             os.system('pause')
             sys.exit(1)
+        else:
+            self.core.init_config()
         os.system('cls')
         print(self.gui.table)
 
@@ -70,23 +71,34 @@ class GUI:
                 addons = self.args.update.split(',')
             else:
                 addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
-            for addon in addons:
-                name, versionnew, versionold = self.core.update_addon(addon if isinstance(addon, str) else addon['URL'])
-                if versionold:
-                    if versionold == versionnew:
-                        self.table.append([f'{Fore.GREEN}Up-to-date{Fore.RESET}', name, versionold])
+            if len(addons) == 0:
+                raise RuntimeError('No add-ons installed. '
+                                   'Start this application with -h parameter to see available options.')
+            else:
+                for addon in addons:
+                    name, versionnew, versionold = self.core.update_addon(addon if isinstance(addon, str) else
+                                                                          addon['URL'])
+                    if versionold:
+                        if versionold == versionnew:
+                            self.table.append([f'{Fore.GREEN}Up-to-date{Fore.RESET}', name, versionold])
+                        else:
+                            self.table.append([f'{Fore.YELLOW}Updated{Fore.RESET}', name,
+                                               f'{versionold} {Fore.LIGHTBLACK_EX}>>>{Fore.RESET} {versionnew}'])
                     else:
-                        self.table.append([f'{Fore.YELLOW}Updated{Fore.RESET}', name,
-                                           f'{versionold} {Fore.LIGHTBLACK_EX}>>>{Fore.RESET} {versionnew}'])
-                else:
-                    self.table.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
-                os.system('cls')
-                print(self.gui.table)
+                        self.table.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
+                    os.system('cls')
+                    print(self.gui.table)
         os.system('pause')
 
 
 if __name__ == "__main__":
-    if getattr(sys, 'frozen', False):
-        os.chdir(os.path.dirname(os.path.abspath(sys.executable)))
-    app = GUI()
-    app.start()
+    try:
+        if getattr(sys, 'frozen', False):
+            os.chdir(os.path.dirname(os.path.abspath(sys.executable)))
+        app = GUI()
+        app.start()
+    except Exception as e:
+        print(f'{Fore.LIGHTRED_EX}{str(e)}{Fore.RESET}')
+        os.system('pause')
+        sys.exit(1)
+

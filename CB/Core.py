@@ -9,14 +9,17 @@ from .WoWInterface import WoWInterfaceAddon
 class Core:
     def __init__(self):
         self.path = 'Interface\\AddOns'
+        self.config = None
+
+    def init_config(self):
         if os.path.isfile('CurseBreaker.json'):
             with open('CurseBreaker.json', 'r') as f:
                 self.config = json.load(f)
         else:
             self.config = {'Addons': [], 'URLCache': {}}
-            self.save()
+            self.save_config()
 
-    def save(self):
+    def save_config(self):
         with open('CurseBreaker.json', 'w') as outfile:
             json.dump(self.config, outfile, sort_keys=True, indent=4, separators=(',', ': '))
 
@@ -59,7 +62,7 @@ class Core:
                                           'InstalledVersion': new.currentVersion,
                                           'Directories': new.directories
                                           })
-            self.save()
+            self.save_config()
             return new.name, new.currentVersion
         return addon['Name'], False
 
@@ -69,7 +72,7 @@ class Core:
             self.cleanup(old['Directories'])
             self.config['Addons'][:] = [d for d in self.config['Addons'] if d.get('URL') != url
                                         and d.get('Name') != url]
-            self.save()
+            self.save_config()
             return old['Name'], old['InstalledVersion']
         return False, False
 
@@ -85,6 +88,6 @@ class Core:
                 old['CurrentVersion'] = new.currentVersion
                 old['InstalledVersion'] = new.currentVersion
                 old['Directories'] = new.directories
-            self.save()
+            self.save_config()
             return new.name, old['InstalledVersion'], oldversion
         return url, False, False
