@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import shutil
 import zipfile
@@ -56,6 +57,8 @@ class Core:
             raise NotImplementedError('Provided URL is not supported.')
 
     def add_addon(self, url):
+        if 'curse://' in url:
+            url = url.split('/download-client')[0].replace('curse://', 'https://').strip()
         addon = self.check_if_installed(url)
         if not addon:
             new = self.parse_url(url)
@@ -137,3 +140,13 @@ class Core:
             if directory not in directories:
                 orphans.append(directory)
         return orphans
+
+    def create_reg(self):
+        with open('CurseBreaker.reg', 'w') as outfile:
+            outfile.write('Windows Registry Editor Version 5.00\n[HKEY_CURRENT_USER\Software\Classes\curse]\n"URL Proto'
+                          'col"="\\"\\""\n@="\\"URL:CurseBreaker Protocol\\""\n[HKEY_CURRENT_USER\Software\Classes\curs'
+                          'e\DefaultIcon]\n@="\\"CurseBreaker.exe,1\\""\n[HKEY_CURRENT_USER\Software\Classes\curse\shel'
+                          'l]\n[HKEY_CURRENT_USER\Software\Classes\curse\shell\open]\n[HKEY_CURRENT_USER\Software\Class'
+                          'es\curse\shell\open\command]\n@="\\"' + os.path.abspath(sys.executable).replace('\\', '\\\\')
+                          + '\\" \\"-a %1\\""')
+

@@ -21,6 +21,7 @@ class GUI:
         mainoptions.add_argument('-l', '--list', help='Show installed add-ons', action='store_true')
         mainoptions.add_argument('-o', '--orphan', help='Show list of orphaned add-on directories', action='store_true')
         mainoptions.add_argument('-b', '--backup', help='Enable/disable WTF backup', action='store_true')
+        mainoptions.add_argument('-c', '--curse', help='Generate REG file for curse:// URI scheme', action='store_true')
         parser.add_argument('-d', '--debug', help='Display more verbose errors', action='store_true')
 
         self.args = parser.parse_args()
@@ -78,6 +79,10 @@ class GUI:
             status = self.core.backup_toggle()
             print(f'{Fore.LIGHTGREEN_EX}Backup of WTF directory is now: '
                   f'{f"{Fore.GREEN}ENABLED{Fore.RESET}" if status else f"{Fore.LIGHTRED_EX}DISABLED{Fore.RESET}"}')
+        elif self.args.curse:
+            self.core.create_reg()
+            print(f'{Fore.LIGHTGREEN_EX}CurseBreaker.reg file was created. '
+                  f'Import it to enable integration.{Fore.RESET}')
         else:
             if self.args.update:
                 addons = self.args.update.split(',')
@@ -119,7 +124,7 @@ if __name__ == '__main__':
             sys.tracebacklimit = 1000
             traceback.print_exc()
         else:
-            print(f'{Fore.LIGHTRED_EX}{str(e)}{Fore.RESET}')
+            print(f'{Fore.LIGHTRED_EX}{str(e)}{Fore.RESET}\n')
         os.system('pause')
         sys.exit(1)
 
