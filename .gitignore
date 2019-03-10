@@ -3,6 +3,8 @@ __pycache__/
 Interface/
 build/
 dist/
+WTF/
+WTF-Backup/
 /CurseBreaker.json
 /Wow.exe
 /CurseBreaker.spec

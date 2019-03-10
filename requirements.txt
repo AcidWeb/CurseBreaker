@@ -2,3 +2,4 @@ beautifulsoup4
 requests
 colorama
 terminaltables
+tqdm

@@ -1,6 +1,9 @@
 import os
 import json
 import shutil
+import zipfile
+import datetime
+from tqdm import tqdm
 from .CurseForge import CurseForgeAddon
 from .ElvUI import ElvUIAddon
 from .WoWInterface import WoWInterfaceAddon
@@ -16,8 +19,10 @@ class Core:
             with open('CurseBreaker.json', 'r') as f:
                 self.config = json.load(f)
         else:
-            self.config = {'Addons': [], 'URLCache': {}}
+            self.config = {'Addons': [], 'URLCache': {}, 'Backup': {'Enabled': True, 'Number': 7}}
             self.save_config()
+        if not os.path.isdir('WTF-Backup'):
+            os.mkdir('WTF-Backup')
 
     def save_config(self):
         with open('CurseBreaker.json', 'w') as outfile:
@@ -91,3 +96,33 @@ class Core:
             self.save_config()
             return new.name, old['InstalledVersion'], oldversion
         return url, False, False
+
+    def backup_toggle(self):
+        self.config['Backup']['Enabled'] = not self.config['Backup']['Enabled']
+        self.save_config()
+        return self.config['Backup']['Enabled']
+
+    def backup_check(self):
+        if self.config['Backup']['Enabled']:
+            if not os.path.isfile(f'WTF-Backup\\{datetime.datetime.now().strftime("%d%m%y")}.zip'):
+                listofbackups = os.listdir('WTF-Backup')
+                fullpath = [f'WTF-Backup\\{x}' for x in listofbackups]
+                if len([name for name in listofbackups]) == self.config['Backup']['Number']:
+                    oldest_file = min(fullpath, key=os.path.getctime)
+                    os.remove(oldest_file)
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def backup_wtf(self, barwidth):
+        zipf = zipfile.ZipFile(f'WTF-Backup\\{datetime.datetime.now().strftime("%d%m%y")}.zip', 'w',
+                               zipfile.ZIP_DEFLATED)
+        filecount = sum([len(files) for r, d, files in os.walk('WTF/')])
+        with tqdm(total=filecount, bar_format='{n_fmt}/{total_fmt} |{bar}|', ncols=barwidth) as pbar:
+            for root, dirs, files in os.walk('WTF/'):
+                for f in files:
+                    zipf.write(os.path.join(root, f))
+                    pbar.update(1)
+        zipf.close()

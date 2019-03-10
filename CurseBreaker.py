@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import traceback
 from colorama import init, Fore
 from terminaltables import SingleTable
 from CB import __version__
@@ -17,6 +18,8 @@ class GUI:
         parser.add_argument('-r', '--remove', help='Remove add-ons', metavar='URL/Name')
         parser.add_argument('-u', '--update', help='Update add-ons', metavar='URL/Name')
         parser.add_argument('-l', '--list', help='Show installed add-ons', action='store_true')
+        parser.add_argument('-b', '--backup', help='Enable/disable WTF backup', action='store_true')
+        parser.add_argument('-d', '--debug', help='Display more verbose errors', action='store_true')
 
         self.args = parser.parse_args()
         self.core = Core()
@@ -28,17 +31,15 @@ class GUI:
         init()
 
     def start(self):
-        if not os.path.exists('Wow.exe') or not os.path.exists('Interface\\AddOns'):
-            print(f'{Fore.LIGHTBLACK_EX}~~~ {Fore.LIGHTGREEN_EX}CurseBreaker '
-                  f'{Fore.LIGHTBLACK_EX}v{__version__} ~~~{Fore.RESET}\n'
-                  f'{Fore.LIGHTRED_EX}This executable should be placed in WoW directory!{Fore.RESET}')
-            os.remove('CurseBreaker.json')
+        os.system('cls')
+        print(f'{Fore.LIGHTBLACK_EX}~~~ {Fore.LIGHTGREEN_EX}CurseBreaker '
+              f'{Fore.LIGHTBLACK_EX}v{__version__} ~~~{Fore.RESET}\n')
+        if not os.path.isfile('Wow.exe') or not os.path.isdir('Interface\\AddOns') or not os.path.isdir('WTF'):
+            print(f'{Fore.LIGHTRED_EX}This executable should be placed in WoW directory!{Fore.RESET}')
             os.system('pause')
             sys.exit(1)
         else:
             self.core.init_config()
-        os.system('cls')
-        print(self.gui.table)
 
         if self.args.add:
             addons = self.args.add.split(',')
@@ -66,6 +67,10 @@ class GUI:
                 self.table.append([f'{Fore.GREEN}Up-to-date{Fore.RESET}', addon['Name'], addon['InstalledVersion']])
             os.system('cls')
             print(self.gui.table)
+        elif self.args.backup:
+            status = self.core.backup_toggle()
+            print(f'{Fore.LIGHTGREEN_EX}Backup of WTF directory is now: '
+                  f'{f"{Fore.GREEN}ENABLED{Fore.RESET}" if status else f"{Fore.LIGHTRED_EX}DISABLED{Fore.RESET}"}')
         else:
             if self.args.update:
                 addons = self.args.update.split(',')
@@ -88,17 +93,26 @@ class GUI:
                         self.table.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
                     os.system('cls')
                     print(self.gui.table)
+        if self.core.backup_check():
+            print(f'\n{Fore.LIGHTGREEN_EX}Backing up WTF directory:{Fore.RESET}')
+            self.core.backup_wtf(self.gui.table_width)
         os.system('pause')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     try:
         if getattr(sys, 'frozen', False):
             os.chdir(os.path.dirname(os.path.abspath(sys.executable)))
         app = GUI()
         app.start()
     except Exception as e:
-        print(f'{Fore.LIGHTRED_EX}{str(e)}{Fore.RESET}')
-        os.system('pause')
-        sys.exit(1)
+        # noinspection PyUnboundLocalVariable
+        if app.args.debug:
+            sys.tracebacklimit = 1000
+            traceback.print_exc()
+            sys.exit(1)
+        else:
+            print(f'{Fore.LIGHTRED_EX}{str(e)}{Fore.RESET}')
+            os.system('pause')
+            sys.exit(1)
 
