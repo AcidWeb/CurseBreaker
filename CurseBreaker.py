@@ -2,12 +2,15 @@ import os
 import sys
 import time
 import msvcrt
+import shutil
+import requests
 import traceback
 from tqdm import tqdm
 from colorama import init, Fore
 from terminaltables import SingleTable
 from prompt_toolkit import PromptSession, HTML, print_formatted_text as printft
 from prompt_toolkit.completion import WordCompleter
+from distutils.version import StrictVersion
 from CB import __version__
 from CB.Core import Core
 
@@ -40,6 +43,7 @@ class TUI:
                          'Try starting it with administrative privileges.</ansibrightred>\n'))
             os.system('pause')
             sys.exit(1)
+        self.auto_update()
         self.core.init_config()
         self.setup_completer()
         # Curse URI Support
@@ -80,8 +84,7 @@ class TUI:
         # Prompt session
         while True:
             try:
-                command = self.session.prompt(HTML('<ansibrightgreen>CB></ansibrightgreen> '),
-                                              completer=self.completer, bottom_toolbar=self.version_check())
+                command = self.session.prompt(HTML('<ansibrightgreen>CB></ansibrightgreen> '), completer=self.completer)
             except KeyboardInterrupt:
                 continue
             except EOFError:
@@ -97,6 +100,29 @@ class TUI:
                 else:
                     printft('Command not found.')
 
+    def auto_update(self):
+        if getattr(sys, 'frozen', False):
+            try:
+                payload = requests.get('https://api.github.com/repos/AcidWeb/CurseBreaker/releases/latest').json()
+                remoteversion = payload['name']
+                url = payload['assets'][0]['browser_download_url']
+                if StrictVersion(remoteversion[1:]) > StrictVersion(__version__):
+                    printft(HTML('<ansigreen>Updating CurseBreaker...</ansigreen>'))
+                    if os.path.isfile(sys.executable + '.old'):
+                        os.remove(sys.executable + '.old')
+                    shutil.move(sys.executable, sys.executable + '.old')
+                    payload = requests.get(url)
+                    with open(sys.executable, 'wb') as f:
+                        f.write(payload.content)
+                    printft(HTML('\n<ansibrightgreen>Update complete! Please restart the application.'
+                                 '</ansibrightgreen>\n'))
+                    os.system('pause')
+                    sys.exit(0)
+            except Exception as e:
+                printft(HTML(f'<ansibrightred>Update failed!\n\nReason: {str(e)}</ansibrightred>\n'))
+                os.system('pause')
+                sys.exit(1)
+
     def handle_exception(self, e):
         if getattr(sys, 'frozen', False):
             printft(HTML(f'\n<ansibrightred>{str(e)}</ansibrightred>'))
@@ -108,10 +134,6 @@ class TUI:
         os.system('cls')
         printft(HTML(f'<ansibrightblack>~~~ <ansibrightgreen>CurseBreaker</ansibrightgreen> <ansibrightred>v'
                      f'{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
-
-    def version_check(self):
-        # TODO Version check
-        return HTML(f'Installed version: <style bg="ansired">v{__version__}</style>')
 
     def setup_completer(self):
         commands = ['install', 'uninstall', 'update', 'status', 'orphans', 'toggle_backup', 'uri_integration']
