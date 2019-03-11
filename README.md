@@ -1,6 +1,11 @@
 # CurseBreaker
 
-CLI add-on updater for World of Warcraft.
+CLI addon updater for World of Warcraft.
+
+## USAGE
+Should be pretty self-explanatory. Place **CurseBreaker** EXE inside WoW directory and start it up.\
+Already installed addons will not be recognized by **CurseBreaker** and they need to be reinstalled.\
+By default **CurseBreaker** create backups of entire `WTF` directory.
 
 ## COPYRIGHT
 **CurseBreaker** is free software/open source, and is distributed under the GNU General Public License v3.

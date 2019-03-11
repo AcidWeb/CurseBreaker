@@ -23,9 +23,7 @@ class TUI:
         init()
 
     def start(self):
-        os.system('cls')
-        printft(HTML(f'<ansibrightblack>~~~ <ansibrightgreen>CurseBreaker</ansibrightgreen> <ansibrightred>v'
-                     f'{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
+        self.print_header()
         # Check if executable is in good location
         if not os.path.isfile('Wow.exe') or not os.path.isdir('Interface\\AddOns') or not os.path.isdir('WTF'):
             printft(HTML('<ansibrightred>This executable should be placed in same directory where Wow.exe is located.'
@@ -57,9 +55,7 @@ class TUI:
                     elif time.time() - starttime > 5:
                         break
                 if not keypress:
-                    os.system('cls')
-                    printft(HTML(f'<ansibrightblack>~~~ <ansibrightgreen>CurseBreaker</ansibrightgreen> <ansibrightred>'
-                                 f'v{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
+                    self.print_header()
                     try:
                         self.c_update(False, True)
                         if self.core.backup_check():
@@ -70,11 +66,8 @@ class TUI:
                     printft('')
                     os.system('pause')
                     sys.exit(0)
-                else:
-                    os.system('cls')
-                    printft(HTML(f'<ansibrightblack>~~~ <ansibrightgreen>CurseBreaker</ansibrightgreen> <ansibrightred>'
-                                 f'v{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
-                    printft('Press TAB to see a list of available commands.\nPress CTRL+D to close the application.\n')
+            self.print_header()
+            printft('Press TAB to see a list of available commands.\nPress CTRL+D to close the application.\n')
             # Prompt session
             while True:
                 try:
@@ -95,16 +88,21 @@ class TUI:
                     else:
                         printft('Command not found.')
 
-    def version_check(self):
-        # TODO Version check
-        return HTML(f'Installed version: <style bg="ansired">v{__version__}</style>')
-
     def handle_exception(self, e):
         if getattr(sys, 'frozen', False):
             printft(HTML(f'\n<ansibrightred>{str(e)}</ansibrightred>'))
         else:
             sys.tracebacklimit = 1000
             traceback.print_exc()
+
+    def print_header(self):
+        os.system('cls')
+        printft(HTML(f'<ansibrightblack>~~~ <ansibrightgreen>CurseBreaker</ansibrightgreen> <ansibrightred>v'
+                     f'{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
+
+    def version_check(self):
+        # TODO Version check
+        return HTML(f'Installed version: <style bg="ansired">v{__version__}</style>')
 
     def setup_completer(self):
         commands = ['install', 'uninstall', 'update', 'status', 'orphans', 'toggle_backup', 'uri_integration']
@@ -198,9 +196,10 @@ class TUI:
 
 
 if __name__ == '__main__':
-    os.system('mode con: cols=100 lines=50')
     if getattr(sys, 'frozen', False):
         os.chdir(os.path.dirname(os.path.abspath(sys.executable)))
+    os.system(f'title CurseBreaker v{__version__}')
+    os.system('mode con: cols=100 lines=50')
     app = TUI()
     app.start()
 
