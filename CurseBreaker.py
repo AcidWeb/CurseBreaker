@@ -1,130 +1,207 @@
 import os
 import sys
-import argparse
+import time
+import msvcrt
 import traceback
+from tqdm import tqdm
 from colorama import init, Fore
 from terminaltables import SingleTable
+from prompt_toolkit import PromptSession, HTML, print_formatted_text as printft
+from prompt_toolkit.completion import WordCompleter
 from CB import __version__
 from CB.Core import Core
 
 
-class GUI:
+class TUI:
     def __init__(self):
-        parser = argparse.ArgumentParser(description='All options support comma separated lists. '
-                                                     'When started without arguments program will update all add-ons.',
-                                         epilog='Supported URLs: https://www.curseforge.com/wow/addons/<addon_name>, '
-                                                'https://www.wowinterface.com/downloads/<addon_name>, ElvUI, ElvUI:Dev')
-        mainoptions = parser.add_mutually_exclusive_group()
-        mainoptions.add_argument('-a', '--add', help='Install add-ons', metavar='URL')
-        mainoptions.add_argument('-r', '--remove', help='Remove add-ons', metavar='URL/Name')
-        mainoptions.add_argument('-u', '--update', help='Update add-ons', metavar='URL/Name')
-        mainoptions.add_argument('-l', '--list', help='Show installed add-ons', action='store_true')
-        mainoptions.add_argument('-o', '--orphan', help='Show list of orphaned add-on directories', action='store_true')
-        mainoptions.add_argument('-b', '--backup', help='Enable/disable WTF backup', action='store_true')
-        mainoptions.add_argument('-c', '--curse', help='Generate REG file for curse:// URI scheme', action='store_true')
-        parser.add_argument('-d', '--debug', help='Display more verbose errors', action='store_true')
-
-        self.args = parser.parse_args()
         self.core = Core()
-        self.table = [['Status', 'Name', 'Version']]
-        self.gui = SingleTable(self.table)
-        self.gui.title = f'{Fore.LIGHTGREEN_EX}CurseBreaker {Fore.LIGHTBLACK_EX}v{__version__}{Fore.RESET}'
-        self.gui.justify_columns[0] = 'center'
+        self.session = PromptSession()
+        self.table_data = None
+        self.table = None
+        self.completer = None
         sys.tracebacklimit = 0
         init()
 
     def start(self):
         os.system('cls')
-        print(f'{Fore.LIGHTBLACK_EX}~~~ {Fore.LIGHTGREEN_EX}CurseBreaker '
-              f'{Fore.LIGHTBLACK_EX}v{__version__} ~~~{Fore.RESET}\n')
+        printft(HTML(f'<ansibrightblack>~~~ <ansibrightgreen>CurseBreaker</ansibrightgreen> <ansibrightred>v'
+                     f'{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
+        # Check if executable is in good location
         if not os.path.isfile('Wow.exe') or not os.path.isdir('Interface\\AddOns') or not os.path.isdir('WTF'):
-            print(f'{Fore.LIGHTRED_EX}This executable should be placed in WoW directory!{Fore.RESET}\n')
+            printft(HTML('<ansibrightred>This executable should be placed in same directory where Wow.exe is located.'
+                         '</ansibrightred>\n'))
             os.system('pause')
             sys.exit(1)
         else:
             self.core.init_config()
-
-        if self.args.add:
-            addons = self.args.add.split(',')
-            for addon in addons:
-                name, version = self.core.add_addon(addon)
-                if version:
-                    self.table.append([f'{Fore.GREEN}Installed{Fore.RESET}', name, version])
-                else:
-                    self.table.append([f'{Fore.LIGHTBLACK_EX}Already installed{Fore.RESET}', name, ''])
-                os.system('cls')
-                print(self.gui.table)
-        elif self.args.remove:
-            addons = self.args.remove.split(',')
-            for addon in addons:
-                name, version = self.core.del_addon(addon)
-                if name:
-                    self.table.append([f'{Fore.RED}Uninstalled{Fore.RESET}', name, version])
-                else:
-                    self.table.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
-                os.system('cls')
-                print(self.gui.table)
-        elif self.args.orphan:
-            orphans = self.core.find_orphans()
-            print(f'{Fore.LIGHTGREEN_EX}Directories that are not part of any installed add-on:{Fore.RESET}')
-            for orphan in sorted(orphans):
-                print(orphan)
-        elif self.args.list:
-            addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
-            for addon in addons:
-                self.table.append([f'{Fore.GREEN}Up-to-date{Fore.RESET}', addon['Name'], addon['InstalledVersion']])
-            os.system('cls')
-            print(self.gui.table)
-        elif self.args.backup:
-            status = self.core.backup_toggle()
-            print(f'{Fore.LIGHTGREEN_EX}Backup of WTF directory is now: '
-                  f'{f"{Fore.GREEN}ENABLED{Fore.RESET}" if status else f"{Fore.LIGHTRED_EX}DISABLED{Fore.RESET}"}')
-        elif self.args.curse:
-            self.core.create_reg()
-            print(f'{Fore.LIGHTGREEN_EX}CurseBreaker.reg file was created. '
-                  f'Import it to enable integration.{Fore.RESET}')
-        else:
-            if self.args.update:
-                addons = self.args.update.split(',')
-            else:
-                addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
-            if len(addons) == 0:
-                raise RuntimeError('No add-ons installed. '
-                                   'Start this application with -h parameter to see available options.')
-            else:
-                for addon in addons:
-                    name, versionnew, versionold = self.core.update_addon(addon if isinstance(addon, str) else
-                                                                          addon['URL'])
-                    if versionold:
-                        if versionold == versionnew:
-                            self.table.append([f'{Fore.GREEN}Up-to-date{Fore.RESET}', name, versionold])
-                        else:
-                            self.table.append([f'{Fore.YELLOW}Updated{Fore.RESET}', name,
-                                               f'{versionold} {Fore.LIGHTBLACK_EX}>>>{Fore.RESET} {versionnew}'])
-                    else:
-                        self.table.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
+            self.setup_completer()
+            # Curse URI Support
+            if len(sys.argv) == 2 and 'curse://' in sys.argv[1]:
+                try:
+                    self.c_install(sys.argv[1].strip())
+                except Exception as e:
+                    self.handle_exception(e)
+                printft('')
+                os.system('pause')
+                sys.exit(0)
+            # Auto update
+            if len(self.core.config['Addons']) > 0:
+                printft('Automatic update of all addons will start in 5 seconds.\n'
+                        'Press any button to enter interactive mode.')
+                starttime = time.time()
+                keypress = None
+                while True:
+                    if msvcrt.kbhit():
+                        keypress = msvcrt.getch()
+                        break
+                    elif time.time() - starttime > 5:
+                        break
+                if not keypress:
                     os.system('cls')
-                    print(self.gui.table)
-        if self.core.backup_check():
-            print(f'\n{Fore.LIGHTGREEN_EX}Backing up WTF directory:{Fore.RESET}')
-            self.core.backup_wtf(self.gui.table_width)
-        print('')
-        os.system('pause')
+                    printft(HTML(f'<ansibrightblack>~~~ <ansibrightgreen>CurseBreaker</ansibrightgreen> <ansibrightred>'
+                                 f'v{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
+                    try:
+                        self.c_update(False, True)
+                        if self.core.backup_check():
+                            printft(HTML('\n<ansigreen>Backing up WTF directory:</ansigreen>'))
+                            self.core.backup_wtf()
+                    except Exception as e:
+                        self.handle_exception(e)
+                    printft('')
+                    os.system('pause')
+                    sys.exit(0)
+                else:
+                    os.system('cls')
+                    printft(HTML(f'<ansibrightblack>~~~ <ansibrightgreen>CurseBreaker</ansibrightgreen> <ansibrightred>'
+                                 f'v{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
+                    printft('Press TAB to see a list of available commands.\nPress CTRL+D to close the application.\n')
+            # Prompt session
+            while True:
+                try:
+                    command = self.session.prompt(HTML('<ansibrightgreen>CB></ansibrightgreen> '),
+                                                  completer=self.completer, bottom_toolbar=self.version_check())
+                except KeyboardInterrupt:
+                    continue
+                except EOFError:
+                    break
+                else:
+                    command = command.split(' ', 1)
+                    if getattr(self, f'c_{command[0].lower()}', False):
+                        try:
+                            getattr(self, f'c_{command[0].lower()}')(command[1].strip() if len(command) > 1 else False)
+                            self.setup_completer()
+                        except Exception as e:
+                            self.handle_exception(e)
+                    else:
+                        printft('Command not found.')
+
+    def version_check(self):
+        # TODO Version check
+        return HTML(f'Installed version: <style bg="ansired">v{__version__}</style>')
+
+    def handle_exception(self, e):
+        if getattr(sys, 'frozen', False):
+            printft(HTML(f'\n<ansibrightred>{str(e)}</ansibrightred>'))
+        else:
+            sys.tracebacklimit = 1000
+            traceback.print_exc()
+
+    def setup_completer(self):
+        commands = ['install', 'uninstall', 'update', 'status', 'orphans', 'toggle_backup', 'uri_integration']
+        addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
+        for addon in addons:
+            commands.extend([f'uninstall {addon["Name"]}', f'update {addon["Name"]}', f'status {addon["Name"]}'])
+        self.completer = WordCompleter(commands, ignore_case=True, sentence=True)
+
+    def setup_table(self):
+        self.table_data = [[f'{Fore.LIGHTWHITE_EX}Status{Fore.RESET}', f'{Fore.LIGHTWHITE_EX}Name{Fore.RESET}',
+                            f'{Fore.LIGHTWHITE_EX}Version{Fore.RESET}']]
+        self.table = SingleTable(self.table_data)
+        self.table.justify_columns[0] = 'center'
+
+    def c_install(self, args):
+        if args:
+            addons = args.split(',')
+            self.setup_table()
+            with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
+                for addon in addons:
+                    installed, name, version = self.core.add_addon(addon)
+                    if installed:
+                        self.table_data.append([f'{Fore.GREEN}Installed{Fore.RESET}', name, version])
+                    else:
+                        self.table_data.append([f'{Fore.LIGHTBLACK_EX}Already installed{Fore.RESET}', name, version])
+                    pbar.update(1)
+            print(self.table.table)
+        else:
+            printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a comma-separated list of links as an a'
+                         'rgument.\n<ansigreen>Supported URLs:</ansigreen>\n\thttps://www.curseforge.com/wow/addons/[ad'
+                         'don_name]\n\thttps://www.wowinterface.com/downloads/[addon_name]\n\tElvUI\n\tElvUI:Dev'))
+
+    def c_uninstall(self, args):
+        if args:
+            addons = args.split(',')
+            self.setup_table()
+            with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
+                for addon in addons:
+                    name, version = self.core.del_addon(addon)
+                    if name:
+                        self.table_data.append([f'{Fore.RED}Uninstalled{Fore.RESET}', name, version])
+                    else:
+                        self.table_data.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
+                    pbar.update(1)
+            print(self.table.table)
+        else:
+            printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a comma-separated list of links or addo'
+                         'n names as an argument.\n<ansigreen>Supported URLs:</ansigreen>\n\thttps://www.curseforge.com'
+                         '/wow/addons/[addon_name]\n\thttps://www.wowinterface.com/downloads/[addon_name]\n\tElvUI\n\tE'
+                         'lvUI:Dev'))
+
+    def c_update(self, args, addline=False, update=True):
+        if args:
+            addons = args.split(',')
+        else:
+            addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
+        self.setup_table()
+        with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
+            for addon in addons:
+                name, versionnew, versionold = self.core.\
+                    update_addon(addon if isinstance(addon, str) else addon['URL'], update)
+                if versionold:
+                    if versionold == versionnew:
+                        self.table_data.append([f'{Fore.GREEN}Up-to-date{Fore.RESET}', name, versionold])
+                    else:
+                        self.table_data.append([f'{Fore.YELLOW}{"Updated" if update else "Update available"}'
+                                                f'{Fore.RESET}', name, f'{versionold} {Fore.LIGHTBLACK_EX}>>'
+                                                f'>{Fore.RESET} {versionnew}'])
+                else:
+                    self.table_data.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
+                pbar.update(1)
+        print('\n' + self.table.table if addline else self.table.table)
+
+    def c_status(self, args):
+        self.c_update(args, False, False)
+
+    def c_orphans(self, _):
+        orphans = self.core.find_orphans()
+        printft(HTML('<ansigreen>Directories that are not part of any installed addon:</ansigreen>'))
+        for orphan in sorted(orphans):
+            printft(orphan)
+
+    def c_uri_integration(self, _):
+        self.core.create_reg()
+        printft('CurseBreaker.reg file was created. Import it to enable integration.')
+
+    def c_toggle_backup(self, _):
+        status = self.core.backup_toggle()
+        printft('Backup of WTF directory is now:',
+                HTML('<ansigreen>ENABLED</ansigreen>') if status else HTML('<ansired>DISABLED</ansired>'))
 
 
 if __name__ == '__main__':
-    try:
-        if getattr(sys, 'frozen', False):
-            os.chdir(os.path.dirname(os.path.abspath(sys.executable)))
-        app = GUI()
-        app.start()
-    except Exception as e:
-        # noinspection PyUnboundLocalVariable
-        if app.args.debug:
-            sys.tracebacklimit = 1000
-            traceback.print_exc()
-        else:
-            print(f'{Fore.LIGHTRED_EX}{str(e)}{Fore.RESET}\n')
-        os.system('pause')
-        sys.exit(1)
+    os.system('mode con: cols=100 lines=50')
+    if getattr(sys, 'frozen', False):
+        os.chdir(os.path.dirname(os.path.abspath(sys.executable)))
+    app = TUI()
+    app.start()
+
 

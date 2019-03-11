@@ -5,8 +5,8 @@ import shutil
 import zipfile
 import datetime
 from tqdm import tqdm
-from .CurseForge import CurseForgeAddon
 from .ElvUI import ElvUIAddon
+from .CurseForge import CurseForgeAddon
 from .WoWInterface import WoWInterfaceAddon
 
 
@@ -66,13 +66,12 @@ class Core:
             new.install(self.path)
             self.config['Addons'].append({'Name': new.name,
                                           'URL': url,
-                                          'CurrentVersion': new.currentVersion,
-                                          'InstalledVersion': new.currentVersion,
+                                          'Version': new.currentVersion,
                                           'Directories': new.directories
                                           })
             self.save_config()
-            return new.name, new.currentVersion
-        return addon['Name'], False
+            return True, new.name, new.currentVersion
+        return False, addon['Name'], addon['Version']
 
     def del_addon(self, url):
         old = self.check_if_installed(url)
@@ -81,23 +80,22 @@ class Core:
             self.config['Addons'][:] = [d for d in self.config['Addons'] if d.get('URL') != url
                                         and d.get('Name') != url]
             self.save_config()
-            return old['Name'], old['InstalledVersion']
+            return old['Name'], old['Version']
         return False, False
 
-    def update_addon(self, url):
+    def update_addon(self, url, update):
         old = self.check_if_installed(url)
         if old:
             new = self.parse_url(old['URL'])
             new.get_current_version()
-            oldversion = old['InstalledVersion']
-            if new.currentVersion != old['InstalledVersion']:
+            oldversion = old['Version']
+            if new.currentVersion != old['Version'] and update:
                 self.cleanup(old['Directories'])
                 new.install(self.path)
-                old['CurrentVersion'] = new.currentVersion
-                old['InstalledVersion'] = new.currentVersion
+                old['Version'] = new.currentVersion
                 old['Directories'] = new.directories
-            self.save_config()
-            return new.name, old['InstalledVersion'], oldversion
+                self.save_config()
+            return new.name, new.currentVersion, oldversion
         return url, False, False
 
     def backup_toggle(self):
@@ -119,11 +117,11 @@ class Core:
         else:
             return False
 
-    def backup_wtf(self, barwidth):
+    def backup_wtf(self):
         zipf = zipfile.ZipFile(f'WTF-Backup\\{datetime.datetime.now().strftime("%d%m%y")}.zip', 'w',
                                zipfile.ZIP_DEFLATED)
         filecount = sum([len(files) for r, d, files in os.walk('WTF/')])
-        with tqdm(total=filecount, bar_format='{n_fmt}/{total_fmt} |{bar}|', ncols=barwidth) as pbar:
+        with tqdm(total=filecount, bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
             for root, dirs, files in os.walk('WTF/'):
                 for f in files:
                     zipf.write(os.path.join(root, f))
@@ -148,5 +146,5 @@ class Core:
                           'e\DefaultIcon]\n@="\\"CurseBreaker.exe,1\\""\n[HKEY_CURRENT_USER\Software\Classes\curse\shel'
                           'l]\n[HKEY_CURRENT_USER\Software\Classes\curse\shell\open]\n[HKEY_CURRENT_USER\Software\Class'
                           'es\curse\shell\open\command]\n@="\\"' + os.path.abspath(sys.executable).replace('\\', '\\\\')
-                          + '\\" \\"-a %1\\""')
+                          + '\\" \\"%1\\""')
 

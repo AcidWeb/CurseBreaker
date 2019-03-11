@@ -1,5 +1,6 @@
 beautifulsoup4
+terminaltables
+prompt_toolkit
 requests
 colorama
-terminaltables
 tqdm
