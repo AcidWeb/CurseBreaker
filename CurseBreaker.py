@@ -26,67 +26,76 @@ class TUI:
         self.print_header()
         # Check if executable is in good location
         if not os.path.isfile('Wow.exe') or not os.path.isdir('Interface\\AddOns') or not os.path.isdir('WTF'):
-            printft(HTML('<ansibrightred>This executable should be placed in same directory where Wow.exe is located.'
-                         '</ansibrightred>\n'))
+            printft(HTML('<ansibrightred>This executable should be placed in the same directory where Wow.exe is locate'
+                         'd.</ansibrightred>\n'))
             os.system('pause')
             sys.exit(1)
-        else:
-            self.core.init_config()
-            self.setup_completer()
-            # Curse URI Support
-            if len(sys.argv) == 2 and 'curse://' in sys.argv[1]:
+        # Check if client have write access
+        try:
+            with open('PermissionTest', 'w') as _:
+                pass
+            os.remove('PermissionTest')
+        except IOError:
+            printft(HTML('<ansibrightred>CurseBreaker doesn\'t have write rights for the current directory.\n'
+                         'Try starting it with administrative privileges.</ansibrightred>\n'))
+            os.system('pause')
+            sys.exit(1)
+        self.core.init_config()
+        self.setup_completer()
+        # Curse URI Support
+        if len(sys.argv) == 2 and 'curse://' in sys.argv[1]:
+            try:
+                self.c_install(sys.argv[1].strip())
+            except Exception as e:
+                self.handle_exception(e)
+            printft('')
+            os.system('pause')
+            sys.exit(0)
+        # Addons auto update
+        if len(self.core.config['Addons']) > 0:
+            printft('Automatic update of all addons will start in 5 seconds.\n'
+                    'Press any button to enter interactive mode.')
+            starttime = time.time()
+            keypress = None
+            while True:
+                if msvcrt.kbhit():
+                    keypress = msvcrt.getch()
+                    break
+                elif time.time() - starttime > 5:
+                    break
+            if not keypress:
+                self.print_header()
                 try:
-                    self.c_install(sys.argv[1].strip())
+                    self.c_update(False, True)
+                    if self.core.backup_check():
+                        printft(HTML('\n<ansigreen>Backing up WTF directory:</ansigreen>'))
+                        self.core.backup_wtf()
                 except Exception as e:
                     self.handle_exception(e)
                 printft('')
                 os.system('pause')
                 sys.exit(0)
-            # Auto update
-            if len(self.core.config['Addons']) > 0:
-                printft('Automatic update of all addons will start in 5 seconds.\n'
-                        'Press any button to enter interactive mode.')
-                starttime = time.time()
-                keypress = None
-                while True:
-                    if msvcrt.kbhit():
-                        keypress = msvcrt.getch()
-                        break
-                    elif time.time() - starttime > 5:
-                        break
-                if not keypress:
-                    self.print_header()
+        self.print_header()
+        printft('Press TAB to see a list of available commands.\nPress CTRL+D to close the application.\n')
+        # Prompt session
+        while True:
+            try:
+                command = self.session.prompt(HTML('<ansibrightgreen>CB></ansibrightgreen> '),
+                                              completer=self.completer, bottom_toolbar=self.version_check())
+            except KeyboardInterrupt:
+                continue
+            except EOFError:
+                break
+            else:
+                command = command.split(' ', 1)
+                if getattr(self, f'c_{command[0].lower()}', False):
                     try:
-                        self.c_update(False, True)
-                        if self.core.backup_check():
-                            printft(HTML('\n<ansigreen>Backing up WTF directory:</ansigreen>'))
-                            self.core.backup_wtf()
+                        getattr(self, f'c_{command[0].lower()}')(command[1].strip() if len(command) > 1 else False)
+                        self.setup_completer()
                     except Exception as e:
                         self.handle_exception(e)
-                    printft('')
-                    os.system('pause')
-                    sys.exit(0)
-            self.print_header()
-            printft('Press TAB to see a list of available commands.\nPress CTRL+D to close the application.\n')
-            # Prompt session
-            while True:
-                try:
-                    command = self.session.prompt(HTML('<ansibrightgreen>CB></ansibrightgreen> '),
-                                                  completer=self.completer, bottom_toolbar=self.version_check())
-                except KeyboardInterrupt:
-                    continue
-                except EOFError:
-                    break
                 else:
-                    command = command.split(' ', 1)
-                    if getattr(self, f'c_{command[0].lower()}', False):
-                        try:
-                            getattr(self, f'c_{command[0].lower()}')(command[1].strip() if len(command) > 1 else False)
-                            self.setup_completer()
-                        except Exception as e:
-                            self.handle_exception(e)
-                    else:
-                        printft('Command not found.')
+                    printft('Command not found.')
 
     def handle_exception(self, e):
         if getattr(sys, 'frozen', False):
