@@ -141,7 +141,7 @@ class TUI:
                      f'{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
 
     def setup_completer(self):
-        commands = ['install', 'uninstall', 'update', 'status', 'orphans', 'toggle_backup', 'uri_integration']
+        commands = ['install', 'uninstall', 'update', 'status', 'orphans', 'toggle_backup', 'uri_integration', 'exit']
         addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         for addon in addons:
             commands.extend([f'uninstall {addon["Name"]}', f'update {addon["Name"]}', f'status {addon["Name"]}'])
@@ -229,6 +229,9 @@ class TUI:
         status = self.core.backup_toggle()
         printft('Backup of WTF directory is now:',
                 HTML('<ansigreen>ENABLED</ansigreen>') if status else HTML('<ansired>DISABLED</ansired>'))
+
+    def c_exit(self, _):
+        sys.exit(0)
 
 
 if __name__ == '__main__':
