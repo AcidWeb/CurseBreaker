@@ -71,6 +71,11 @@ class TUI:
                 self.print_header()
                 try:
                     self.c_update(False, True)
+                except Exception as e:
+                    if len(self.table_data) > 1:
+                        print('\n' + self.table.table)
+                    self.handle_exception(e)
+                try:
                     if self.core.backup_check():
                         printft(HTML('\n<ansigreen>Backing up WTF directory:</ansigreen>'))
                         self.core.backup_wtf()
