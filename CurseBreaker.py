@@ -140,10 +140,12 @@ class TUI:
                      f'{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
 
     def setup_completer(self):
-        commands = ['install', 'uninstall', 'update', 'status', 'orphans', 'toggle_backup', 'uri_integration', 'exit']
+        commands = ['install', 'uninstall', 'update', 'force_update', 'status', 'orphans', 'toggle_backup',
+                    'uri_integration', 'exit']
         addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         for addon in addons:
-            commands.extend([f'uninstall {addon["Name"]}', f'update {addon["Name"]}', f'status {addon["Name"]}'])
+            commands.extend([f'uninstall {addon["Name"]}', f'update {addon["Name"]}', f'force_update {addon["Name"]}',
+                             f'status {addon["Name"]}'])
         self.completer = WordCompleter(commands, ignore_case=True, sentence=True)
 
     def setup_table(self):
@@ -187,7 +189,7 @@ class TUI:
                          '/wow/addons/[addon_name]\n\thttps://www.wowinterface.com/downloads/[addon_name]\n\tElvUI\n\tE'
                          'lvUI:Dev'))
 
-    def c_update(self, args, addline=False, update=True):
+    def c_update(self, args, addline=False, update=True, force=False):
         if args:
             addons = args.split(',')
         else:
@@ -195,7 +197,7 @@ class TUI:
         with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
             for addon in addons:
                 name, versionnew, versionold, modified = self.core.\
-                    update_addon(addon if isinstance(addon, str) else addon['URL'], update)
+                    update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
                 if versionold:
                     if versionold == versionnew:
                         if modified:
@@ -214,6 +216,9 @@ class TUI:
                     self.table_data.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
                 pbar.update(1)
         print('\n' + self.table.table if addline else self.table.table)
+
+    def c_force_update(self, args):
+        self.c_update(args, False, True, True)
 
     def c_status(self, args):
         self.c_update(args, False, False)

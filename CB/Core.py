@@ -105,14 +105,14 @@ class Core:
             return old['Name'], old['Version']
         return False, False
 
-    def update_addon(self, url, update):
+    def update_addon(self, url, update, force):
         old = self.check_if_installed(url)
         if old:
             new = self.parse_url(old['URL'])
             new.get_current_version()
             oldversion = old['Version']
             modified = self.check_checksum(url)
-            if new.currentVersion != old['Version'] and not modified and update:
+            if new.currentVersion != old['Version'] and update and (not modified or force):
                 self.cleanup(old['Directories'])
                 new.install(self.path)
                 checksums = {}
@@ -122,7 +122,7 @@ class Core:
                 old['Directories'] = new.directories
                 old['Checksums'] = checksums
                 self.save_config()
-            return new.name, new.currentVersion, oldversion, modified
+            return new.name, new.currentVersion, oldversion, modified if not force else False
         return url, False, False, False
 
     def check_checksum(self, url):
