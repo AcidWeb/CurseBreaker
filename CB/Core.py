@@ -129,15 +129,28 @@ class Core:
         zipf.close()
 
     def find_orphans(self):
-        orphans = []
+        orphanedaddon = []
+        orphaneconfig = []
         directories = []
+        directoriesgit = []
         for addon in self.config['Addons']:
             for directory in addon['Directories']:
                 directories.append(directory)
         for directory in os.listdir(self.path):
             if directory not in directories:
-                orphans.append(directory)
-        return orphans
+                if os.path.isdir(os.path.join(self.path, directory, '.git')):
+                    orphanedaddon.append(f'{directory} [GIT]')
+                    directoriesgit.append(directory)
+                else:
+                    orphanedaddon.append(directory)
+        directories += directoriesgit + orphanedaddon
+        for root, dirs, files in os.walk('WTF/'):
+            for f in files:
+                if 'Blizzard_' not in f and f.endswith('.lua'):
+                    name = f.split('.')[0]
+                    if name not in directories:
+                        orphaneconfig.append(os.path.join(root, f)[4:])
+        return orphanedaddon, orphaneconfig
 
     def create_reg(self):
         with open('CurseBreaker.reg', 'w') as outfile:

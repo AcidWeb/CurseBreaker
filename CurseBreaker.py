@@ -213,9 +213,12 @@ class TUI:
         self.c_update(args, False, False)
 
     def c_orphans(self, _):
-        orphans = self.core.find_orphans()
+        orphansd, orphansf = self.core.find_orphans()
         printft(HTML('<ansigreen>Directories that are not part of any installed addon:</ansigreen>'))
-        for orphan in sorted(orphans):
+        for orphan in sorted(orphansd):
+            printft(HTML(orphan.replace('[GIT]', '<ansiyellow>[GIT]</ansiyellow>')))
+        printft(HTML('\n<ansigreen>Files that are leftovers after no longer installed addons:</ansigreen>'))
+        for orphan in sorted(orphansf):
             printft(orphan)
 
     def c_uri_integration(self, _):
