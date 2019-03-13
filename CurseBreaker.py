@@ -46,6 +46,7 @@ class TUI:
         self.auto_update()
         self.core.init_config()
         self.setup_completer()
+        self.setup_table()
         # Curse URI Support
         if len(sys.argv) == 2 and 'curse://' in sys.argv[1]:
             try:
@@ -71,12 +72,8 @@ class TUI:
                 self.print_header()
                 try:
                     self.c_update(False, True)
-                except Exception as e:
-                    if len(self.table_data) > 1:
-                        print('\n' + self.table.table)
-                    self.handle_exception(e)
-                try:
                     if self.core.backup_check():
+                        self.setup_table()
                         printft(HTML('\n<ansigreen>Backing up WTF directory:</ansigreen>'))
                         self.core.backup_wtf()
                 except Exception as e:
@@ -98,6 +95,7 @@ class TUI:
                 command = command.split(' ', 1)
                 if getattr(self, f'c_{command[0].lower()}', False):
                     try:
+                        self.setup_table()
                         getattr(self, f'c_{command[0].lower()}')(command[1].strip() if len(command) > 1 else False)
                         self.setup_completer()
                     except Exception as e:
@@ -129,6 +127,8 @@ class TUI:
                 sys.exit(1)
 
     def handle_exception(self, e):
+        if len(self.table_data) > 1:
+            print(self.table.table)
         if getattr(sys, 'frozen', False):
             printft(HTML(f'\n<ansibrightred>{str(e)}</ansibrightred>'))
         else:
@@ -156,7 +156,6 @@ class TUI:
     def c_install(self, args):
         if args:
             addons = args.split(',')
-            self.setup_table()
             with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
                 for addon in addons:
                     installed, name, version = self.core.add_addon(addon)
@@ -174,7 +173,6 @@ class TUI:
     def c_uninstall(self, args):
         if args:
             addons = args.split(',')
-            self.setup_table()
             with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
                 for addon in addons:
                     name, version = self.core.del_addon(addon)
@@ -195,7 +193,6 @@ class TUI:
             addons = args.split(',')
         else:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
-        self.setup_table()
         with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
             for addon in addons:
                 name, versionnew, versionold = self.core.\
