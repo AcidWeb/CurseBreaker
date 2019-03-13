@@ -53,8 +53,7 @@ class TUI:
                 self.c_install(sys.argv[1].strip())
             except Exception as e:
                 self.handle_exception(e)
-            printft('')
-            os.system('pause')
+            os.system('timeout /t 5')
             sys.exit(0)
         # Addons auto update
         if len(self.core.config['Addons']) > 0:
