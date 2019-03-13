@@ -8,7 +8,7 @@ install:
   - "%PYTHON%\\python.exe -m pip install certifi https://github.com/pyinstaller/pyinstaller/archive/develop.zip"
 
 build_script:
-    - "pyinstaller -y -F -i CurseBreaker.ico -n CurseBreaker -c --noupx CurseBreaker.py"
+    - "pyinstaller --additional-hooks-dir=Hooks/ -y -F -i CurseBreaker.ico -n CurseBreaker -c --noupx CurseBreaker.py"
 
 after_build:
   - ps: Get-ChildItem .\dist\CurseBreaker* | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
