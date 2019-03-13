@@ -195,15 +195,22 @@ class TUI:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
             for addon in addons:
-                name, versionnew, versionold = self.core.\
+                name, versionnew, versionold, modified = self.core.\
                     update_addon(addon if isinstance(addon, str) else addon['URL'], update)
                 if versionold:
                     if versionold == versionnew:
-                        self.table_data.append([f'{Fore.GREEN}Up-to-date{Fore.RESET}', name, versionold])
+                        if modified:
+                            self.table_data.append([f'{Fore.LIGHTRED_EX}Modified{Fore.RESET}', name, versionold])
+                        else:
+                            self.table_data.append([f'{Fore.GREEN}Up-to-date{Fore.RESET}', name, versionold])
                     else:
-                        self.table_data.append([f'{Fore.YELLOW}{"Updated" if update else "Update available"}'
-                                                f'{Fore.RESET}', name, f'{versionold} {Fore.LIGHTBLACK_EX}>>'
-                                                f'>{Fore.RESET} {versionnew}'])
+                        if modified:
+                            self.table_data.append([f'{Fore.RED}Modified & Update available{Fore.RESET}', name,
+                                                    versionold])
+                        else:
+                            self.table_data.append([f'{Fore.YELLOW}{"Updated" if update else "Update available"}'
+                                                    f'{Fore.RESET}', name, f'{versionold} {Fore.LIGHTBLACK_EX}>>'
+                                                    f'>{Fore.RESET} {versionnew}'])
                 else:
                     self.table_data.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
                 pbar.update(1)

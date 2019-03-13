@@ -5,6 +5,8 @@ import shutil
 import zipfile
 import datetime
 from tqdm import tqdm
+from checksumdir import dirhash
+from . import __version__
 from .ElvUI import ElvUIAddon
 from .CurseForge import CurseForgeAddon
 from .WoWInterface import WoWInterfaceAddon
@@ -20,14 +22,30 @@ class Core:
             with open('CurseBreaker.json', 'r') as f:
                 self.config = json.load(f)
         else:
-            self.config = {'Addons': [], 'URLCache': {}, 'Backup': {'Enabled': True, 'Number': 7}}
+            self.config = {'Addons': [],
+                           'URLCache': {},
+                           'Backup': {'Enabled': True, 'Number': 7},
+                           'Version': __version__}
             self.save_config()
         if not os.path.isdir('WTF-Backup'):
             os.mkdir('WTF-Backup')
+        self.update_config()
 
     def save_config(self):
         with open('CurseBreaker.json', 'w') as outfile:
             json.dump(self.config, outfile, sort_keys=True, indent=4, separators=(',', ': '))
+
+    def update_config(self):
+        if 'Version' not in self.config.keys():
+            # 1.1.0
+            for addon in self.config['Addons']:
+                if 'Checksums' not in addon.keys():
+                    checksums = {}
+                    for directory in addon['Directories']:
+                        checksums[directory] = dirhash(os.path.join(self.path, directory))
+                    addon['Checksums'] = checksums
+            self.config['Version'] = __version__
+            self.save_config()
 
     def check_if_installed(self, url):
         for addon in self.config['Addons']:
@@ -64,10 +82,14 @@ class Core:
             new = self.parse_url(url)
             new.get_current_version()
             new.install(self.path)
+            checksums = {}
+            for directory in new.directories:
+                checksums[directory] = dirhash(os.path.join(self.path, directory))
             self.config['Addons'].append({'Name': new.name,
                                           'URL': url,
                                           'Version': new.currentVersion,
-                                          'Directories': new.directories
+                                          'Directories': new.directories,
+                                          'Checksums': checksums
                                           })
             self.save_config()
             return True, new.name, new.currentVersion
@@ -89,14 +111,28 @@ class Core:
             new = self.parse_url(old['URL'])
             new.get_current_version()
             oldversion = old['Version']
-            if new.currentVersion != old['Version'] and update:
+            modified = self.check_checksum(url)
+            if new.currentVersion != old['Version'] and not modified and update:
                 self.cleanup(old['Directories'])
                 new.install(self.path)
+                checksums = {}
+                for directory in new.directories:
+                    checksums[directory] = dirhash(os.path.join(self.path, directory))
                 old['Version'] = new.currentVersion
                 old['Directories'] = new.directories
+                old['Checksums'] = checksums
                 self.save_config()
-            return new.name, new.currentVersion, oldversion
-        return url, False, False
+            return new.name, new.currentVersion, oldversion, modified
+        return url, False, False, False
+
+    def check_checksum(self, url):
+        old = self.check_if_installed(url)
+        if old:
+            checksums = {}
+            for directory in old['Directories']:
+                checksums[directory] = dirhash(os.path.join(self.path, directory))
+            return len(checksums.items() & old['Checksums'].items()) != len(old['Checksums'])
+        return False
 
     def backup_toggle(self):
         self.config['Backup']['Enabled'] = not self.config['Backup']['Enabled']

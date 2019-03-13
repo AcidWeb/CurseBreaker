@@ -1,6 +1,7 @@
 beautifulsoup4
 terminaltables
 prompt_toolkit
+checksumdir
 requests
 colorama
 tqdm
