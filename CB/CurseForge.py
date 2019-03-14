@@ -15,29 +15,40 @@ class CurseForgeAddon:
                 url = link['href'] + '/files'
                 break
             self.redirectUrl = url
-        self.soup = BeautifulSoup(requests.get(url).content, 'html.parser')
+        self.url = url
+        self.soup = BeautifulSoup(requests.get(self.url).content, 'html.parser')
         self.name = self.soup.title.string.split(' - ')[1].strip()
         self.downloadUrl = url + '/latest'
         self.currentVersion = None
         self.archive = None
         self.directories = []
 
+    def version_search(self, tag):
+        version = None
+        table = self.soup.find('table', attrs={'class': 'listing listing-project-file project-file-listing '
+                                                        'b-table b-table-a'}).find('tbody')
+        for row in table.find_all('tr', attrs={'class': 'project-file-list-item'}):
+            if tag in str(row.find('td', attrs={'class': 'project-file-release-type'})):
+                version = row.find('a', attrs={'class': 'overflow-tip twitch-link'}).contents[0].strip()
+                break
+        return version
+
+    @retry
     def get_current_version(self):
-        try:
-            table = self.soup.find('table', attrs={'class': 'listing listing-project-file project-file-listing'
-                                                            ' b-table b-table-a'}).find('tbody')
-            for row in table.find_all('tr', attrs={'class': 'project-file-list-item'}):
-                if 'Release' in str(row.find('td', attrs={'class': 'project-file-release-type'})):
-                    self.currentVersion = row.find('a', attrs={'class': 'overflow-tip twitch-link'}).contents[0].strip()
-                    break
-            if not self.currentVersion:
-                for row in table.find_all('tr', attrs={'class': 'project-file-list-item'}):
-                    if 'Beta' in str(row.find('td', attrs={'class': 'project-file-release-type'})):
-                        self.currentVersion = row.find('a', attrs={'class': 'overflow-tip twitch-link'}).contents[0]\
-                            .strip()
-                        break
-        except Exception:
-            raise RuntimeError('Failed to parse addon page. URL is wrong or your source has some issues.')
+        self.currentVersion = self.version_search('Release')
+        if self.currentVersion is None:
+            self.currentVersion = self.version_search('Beta')
+        if self.currentVersion:
+            return
+        for page in range(2, 6):
+            self.soup = BeautifulSoup(requests.get(f'{self.url}?page={page}').content, 'html.parser')
+            self.currentVersion = self.version_search('Release')
+            if self.currentVersion is None:
+                self.currentVersion = self.version_search('Beta')
+            if self.currentVersion:
+                break
+        if self.currentVersion is None:
+            raise RuntimeError
 
     @retry
     def get_addon(self):

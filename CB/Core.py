@@ -36,14 +36,17 @@ class Core:
             json.dump(self.config, outfile, sort_keys=True, indent=4, separators=(',', ': '))
 
     def update_config(self):
-        if 'Version' not in self.config.keys():
-            # 1.1.0
+        if 'Version' not in self.config.keys() or self.config['Version'] != __version__:
             for addon in self.config['Addons']:
+                # 1.1.0
                 if 'Checksums' not in addon.keys():
                     checksums = {}
                     for directory in addon['Directories']:
                         checksums[directory] = dirhash(os.path.join(self.path, directory))
                     addon['Checksums'] = checksums
+                # 1.1.1
+                if addon['Version'] is None:
+                    addon['Version'] = "1"
             self.config['Version'] = __version__
             self.save_config()
 
