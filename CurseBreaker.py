@@ -107,6 +107,7 @@ class TUI:
             try:
                 payload = requests.get('https://api.github.com/repos/AcidWeb/CurseBreaker/releases/latest').json()
                 remoteversion = payload['name']
+                changelog = payload['body']
                 url = payload['assets'][0]['browser_download_url']
                 if StrictVersion(remoteversion[1:]) > StrictVersion(__version__):
                     printft(HTML('<ansigreen>Updating CurseBreaker...</ansigreen>'))
@@ -116,8 +117,8 @@ class TUI:
                     payload = requests.get(url)
                     with open(sys.executable, 'wb') as f:
                         f.write(payload.content)
-                    printft(HTML('\n<ansibrightgreen>Update complete! Please restart the application.'
-                                 '</ansibrightgreen>\n'))
+                    printft(HTML(f'<ansibrightgreen>Update complete! Please restart the application.</ansibrightgreen'
+                                 f'>\n\n<ansigreen>Changelog:</ansigreen>\n{changelog}\n'))
                     os.system('pause')
                     sys.exit(0)
             except Exception as e:
