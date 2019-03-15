@@ -10,6 +10,7 @@ from . import __version__
 from .ElvUI import ElvUIAddon
 from .CurseForge import CurseForgeAddon
 from .WoWInterface import WoWInterfaceAddon
+from .TukUI import TukUIAddon
 
 
 class Core:
@@ -74,6 +75,8 @@ class Core:
             return ElvUIAddon('master')
         elif url.lower() == 'elvui:dev':
             return ElvUIAddon('development')
+        elif url.lower() == 'tukui':
+            return TukUIAddon()
         else:
             raise NotImplementedError('Provided URL is not supported.')
 
