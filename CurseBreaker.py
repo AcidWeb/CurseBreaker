@@ -81,7 +81,9 @@ class TUI:
                 os.system('pause')
                 sys.exit(0)
         self.print_header()
-        printft('Press TAB to see a list of available commands.\nPress CTRL+D to close the application.\n')
+        printft(HTML('Use command <ansigreen>help</ansigreen> or press <ansigreen>TAB</ansigreen> to see a list of avai'
+                     'lable commands.\nCommand <ansigreen>exit</ansigreen> or pressing <ansigreen>CTRL+D</ansigreen> wi'
+                     'll close the application.\n'))
         # Prompt session
         while True:
             try:
@@ -142,7 +144,7 @@ class TUI:
 
     def setup_completer(self):
         commands = ['install', 'uninstall', 'update', 'force_update', 'status', 'orphans', 'toggle_backup',
-                    'uri_integration', 'exit']
+                    'uri_integration', 'help', 'exit']
         addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         for addon in addons:
             commands.extend([f'uninstall {addon["Name"]}', f'update {addon["Name"]}', f'force_update {addon["Name"]}',
@@ -220,7 +222,11 @@ class TUI:
         print('\n' + self.table.table if addline else self.table.table)
 
     def c_force_update(self, args):
-        self.c_update(args, False, True, True)
+        if args:
+            self.c_update(args, False, True, True)
+        else:
+            printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a comma-separated list of links or addo'
+                         'n names as an argument.'))
 
     def c_status(self, args):
         self.c_update(args, False, False)
@@ -236,12 +242,34 @@ class TUI:
 
     def c_uri_integration(self, _):
         self.core.create_reg()
-        printft('CurseBreaker.reg file was created. Import it to enable integration.')
+        printft('CurseBreaker.reg file was created. Attempting to import...')
+        out = os.system('Reg import CurseBreaker.reg')
+        if out != 0:
+            printft('Import failed. Please try to import REG file manually.')
+        else:
+            os.remove('CurseBreaker.reg')
 
     def c_toggle_backup(self, _):
         status = self.core.backup_toggle()
         printft('Backup of WTF directory is now:',
                 HTML('<ansigreen>ENABLED</ansigreen>') if status else HTML('<ansired>DISABLED</ansired>'))
+
+    def c_help(self, _):
+        printft(HTML('<ansigreen>install [URL]</ansigreen>\n\tCommand accepts a comma-separated list of links.'))
+        printft(HTML('<ansigreen>uninstall [URL/Name]</ansigreen>\n\tCommand accepts a comma-separated list of links or'
+                     ' addon names.'))
+        printft(HTML('<ansigreen>update [URL/Name]</ansigreen>\n\tCommand accepts a comma-separated list of links or ad'
+                     'don names.\n\tIf no argument is provided all non-modified addons will be updated.'))
+        printft(HTML('<ansigreen>force_update [URL/Name]</ansigreen>\n\tCommand accepts a comma-separated list of links'
+                     ' or addon names.\n\tSelected addons will be reinstalled or updated regardless of their current st'
+                     'ate.'))
+        printft(HTML('<ansigreen>status</ansigreen>\n\tPrints the current state of all installed addons.'))
+        printft(HTML('<ansigreen>orphans</ansigreen>\n\tPrints list of orphaned directories and files.'))
+        printft(HTML('<ansigreen>toggle_backup</ansigreen>\n\tEnable/disable automatic daily backup of WTF directory.'))
+        printft(HTML('<ansigreen>uri_integration</ansigreen>\n\tEnable integration with CurseForge page. "Install" butt'
+                     'on will now start this application.'))
+        printft(HTML('\n<ansibrightgreen>Supported URLs:</ansibrightgreen>\n\thttps://www.curseforge.com/wow/addons/[ad'
+                     'don_name]\n\thttps://www.wowinterface.com/downloads/[addon_name]\n\tElvUI\n\tElvUI:Dev\n\tTukUI'))
 
     def c_exit(self, _):
         sys.exit(0)
