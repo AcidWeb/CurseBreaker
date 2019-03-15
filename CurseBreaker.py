@@ -178,7 +178,7 @@ class TUI:
                 for addon in addons:
                     name, version = self.core.del_addon(addon)
                     if name:
-                        self.table_data.append([f'{Fore.RED}Uninstalled{Fore.RESET}', name, version])
+                        self.table_data.append([f'{Fore.LIGHTRED_EX}Uninstalled{Fore.RESET}', name, version])
                     else:
                         self.table_data.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
                     pbar.update(1)
@@ -206,7 +206,7 @@ class TUI:
                             self.table_data.append([f'{Fore.GREEN}Up-to-date{Fore.RESET}', name, versionold])
                     else:
                         if modified:
-                            self.table_data.append([f'{Fore.RED}Modified & Update available{Fore.RESET}', name,
+                            self.table_data.append([f'{Fore.LIGHTRED_EX}Update suppressed{Fore.RESET}', name,
                                                     versionold])
                         else:
                             self.table_data.append([f'{Fore.YELLOW}{"Updated" if update else "Update available"}'
