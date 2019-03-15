@@ -1,12 +1,15 @@
 import os
 import sys
 import json
+import html
 import shutil
 import zipfile
 import datetime
+import requests
+from bs4 import BeautifulSoup
 from tqdm import tqdm
 from checksumdir import dirhash
-from . import __version__
+from . import retry, __version__
 from .ElvUI import ElvUIAddon
 from .CurseForge import CurseForgeAddon
 from .WoWInterface import WoWInterfaceAddon
@@ -193,6 +196,15 @@ class Core:
                     if name not in directories:
                         orphaneconfig.append(os.path.join(root, f)[4:])
         return orphanedaddon, orphaneconfig
+
+    @retry(custom_error='Failed to execute the search.')
+    def search(self, query):
+        results = []
+        soup = BeautifulSoup(requests.get(f'https://www.curseforge.com/wow/addons/search?search='
+                                          f'{html.escape(query.strip())}').content, 'html.parser')
+        for row in soup.find_all('h2', attrs={'class': 'list-item__title strong mg-b-05'}):
+            results.append(f'https://www.curseforge.com{row.parent["href"]}')
+        return results
 
     def create_reg(self):
         with open('CurseBreaker.reg', 'w') as outfile:

@@ -143,7 +143,7 @@ class TUI:
                      f'{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
 
     def setup_completer(self):
-        commands = ['install', 'uninstall', 'update', 'force_update', 'status', 'orphans', 'toggle_backup',
+        commands = ['install', 'uninstall', 'update', 'force_update', 'status', 'orphans', 'search', 'toggle_backup',
                     'uri_integration', 'help', 'exit']
         addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         for addon in addons:
@@ -254,6 +254,15 @@ class TUI:
         printft('Backup of WTF directory is now:',
                 HTML('<ansigreen>ENABLED</ansigreen>') if status else HTML('<ansired>DISABLED</ansired>'))
 
+    def c_search(self, args):
+        if args:
+            results = self.core.search(args)
+            printft(HTML('<ansigreen>Top results of your search:</ansigreen>'))
+            for url in results:
+                printft(url)
+        else:
+            printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a search query as an argument.'))
+
     def c_help(self, _):
         printft(HTML('<ansigreen>install [URL]</ansigreen>\n\tCommand accepts a comma-separated list of links.'))
         printft(HTML('<ansigreen>uninstall [URL/Name]</ansigreen>\n\tCommand accepts a comma-separated list of links or'
@@ -265,6 +274,7 @@ class TUI:
                      'ate.'))
         printft(HTML('<ansigreen>status</ansigreen>\n\tPrints the current state of all installed addons.'))
         printft(HTML('<ansigreen>orphans</ansigreen>\n\tPrints list of orphaned directories and files.'))
+        printft(HTML('<ansigreen>search [Keyword]</ansigreen>\n\tExecute addon search on CurseForge.'))
         printft(HTML('<ansigreen>toggle_backup</ansigreen>\n\tEnable/disable automatic daily backup of WTF directory.'))
         printft(HTML('<ansigreen>uri_integration</ansigreen>\n\tEnable integration with CurseForge page. "Install" butt'
                      'on will now start this application.'))

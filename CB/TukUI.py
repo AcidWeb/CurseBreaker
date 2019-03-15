@@ -8,7 +8,7 @@ from . import retry
 
 
 class TukUIAddon:
-    @retry
+    @retry()
     def __init__(self):
         self.soup = BeautifulSoup(requests.get('https://git.tukui.org/Tukz/Tukui/tree/master').content, 'html.parser')
         self.name = 'TukUI'
@@ -23,7 +23,7 @@ class TukUIAddon:
         except Exception:
             raise RuntimeError('Failed to parse addon page. URL is wrong or your source has some issues.')
 
-    @retry
+    @retry()
     def get_addon(self):
         self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl).content))
         for file in self.archive.namelist():

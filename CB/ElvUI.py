@@ -8,7 +8,7 @@ from . import retry
 
 
 class ElvUIAddon:
-    @retry
+    @retry()
     def __init__(self, branch):
         self.soup = BeautifulSoup(requests.get(f'https://git.tukui.org/elvui/elvui/tree/{branch}').content,
                                   'html.parser')
@@ -25,7 +25,7 @@ class ElvUIAddon:
         except Exception:
             raise RuntimeError('Failed to parse addon page. URL is wrong or your source has some issues.')
 
-    @retry
+    @retry()
     def get_addon(self):
         self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl).content))
         for file in self.archive.namelist():

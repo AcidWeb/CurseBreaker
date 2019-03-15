@@ -7,7 +7,7 @@ from . import retry
 
 
 class CurseForgeAddon:
-    @retry
+    @retry()
     def __init__(self, url):
         if url.startswith('https://www.curseforge.com/wow/addons/'):
             soup = BeautifulSoup(requests.get(url).content, 'html.parser')
@@ -33,7 +33,7 @@ class CurseForgeAddon:
                 break
         return version
 
-    @retry
+    @retry()
     def get_current_version(self):
         self.currentVersion = self.version_search('Release')
         if self.currentVersion is None:
@@ -50,7 +50,7 @@ class CurseForgeAddon:
         if self.currentVersion is None:
             raise RuntimeError
 
-    @retry
+    @retry()
     def get_addon(self):
         self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl).content))
         for file in self.archive.namelist():

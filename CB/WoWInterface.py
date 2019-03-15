@@ -7,7 +7,7 @@ from . import retry
 
 
 class WoWInterfaceAddon:
-    @retry
+    @retry()
     def __init__(self, url):
         self.soup = BeautifulSoup(requests.get(url).content, 'html.parser')
         self.name = self.soup.find('meta', attrs={'property': 'og:title'})['content']
@@ -22,7 +22,7 @@ class WoWInterfaceAddon:
         except Exception:
             raise RuntimeError('Failed to parse addon page. URL is wrong or your source has some issues.')
 
-    @retry
+    @retry()
     def get_addon(self):
         dsoup = BeautifulSoup(requests.get(self.downloadUrl).content, 'html.parser')
         self.archive = zipfile.ZipFile(io.BytesIO(requests.get(dsoup.find('div', attrs={'class': 'manuallink'}).
