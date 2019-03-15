@@ -118,7 +118,7 @@ class Core:
             new.get_current_version()
             oldversion = old['Version']
             modified = self.check_checksum(url)
-            if new.currentVersion != old['Version'] and update and (not modified or force):
+            if force or (new.currentVersion != old['Version'] and update and not modified):
                 self.cleanup(old['Directories'])
                 new.install(self.path)
                 checksums = {}
