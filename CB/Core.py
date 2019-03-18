@@ -31,7 +31,7 @@ class Core:
                            'Backup': {'Enabled': True, 'Number': 7},
                            'Version': __version__}
             self.save_config()
-        if not os.path.isdir('WTF-Backup'):
+        if not os.path.isdir('WTF-Backup') and self.config['Backup']['Enabled']:
             os.mkdir('WTF-Backup')
         self.update_config()
 
@@ -170,9 +170,15 @@ class Core:
     def backup_wtf(self):
         zipf = zipfile.ZipFile(f'WTF-Backup\\{datetime.datetime.now().strftime("%d%m%y")}.zip', 'w',
                                zipfile.ZIP_DEFLATED)
-        filecount = sum([len(files) for r, d, files in os.walk('WTF/')])
+        filecount = 0
+        for root, dirs, files in os.walk('WTF/', topdown=True):
+            files = [f for f in files if not f[0] == '.']
+            dirs[:] = [d for d in dirs if not d[0] == '.']
+            filecount += len(files)
         with tqdm(total=filecount, bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
-            for root, dirs, files in os.walk('WTF/'):
+            for root, dirs, files in os.walk('WTF/', topdown=True):
+                files = [f for f in files if not f[0] == '.']
+                dirs[:] = [d for d in dirs if not d[0] == '.']
                 for f in files:
                     zipf.write(os.path.join(root, f))
                     pbar.update(1)
