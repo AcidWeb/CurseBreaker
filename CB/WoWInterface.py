@@ -16,7 +16,6 @@ class WoWInterfaceAddon:
         self.name = self.payload['UIName']
         self.downloadUrl = self.payload['UIDownload']
         self.currentVersion = self.payload['UIVersion']
-        self.pending = self.payload['UIPending']
         self.archive = None
         self.directories = []
 

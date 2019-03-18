@@ -121,8 +121,6 @@ class Core:
         old = self.check_if_installed(url)
         if old:
             new = self.parse_url(old['URL'])
-            if hasattr(new, 'pending') and new.pending == '1':
-                new.currentVersion = old['Version']
             oldversion = old['Version']
             modified = self.check_checksum(url)
             if force or (new.currentVersion != old['Version'] and update and not modified):
