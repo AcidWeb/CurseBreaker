@@ -27,7 +27,7 @@ class Core:
                 self.config = json.load(f)
         else:
             self.config = {'Addons': [],
-                           'URLCache': {},
+                           'CurseCache': {},
                            'Backup': {'Enabled': True, 'Number': 7},
                            'Version': __version__}
             self.save_config()
@@ -51,6 +51,11 @@ class Core:
                 # 1.1.1
                 if addon['Version'] is None:
                     addon['Version'] = "1"
+            # 1.3.0
+            if 'URLCache' in self.config.keys():
+                self.config.pop('URLCache', None)
+            if 'CurseCache' not in self.config.keys():
+                self.config['CurseCache'] = {}
             self.config['Version'] = __version__
             self.save_config()
 
@@ -66,11 +71,10 @@ class Core:
 
     def parse_url(self, url):
         if url.startswith('https://www.curseforge.com/wow/addons/'):
-            if url in self.config['URLCache']:
-                url = self.config['URLCache'][url]
-            parser = CurseForgeAddon(url)
-            if hasattr(parser, 'redirectUrl'):
-                self.config['URLCache'][url] = parser.redirectUrl
+            parser = CurseForgeAddon(url, self.config['CurseCache'])
+            if hasattr(parser, 'cacheID'):
+                self.config['CurseCache'][url] = parser.cacheID
+                self.save_config()
             return parser
         if url.startswith('https://www.wowinterface.com/downloads/'):
             return WoWInterfaceAddon(url)
@@ -89,7 +93,6 @@ class Core:
         addon = self.check_if_installed(url)
         if not addon:
             new = self.parse_url(url)
-            new.get_current_version()
             new.install(self.path)
             checksums = {}
             for directory in new.directories:
@@ -118,7 +121,8 @@ class Core:
         old = self.check_if_installed(url)
         if old:
             new = self.parse_url(old['URL'])
-            new.get_current_version()
+            if hasattr(new, 'pending') and new.pending == '1':
+                new.currentVersion = old['Version']
             oldversion = old['Version']
             modified = self.check_checksum(url)
             if force or (new.currentVersion != old['Version'] and update and not modified):
@@ -127,6 +131,7 @@ class Core:
                 checksums = {}
                 for directory in new.directories:
                     checksums[directory] = dirhash(os.path.join(self.path, directory))
+                old['Name'] = new.name
                 old['Version'] = new.currentVersion
                 old['Directories'] = new.directories
                 old['Checksums'] = checksums

@@ -3,25 +3,20 @@ import io
 import shutil
 import zipfile
 import requests
-from bs4 import BeautifulSoup
 from . import retry
 
 
 class TukUIAddon:
     @retry()
     def __init__(self):
-        self.soup = BeautifulSoup(requests.get('https://git.tukui.org/Tukz/Tukui/tree/master').content, 'html.parser')
+        self.payload = requests.get('https://git.tukui.org/api/v4/projects/77/repository/branches/master').json()
+        if not self.payload['commit']:
+            raise RuntimeError
         self.name = 'TukUI'
         self.downloadUrl = 'https://git.tukui.org/Tukz/Tukui/-/archive/master/Tukui-master.zip'
-        self.currentVersion = None
+        self.currentVersion = self.payload['commit']['short_id']
         self.archive = None
         self.directories = []
-
-    def get_current_version(self):
-        try:
-            self.currentVersion = self.soup.find('div', attrs={'class': 'label label-monospace'}).contents[0].strip()
-        except Exception:
-            raise RuntimeError('Failed to parse addon page. URL is wrong or your source has some issues.')
 
     @retry()
     def get_addon(self):

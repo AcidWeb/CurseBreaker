@@ -1,5 +1,6 @@
 import os
 import io
+import re
 import zipfile
 import requests
 from bs4 import BeautifulSoup
@@ -8,46 +9,35 @@ from . import retry
 
 class CurseForgeAddon:
     @retry()
-    def __init__(self, url):
-        if url.startswith('https://www.curseforge.com/wow/addons/'):
+    def __init__(self, url, cache):
+        if url in cache:
+            project = cache[url]
+        else:
             soup = BeautifulSoup(requests.get(url).content, 'html.parser')
-            for link in soup.findAll('a', href=True, text='Visit Project Page'):
-                url = link['href'] + '/files'
-                break
-            self.redirectUrl = url
-        self.url = url
-        self.soup = BeautifulSoup(requests.get(self.url).content, 'html.parser')
-        self.name = self.soup.title.string.split(' - ')[1].strip()
-        self.downloadUrl = url + '/latest'
+            project = re.findall(r'\d+', soup.find('a', attrs={'class': 'button button--icon button--twitch '
+                                                                        'download-button'})["data-nurture-data"])[0]
+            self.cacheID = project
+        self.payload = requests.get(f'https://addons-ecs.forgesvc.net/api/addon/{project}').json()
+        self.name = self.payload['name']
+        self.downloadUrl = None
         self.currentVersion = None
         self.archive = None
         self.directories = []
+        self.get_current_version()
 
-    def version_search(self, tag):
-        version = None
-        table = self.soup.find('table', attrs={'class': 'listing listing-project-file project-file-listing '
-                                                        'b-table b-table-a'}).find('tbody')
-        for row in table.find_all('tr', attrs={'class': 'project-file-list-item'}):
-            if tag in str(row.find('td', attrs={'class': 'project-file-release-type'})):
-                version = row.find('a', attrs={'class': 'overflow-tip twitch-link'}).contents[0].strip()
-                break
-        return version
-
-    @retry()
     def get_current_version(self):
-        self.currentVersion = self.version_search('Release')
-        if self.currentVersion is None:
-            self.currentVersion = self.version_search('Beta')
-        if self.currentVersion:
-            return
-        for page in range(2, 6):
-            self.soup = BeautifulSoup(requests.get(f'{self.url}?page={page}').content, 'html.parser')
-            self.currentVersion = self.version_search('Release')
-            if self.currentVersion is None:
-                self.currentVersion = self.version_search('Beta')
-            if self.currentVersion:
+        for f in self.payload['latestFiles']:
+            if f['releaseType'] == 1:
+                self.downloadUrl = f['downloadUrl']
+                self.currentVersion = f['fileName']
                 break
-        if self.currentVersion is None:
+        if not self.downloadUrl and not self.currentVersion:
+            for f in self.payload['latestFiles']:
+                if f['releaseType'] == 2:
+                    self.downloadUrl = f['downloadUrl']
+                    self.currentVersion = f['fileName']
+                    break
+        if not self.downloadUrl or not self.currentVersion:
             raise RuntimeError
 
     @retry()
