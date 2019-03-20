@@ -259,7 +259,10 @@ class TUI:
             results = self.core.search(args)
             printft(HTML('<ansigreen>Top results of your search:</ansigreen>'))
             for url in results:
-                printft(url)
+                if self.core.check_if_installed(url):
+                    printft(HTML(f'{url} <ansiyellow>[Installed]</ansiyellow>'))
+                else:
+                    printft(url)
         else:
             printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a search query as an argument.'))
 
