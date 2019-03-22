@@ -55,6 +55,17 @@ class TUI:
                 self.handle_exception(e)
             os.system('timeout /t 5')
             sys.exit(0)
+        # CLI command
+        if len(sys.argv) >= 2:
+            command = ' '.join(sys.argv[1:]).split(' ', 1)
+            if getattr(self, f'c_{command[0].lower()}', False):
+                try:
+                    getattr(self, f'c_{command[0].lower()}')(command[1].strip() if len(command) > 1 else False)
+                except Exception as e:
+                    self.handle_exception(e)
+            else:
+                printft('Command not found.')
+            sys.exit(0)
         # Addons auto update
         if len(self.core.config['Addons']) > 0:
             printft('Automatic update of all addons will start in 5 seconds.\n'
