@@ -48,7 +48,7 @@ class TUI:
         self.setup_completer()
         self.setup_table()
         # Curse URI Support
-        if len(sys.argv) == 2 and 'curse://' in sys.argv[1]:
+        if len(sys.argv) == 2 and 'twitch://' in sys.argv[1]:
             try:
                 self.c_install(sys.argv[1].strip())
             except Exception as e:
