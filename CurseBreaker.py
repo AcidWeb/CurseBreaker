@@ -160,11 +160,14 @@ class TUI:
                      f'{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
 
     def setup_console(self, buffer=False):
-        if buffer:
-            windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 100))
+        if getattr(sys, 'frozen', False):
+            if buffer:
+                windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 100))
+            else:
+                windll.kernel32.SetConsoleWindowInfo(self.chandle, True, byref(wintypes.SMALL_RECT(0, 0, 99, 49)))
+                windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 50))
         else:
-            windll.kernel32.SetConsoleWindowInfo(self.chandle, True, byref(wintypes.SMALL_RECT(0, 0, 99, 49)))
-            windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 50))
+            os.system('mode con: cols=100 lines=50')
 
     def setup_completer(self):
         commands = ['install', 'uninstall', 'update', 'force_update', 'status', 'orphans', 'search', 'toggle_backup',
