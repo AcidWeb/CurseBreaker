@@ -64,6 +64,16 @@ class Core:
             if addon['URL'] == url or addon['Name'] == url:
                 return addon
 
+    def check_if_dev(self, url):
+        addon = self.check_if_installed(url)
+        if addon:
+            if 'Development' in addon.keys():
+                return True
+            else:
+                return False
+        else:
+            return False
+
     def cleanup(self, directories):
         if len(directories) > 0:
             for directory in directories:
@@ -71,7 +81,7 @@ class Core:
 
     def parse_url(self, url):
         if url.startswith('https://www.curseforge.com/wow/addons/'):
-            parser = CurseForgeAddon(url, self.config['CurseCache'])
+            parser = CurseForgeAddon(url, self.config['CurseCache'], self.check_if_dev(url))
             if hasattr(parser, 'cacheID'):
                 self.config['CurseCache'][url] = parser.cacheID
                 self.save_config()
@@ -145,6 +155,18 @@ class Core:
                 checksums[directory] = dirhash(os.path.join(self.path, directory))
             return len(checksums.items() & old['Checksums'].items()) != len(old['Checksums'])
         return False
+
+    def dev_toggle(self, url):
+        addon = self.check_if_installed(url)
+        if addon:
+            state = self.check_if_dev(url)
+            if state:
+                addon.pop('Development', None)
+            else:
+                addon['Development'] = True
+            self.save_config()
+            return not state
+        return None
 
     def backup_toggle(self):
         self.config['Backup']['Enabled'] = not self.config['Backup']['Enabled']

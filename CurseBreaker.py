@@ -171,11 +171,11 @@ class TUI:
 
     def setup_completer(self):
         commands = ['install', 'uninstall', 'update', 'force_update', 'status', 'orphans', 'search', 'toggle_backup',
-                    'uri_integration', 'help', 'exit']
+                    'toggle_dev', 'uri_integration', 'help', 'exit']
         addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         for addon in addons:
             commands.extend([f'uninstall {addon["Name"]}', f'update {addon["Name"]}', f'force_update {addon["Name"]}',
-                             f'status {addon["Name"]}'])
+                             f'toggle_dev {addon["Name"]}', f'status {addon["Name"]}'])
         self.completer = WordCompleter(commands, ignore_case=True, sentence=True)
 
     def setup_table(self):
@@ -276,6 +276,18 @@ class TUI:
         else:
             os.remove('CurseBreaker.reg')
 
+    def c_toggle_dev(self, args):
+        if args:
+            status = self.core.dev_toggle(args)
+            if status is None:
+                printft(HTML('<ansibrightred>This addon does not exist or it is not installed yet.</ansibrightred>'))
+            elif status:
+                printft('This addon will now prioritize alpha/beta versions.')
+            else:
+                printft('This addon will not longer prioritize alpha/beta versions.')
+        else:
+            printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts an addon name as an argument.'))
+
     def c_toggle_backup(self, _):
         status = self.core.backup_toggle()
         printft('Backup of WTF directory is now:',
@@ -306,6 +318,8 @@ class TUI:
         printft(HTML('<ansigreen>orphans</ansigreen>\n\tPrints list of orphaned directories and files.'))
         printft(HTML('<ansigreen>search [Keyword]</ansigreen>\n\tExecute addon search on CurseForge.'))
         printft(HTML('<ansigreen>toggle_backup</ansigreen>\n\tEnable/disable automatic daily backup of WTF directory.'))
+        printft(HTML('<ansigreen>toggle_dev</ansigreen>\n\tThis command accepts an addon name as an argument.\n\tPriori'
+                     'tize alpha/beta versions for the provided addon.'))
         printft(HTML('<ansigreen>uri_integration</ansigreen>\n\tEnable integration with CurseForge page. "Install" butt'
                      'on will now start this application.'))
         printft(HTML('\n<ansibrightgreen>Supported URLs:</ansibrightgreen>\n\thttps://www.curseforge.com/wow/addons/[ad'

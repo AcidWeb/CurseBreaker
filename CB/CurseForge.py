@@ -9,7 +9,7 @@ from . import retry
 
 class CurseForgeAddon:
     @retry()
-    def __init__(self, url, cache):
+    def __init__(self, url, cache, allowdev):
         if url in cache:
             project = cache[url]
         else:
@@ -19,24 +19,31 @@ class CurseForgeAddon:
             self.cacheID = project
         self.payload = requests.get(f'https://addons-ecs.forgesvc.net/api/addon/{project}').json()
         self.name = self.payload['name']
+        self.allowDev = allowdev
         self.downloadUrl = None
         self.currentVersion = None
         self.archive = None
         self.directories = []
         self.get_current_version()
 
-    def get_current_version(self):
+    def _parse_files(self, releasetype):
         for f in self.payload['latestFiles']:
-            if f['releaseType'] == 1:
+            if f['releaseType'] == releasetype:
                 self.downloadUrl = f['downloadUrl']
                 self.currentVersion = f['fileName']
                 break
-        if not self.downloadUrl and not self.currentVersion:
-            for f in self.payload['latestFiles']:
-                if f['releaseType'] == 2:
-                    self.downloadUrl = f['downloadUrl']
-                    self.currentVersion = f['fileName']
-                    break
+
+    def get_current_version(self):
+        if self.allowDev:
+            self._parse_files(3)
+            if not self.downloadUrl and not self.currentVersion:
+                self._parse_files(2)
+            if not self.downloadUrl and not self.currentVersion:
+                self._parse_files(1)
+        else:
+            self._parse_files(1)
+            if not self.downloadUrl and not self.currentVersion:
+                self._parse_files(2)
         if not self.downloadUrl or not self.currentVersion:
             raise RuntimeError
 
