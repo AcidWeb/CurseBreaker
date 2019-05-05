@@ -10,6 +10,7 @@ from colorama import init, Fore
 from terminaltables import SingleTable
 from prompt_toolkit import PromptSession, HTML, print_formatted_text as printft
 from prompt_toolkit.completion import WordCompleter
+from ctypes import windll, wintypes, byref
 from distutils.version import StrictVersion
 from CB import __version__
 from CB.Core import Core
@@ -22,10 +23,12 @@ class TUI:
         self.table_data = None
         self.table = None
         self.completer = None
+        self.chandle = windll.kernel32.GetStdHandle(-11)
         sys.tracebacklimit = 0
         init()
 
     def start(self):
+        self.setup_console()
         self.print_header()
         # Check if executable is in good location
         if not os.path.isfile('Wow.exe') or not os.path.isdir('Interface\\AddOns') or not os.path.isdir('WTF'):
@@ -79,6 +82,8 @@ class TUI:
                 elif time.time() - starttime > 5:
                     break
             if not keypress:
+                if len(self.core.config['Addons']) > 37:
+                    self.setup_console(True)
                 self.print_header()
                 try:
                     self.c_update(False, True)
@@ -91,6 +96,7 @@ class TUI:
                 printft('')
                 os.system('pause')
                 sys.exit(0)
+        self.setup_console(True)
         self.print_header()
         printft(HTML('Use command <ansigreen>help</ansigreen> or press <ansigreen>TAB</ansigreen> to see a list of avai'
                      'lable commands.\nCommand <ansigreen>exit</ansigreen> or pressing <ansigreen>CTRL+D</ansigreen> wi'
@@ -152,6 +158,13 @@ class TUI:
         os.system('cls')
         printft(HTML(f'<ansibrightblack>~~~ <ansibrightgreen>CurseBreaker</ansibrightgreen> <ansibrightred>v'
                      f'{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
+
+    def setup_console(self, buffer=False):
+        if buffer:
+            windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 100))
+        else:
+            windll.kernel32.SetConsoleWindowInfo(self.chandle, True, byref(wintypes.SMALL_RECT(0, 0, 99, 49)))
+            windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 50))
 
     def setup_completer(self):
         commands = ['install', 'uninstall', 'update', 'force_update', 'status', 'orphans', 'search', 'toggle_backup',
@@ -303,7 +316,6 @@ if __name__ == '__main__':
     if getattr(sys, 'frozen', False):
         os.chdir(os.path.dirname(os.path.abspath(sys.executable)))
     os.system(f'title CurseBreaker v{__version__}')
-    os.system('mode con: cols=100 lines=50')
     app = TUI()
     app.start()
 
