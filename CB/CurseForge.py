@@ -17,7 +17,7 @@ class CurseForgeAddon:
             project = re.findall(r'\d+', soup.find('a', attrs={'class': 'button button--icon button--twitch '
                                                                         'download-button'})["data-nurture-data"])[0]
             self.cacheID = project
-        self.payload = requests.get(f'https://addons-ecs.forgesvc.net/api/addon/{project}').json()
+        self.payload = requests.post('https://addons-ecs.forgesvc.net/api/v2/addon', json=[int(project)]).json()[0]
         self.name = self.payload['name']
         self.allowDev = allowdev
         self.downloadUrl = None
@@ -28,9 +28,9 @@ class CurseForgeAddon:
 
     def _parse_files(self, releasetype):
         for f in self.payload['latestFiles']:
-            if f['releaseType'] == releasetype:
+            if f['releaseType'] == releasetype and '-nolib' not in f['displayName']:
                 self.downloadUrl = f['downloadUrl']
-                self.currentVersion = f['fileName']
+                self.currentVersion = f['displayName']
                 break
 
     def get_current_version(self):
