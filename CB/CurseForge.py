@@ -14,8 +14,7 @@ class CurseForgeAddon:
             project = cache[url]
         else:
             soup = BeautifulSoup(requests.get(url).content, 'html.parser')
-            project = re.findall(r'\d+', soup.find('a', attrs={'class': 'button button--icon button--twitch '
-                                                                        'download-button'})["data-nurture-data"])[0]
+            project = re.findall(r'\d+', soup.find('div', attrs={'class': 'w-full flex justify-between'}).text)[0]
             self.cacheID = project
         self.payload = requests.post('https://addons-ecs.forgesvc.net/api/v2/addon', json=[int(project)]).json()[0]
         self.name = self.payload['name']

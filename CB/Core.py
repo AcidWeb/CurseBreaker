@@ -233,7 +233,7 @@ class Core:
         results = []
         soup = BeautifulSoup(requests.get(f'https://www.curseforge.com/wow/addons/search?search='
                                           f'{html.escape(query.strip())}').content, 'html.parser')
-        for row in soup.find_all('h2', attrs={'class': 'list-item__title strong mg-b-05'}):
+        for row in soup.find_all('h3', attrs={'class': 'text-primary-500 font-bold text-lg hover:no-underline'}):
             results.append(f'https://www.curseforge.com{row.parent["href"]}')
         return results
 

@@ -241,8 +241,7 @@ class TUI:
                                                     versionold])
                         else:
                             self.table_data.append([f'{Fore.YELLOW}{"Updated" if update else "Update available"}'
-                                                    f'{Fore.RESET}', name, f'{versionold} {Fore.LIGHTBLACK_EX}>>'
-                                                    f'>{Fore.RESET} {versionnew}'])
+                                                    f'{Fore.RESET}', name, f'{Fore.YELLOW}{versionnew}{Fore.RESET}'])
                 else:
                     self.table_data.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
                 pbar.update(1)
