@@ -28,7 +28,7 @@ class CurseForgeAddon:
 
     def get_current_version(self):
         files = sorted(self.payload['latestFiles'], key=itemgetter('id'), reverse=True)
-        for status in [[3, 2], [1]] if self.allowDev else [[1], [2], [3]]:
+        for status in [[3, 2, 1]] if self.allowDev else [[1], [2], [3]]:
             for f in files:
                 if f['releaseType'] in status and '-nolib' not in f['displayName'] and not f['isAlternate']:
                     self.downloadUrl = f['downloadUrl']
