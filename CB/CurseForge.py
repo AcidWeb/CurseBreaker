@@ -4,6 +4,7 @@ import re
 import zipfile
 import requests
 from bs4 import BeautifulSoup
+from operator import itemgetter
 from . import retry
 
 
@@ -25,25 +26,17 @@ class CurseForgeAddon:
         self.directories = []
         self.get_current_version()
 
-    def _parse_files(self, releasetype):
-        for f in self.payload['latestFiles']:
-            if f['releaseType'] == releasetype and '-nolib' not in f['displayName']:
-                self.downloadUrl = f['downloadUrl']
-                self.currentVersion = f['displayName']
-                break
-
     def get_current_version(self):
-        if self.allowDev:
-            self._parse_files(3)
-            if not self.downloadUrl and not self.currentVersion:
-                self._parse_files(2)
-            if not self.downloadUrl and not self.currentVersion:
-                self._parse_files(1)
+        files = sorted(self.payload['latestFiles'], key=itemgetter('id'), reverse=True)
+        for status in [[3, 2], [1]] if self.allowDev else [[1], [2], [3]]:
+            for f in files:
+                if f['releaseType'] in status and '-nolib' not in f['displayName'] and not f['isAlternate']:
+                    self.downloadUrl = f['downloadUrl']
+                    self.currentVersion = f['displayName']
+                    break
+            if self.downloadUrl and self.currentVersion:
+                break
         else:
-            self._parse_files(1)
-            if not self.downloadUrl and not self.currentVersion:
-                self._parse_files(2)
-        if not self.downloadUrl or not self.currentVersion:
             raise RuntimeError
 
     @retry()
