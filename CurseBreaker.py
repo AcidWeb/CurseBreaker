@@ -32,7 +32,8 @@ class TUI:
         self.setup_console()
         self.print_header()
         # Check if executable is in good location
-        if not os.path.isfile('Wow.exe') or not os.path.isdir('Interface\\AddOns') or not os.path.isdir('WTF'):
+        if not os.path.isfile('Wow.exe') or not os.path.isdir(os.path.join('Interface', 'AddOns')) or \
+                not os.path.isdir('WTF'):
             printft(HTML('<ansibrightred>This executable should be placed in the same directory where Wow.exe is locate'
                          'd.</ansibrightred>\n'))
             os.system('pause')

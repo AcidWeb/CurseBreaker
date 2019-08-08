@@ -18,7 +18,7 @@ from .TukUI import TukUIAddon
 
 class Core:
     def __init__(self):
-        self.path = 'Interface\\AddOns'
+        self.path = os.path.join('Interface', 'AddOns')
         self.config = None
 
     def init_config(self):
@@ -173,9 +173,9 @@ class Core:
 
     def backup_check(self):
         if self.config['Backup']['Enabled']:
-            if not os.path.isfile(f'WTF-Backup\\{datetime.datetime.now().strftime("%d%m%y")}.zip'):
+            if not os.path.isfile(os.path.join('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip')):
                 listofbackups = os.listdir('WTF-Backup')
-                fullpath = [f'WTF-Backup\\{x}' for x in listofbackups]
+                fullpath = [os.path.join('WTF-Backup', x) for x in listofbackups]
                 if len([name for name in listofbackups]) == self.config['Backup']['Number']:
                     oldest_file = min(fullpath, key=os.path.getctime)
                     os.remove(oldest_file)
@@ -186,7 +186,7 @@ class Core:
             return False
 
     def backup_wtf(self):
-        zipf = zipfile.ZipFile(f'WTF-Backup\\{datetime.datetime.now().strftime("%d%m%y")}.zip', 'w',
+        zipf = zipfile.ZipFile(os.path.join('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip'), 'w',
                                zipfile.ZIP_DEFLATED)
         filecount = 0
         for root, dirs, files in os.walk('WTF/', topdown=True):
