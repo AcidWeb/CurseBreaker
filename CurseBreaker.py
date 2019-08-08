@@ -5,6 +5,7 @@ import msvcrt
 import shutil
 import requests
 import traceback
+from xml.dom.minidom import parse
 from tqdm import tqdm
 from colorama import init, Fore
 from terminaltables import SingleTable
@@ -51,9 +52,18 @@ class TUI:
         self.setup_completer()
         self.setup_table()
         # Curse URI Support
-        if len(sys.argv) == 2 and 'twitch://' in sys.argv[1]:
+        if len(sys.argv) == 2 and '.ccip' in sys.argv[1]:
             try:
-                self.c_install(sys.argv[1].strip())
+                path = sys.argv[1].strip()
+                xml = parse(path)
+                project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
+                payload = requests.post('https://addons-ecs.forgesvc.net/api/v2/addon', json=[int(project)]).json()[0]
+                url = payload['websiteUrl'].strip()
+                self.core.config['CurseCache'][url] = project
+                self.core.save_config()
+                self.c_install(url)
+                if os.path.exists(path):
+                    os.remove(path)
             except Exception as e:
                 self.handle_exception(e)
             os.system('timeout /t 5')
@@ -269,7 +279,7 @@ class TUI:
     def c_uri_integration(self, _):
         self.core.create_reg()
         printft('CurseBreaker.reg file was created. Attempting to import...')
-        out = os.system('Reg import CurseBreaker.reg')
+        out = os.system('"' + os.path.join(os.path.dirname(sys.executable), 'CurseBreaker.reg') + '"')
         if out != 0:
             printft('Import failed. Please try to import REG file manually.')
         else:

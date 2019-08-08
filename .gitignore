@@ -10,4 +10,5 @@ WTF-Backup/
 /CurseBreaker.spec
 /CurseBreaker.reg
 /Setup.bat
-
+/Pipfile
+/Pipfile.lock

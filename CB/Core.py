@@ -98,8 +98,6 @@ class Core:
             raise NotImplementedError('Provided URL is not supported.')
 
     def add_addon(self, url):
-        if 'twitch://' in url:
-            url = url.split('/download-client')[0].replace('twitch://', 'https://').strip()
         addon = self.check_if_installed(url)
         if not addon:
             new = self.parse_url(url)
@@ -239,10 +237,5 @@ class Core:
 
     def create_reg(self):
         with open('CurseBreaker.reg', 'w') as outfile:
-            outfile.write('Windows Registry Editor Version 5.00\n[HKEY_CURRENT_USER\Software\Classes\\twitch]\n"URL Pro'
-                          'tocol"="\\"\\""\n@="\\"URL:CurseBreaker Protocol\\""\n[HKEY_CURRENT_USER\Software\Classes\\t'
-                          'witch\DefaultIcon]\n@="\\"CurseBreaker.exe,1\\""\n[HKEY_CURRENT_USER\Software\Classes\\twitc'
-                          'h\shell]\n[HKEY_CURRENT_USER\Software\Classes\\twitch\shell\open]\n[HKEY_CURRENT_USER\Softwa'
-                          're\Classes\\twitch\shell\open\command]\n@="\\"'
-                          + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""')
-
+            outfile.write('Windows Registry Editor Version 5.00\n\n[HKEY_CLASSES_ROOT\.ccip\Shell\Open\Command]\n@="\\"'
+                          + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\\" \\"%1\\""')
