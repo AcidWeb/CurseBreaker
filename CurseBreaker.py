@@ -53,6 +53,13 @@ class TUI:
         self.setup_completer()
         self.setup_table()
         # Curse URI Support
+        if len(sys.argv) == 2 and 'twitch://' in sys.argv[1]:
+            try:
+                self.c_install(sys.argv[1].strip())
+            except Exception as e:
+                self.handle_exception(e)
+            os.system('timeout /t 5')
+            sys.exit(0)
         if len(sys.argv) == 2 and '.ccip' in sys.argv[1]:
             try:
                 path = sys.argv[1].strip()
