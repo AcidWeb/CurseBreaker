@@ -10,10 +10,9 @@ from tqdm import tqdm
 from checksumdir import dirhash
 from xml.dom.minidom import parse
 from . import retry, __version__
-from .ElvUI import ElvUIAddon
+from .GitLab import GitLabAddon
 from .CurseForge import CurseForgeAddon
 from .WoWInterface import WoWInterfaceAddon
-from .TukUI import TukUIAddon
 
 
 class Core:
@@ -90,11 +89,17 @@ class Core:
         if url.startswith('https://www.wowinterface.com/downloads/'):
             return WoWInterfaceAddon(url)
         elif url.lower() == 'elvui':
-            return ElvUIAddon('master')
+            return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'master')
         elif url.lower() == 'elvui:dev':
-            return ElvUIAddon('development')
+            return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'development')
+        elif url.lower() == 'elvui-classic':
+            return GitLabAddon('ElvUI', '492', 'elvui/elvui-classic', 'master')
+        elif url.lower() == 'elvui-classic:dev':
+            return GitLabAddon('ElvUI', '492', 'elvui/elvui-classic', 'development')
         elif url.lower() == 'tukui':
-            return TukUIAddon()
+            return GitLabAddon('TukUI', '77', 'Tukz/Tukui', 'master')
+        elif url.lower() == 'tukui-classic':
+            return GitLabAddon('TukUI', '77', 'Tukz/Tukui', 'Classic')
         else:
             raise NotImplementedError('Provided URL is not supported.')
 

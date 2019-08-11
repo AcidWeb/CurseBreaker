@@ -6,15 +6,18 @@ import requests
 from . import retry
 
 
-class TukUIAddon:
+class GitLabAddon:
     @retry()
-    def __init__(self):
-        self.payload = requests.get('https://git.tukui.org/api/v4/projects/77/repository/branches/master').json()
+    def __init__(self, name, projectid, path, branch):
+        self.payload = requests.get(f'https://git.tukui.org/api/v4/projects/{projectid}/repository/branches/{branch}')\
+            .json()
         if not self.payload['commit']:
             raise RuntimeError
-        self.name = 'TukUI'
-        self.downloadUrl = 'https://git.tukui.org/Tukz/Tukui/-/archive/master/Tukui-master.zip'
+        self.name = name
+        self.shorthPath = path.split('/')[1]
+        self.downloadUrl = f'https://git.tukui.org/{path}/-/archive/{branch}/{self.shorthPath}-{branch}.zip'
         self.currentVersion = self.payload['commit']['short_id']
+        self.branch = branch
         self.archive = None
         self.directories = []
 
@@ -30,5 +33,5 @@ class TukUIAddon:
         self.get_addon()
         self.archive.extractall(path)
         for directory in self.directories:
-            shutil.move(os.path.join(path, 'Tukui-master', directory), path)
-        shutil.rmtree(os.path.join(path, 'Tukui-master'))
+            shutil.move(os.path.join(path, f'{self.shorthPath}-{self.branch}', directory), path)
+        shutil.rmtree(os.path.join(path, f'{self.shorthPath}-{self.branch}'))
