@@ -20,6 +20,7 @@ class Core:
     def __init__(self):
         self.path = os.path.join('Interface', 'AddOns')
         self.config = None
+        self.cfcache = {}
 
     def init_config(self):
         if os.path.isfile('CurseBreaker.json'):
@@ -81,7 +82,7 @@ class Core:
 
     def parse_url(self, url):
         if url.startswith('https://www.curseforge.com/wow/addons/'):
-            parser = CurseForgeAddon(url, self.config['CurseCache'], self.check_if_dev(url))
+            parser = CurseForgeAddon(url, self.config['CurseCache'], self.cfcache, self.check_if_dev(url))
             if hasattr(parser, 'cacheID'):
                 self.config['CurseCache'][url] = parser.cacheID
                 self.save_config()
@@ -247,6 +248,7 @@ class Core:
                           'ell\open]\n[HKEY_CURRENT_USER\Software\Classes\\twitch\shell\open\command]\n@="\\"'
                           + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""')
 
+    @retry(custom_error='Failed to parse the XML file.')
     def parse_cf_xml(self, path):
         xml = parse(path)
         project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
@@ -255,3 +257,14 @@ class Core:
         self.config['CurseCache'][url] = project
         self.save_config()
         return url
+
+    @retry(custom_error='Failed to execute bulk version check.')
+    def bulk_cf_check(self, addons):
+        ids = []
+        for addon in addons:
+            if addon['URL'] in self.config['CurseCache']:
+                ids.append(int(self.config['CurseCache'][addon['URL']]))
+        if len(ids) > 0:
+            payload = requests.post('https://addons-ecs.forgesvc.net/api/v2/addon', json=ids).json()
+            for addon in payload:
+                self.cfcache[str(addon['id'])] = addon

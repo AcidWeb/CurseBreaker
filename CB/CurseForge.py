@@ -1,23 +1,27 @@
 import os
 import io
-import re
 import zipfile
 import requests
-from bs4 import BeautifulSoup
-from operator import itemgetter
 from . import retry
+from operator import itemgetter
+from xml.dom.minidom import parseString
 
 
 class CurseForgeAddon:
     @retry()
-    def __init__(self, url, cache, allowdev):
-        if url in cache:
-            project = cache[url]
+    def __init__(self, url, idcache, checkcache, allowdev):
+        if url in idcache:
+            project = idcache[url]
         else:
-            soup = BeautifulSoup(requests.get(url).content, 'lxml')
-            project = re.findall(r'\d+', soup.find('div', attrs={'class': 'w-full flex justify-between'}).text)[0]
+            xml = parseString(requests.get(url + '/download-client').text)
+            project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
             self.cacheID = project
-        self.payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/{project}').json()
+        if project in checkcache:
+            self.payload = checkcache[project]
+        else:
+            self.payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/{project}').json()
+        if not len(self.payload['latestFiles']) > 0:
+            raise RuntimeError
         self.name = self.payload['name'].strip().strip('\u200b')
         self.allowDev = allowdev
         self.downloadUrl = None
