@@ -231,10 +231,10 @@ class Core:
     @retry(custom_error='Failed to execute the search.')
     def search(self, query):
         results = []
-        soup = BeautifulSoup(requests.get(f'https://www.curseforge.com/wow/addons/search?search='
-                                          f'{html.escape(query.strip())}').content, 'html.parser')
-        for row in soup.find_all('h3', attrs={'class': 'text-primary-500 font-bold text-lg hover:no-underline'}):
-            results.append(f'https://www.curseforge.com{row.parent["href"]}')
+        payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/search?gameId=1&pageSize=10&searchFilter='
+                               f'{html.escape(query.strip())}').json()
+        for result in payload:
+            results.append(result['websiteUrl'])
         return results
 
     def create_reg(self):
