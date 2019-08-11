@@ -13,7 +13,7 @@ class WoWInterfaceAddon:
         self.payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{project}.json').json()[0]
         if not self.payload['UID'] == project:
             raise RuntimeError
-        self.name = self.payload['UIName']
+        self.name = self.payload['UIName'].strip().strip('\u200b')
         self.downloadUrl = self.payload['UIDownload']
         self.currentVersion = self.payload['UIVersion']
         self.archive = None

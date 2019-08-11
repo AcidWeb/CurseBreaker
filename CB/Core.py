@@ -6,9 +6,9 @@ import shutil
 import zipfile
 import datetime
 import requests
-from bs4 import BeautifulSoup
 from tqdm import tqdm
 from checksumdir import dirhash
+from xml.dom.minidom import parse
 from . import retry, __version__
 from .ElvUI import ElvUIAddon
 from .CurseForge import CurseForgeAddon
@@ -246,3 +246,12 @@ class Core:
                           'CURRENT_USER\Software\Classes\\twitch\shell]\n[HKEY_CURRENT_USER\Software\Classes\\twitch\sh'
                           'ell\open]\n[HKEY_CURRENT_USER\Software\Classes\\twitch\shell\open\command]\n@="\\"'
                           + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""')
+
+    def parse_cf_xml(self, path):
+        xml = parse(path)
+        project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
+        payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/{project}').json()
+        url = payload['websiteUrl'].strip()
+        self.config['CurseCache'][url] = project
+        self.save_config()
+        return url

@@ -5,7 +5,6 @@ import msvcrt
 import shutil
 import requests
 import traceback
-from xml.dom.minidom import parse
 from tqdm import tqdm
 from colorama import init, Fore
 from terminaltables import SingleTable
@@ -63,13 +62,7 @@ class TUI:
         if len(sys.argv) == 2 and '.ccip' in sys.argv[1]:
             try:
                 path = sys.argv[1].strip()
-                xml = parse(path)
-                project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
-                payload = requests.post('https://addons-ecs.forgesvc.net/api/v2/addon', json=[int(project)]).json()[0]
-                url = payload['websiteUrl'].strip()
-                self.core.config['CurseCache'][url] = project
-                self.core.save_config()
-                self.c_install(url)
+                self.c_install(self.core.parse_cf_xml(path))
                 if os.path.exists(path):
                     os.remove(path)
             except Exception as e:
@@ -352,5 +345,3 @@ if __name__ == '__main__':
     os.system(f'title CurseBreaker v{__version__}')
     app = TUI()
     app.start()
-
-

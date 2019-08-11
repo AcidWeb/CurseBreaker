@@ -5,3 +5,4 @@ checksumdir
 requests
 colorama
 tqdm
+lxml

@@ -24,4 +24,3 @@ def retry(custom_error=False):
                     raise RuntimeError('Failed to parse addon page. URL is wrong or your source has some issues.')
         return inner
     return wraps
-

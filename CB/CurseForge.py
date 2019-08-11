@@ -14,11 +14,11 @@ class CurseForgeAddon:
         if url in cache:
             project = cache[url]
         else:
-            soup = BeautifulSoup(requests.get(url).content, 'html.parser')
+            soup = BeautifulSoup(requests.get(url).content, 'lxml')
             project = re.findall(r'\d+', soup.find('div', attrs={'class': 'w-full flex justify-between'}).text)[0]
             self.cacheID = project
-        self.payload = requests.post('https://addons-ecs.forgesvc.net/api/v2/addon', json=[int(project)]).json()[0]
-        self.name = self.payload['name']
+        self.payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/{project}').json()
+        self.name = self.payload['name'].strip().strip('\u200b')
         self.allowDev = allowdev
         self.downloadUrl = None
         self.currentVersion = None
