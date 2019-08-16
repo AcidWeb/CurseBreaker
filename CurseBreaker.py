@@ -37,6 +37,9 @@ class TUI:
                          'd.</ansibrightred>\n'))
             os.system('pause')
             sys.exit(1)
+        # Detect Classic client
+        if os.path.basename(os.path.dirname(sys.executable)) == '_classic_':
+            self.core.clientType = 'wow_classic'
         # Check if client have write access
         try:
             with open('PermissionTest', 'w') as _:
@@ -232,8 +235,8 @@ class TUI:
                          'lvUI:Dev\n\tTukUI'))
 
     def c_update(self, args, addline=False, update=True, force=False):
-        if len(self.core.cfcache) > 0:
-            self.core.cfcache = {}
+        if len(self.core.cfCache) > 0:
+            self.core.cfCache = {}
         if args:
             addons = args.split(',')
         else:

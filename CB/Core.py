@@ -18,8 +18,9 @@ from .WoWInterface import WoWInterfaceAddon
 class Core:
     def __init__(self):
         self.path = os.path.join('Interface', 'AddOns')
+        self.clientType = 'wow_retail'
         self.config = None
-        self.cfcache = {}
+        self.cfCache = {}
 
     def init_config(self):
         if os.path.isfile('CurseBreaker.json'):
@@ -81,7 +82,8 @@ class Core:
 
     def parse_url(self, url):
         if url.startswith('https://www.curseforge.com/wow/addons/'):
-            parser = CurseForgeAddon(url, self.config['CurseCache'], self.cfcache, self.check_if_dev(url))
+            parser = CurseForgeAddon(url, self.config['CurseCache'], self.cfCache,
+                                     self.clientType, self.check_if_dev(url))
             if hasattr(parser, 'cacheID'):
                 self.config['CurseCache'][url] = parser.cacheID
                 self.save_config()
@@ -272,4 +274,4 @@ class Core:
         if len(ids) > 0:
             payload = requests.post('https://addons-ecs.forgesvc.net/api/v2/addon', json=ids).json()
             for addon in payload:
-                self.cfcache[str(addon['id'])] = addon
+                self.cfCache[str(addon['id'])] = addon

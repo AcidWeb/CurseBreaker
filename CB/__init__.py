@@ -1,4 +1,4 @@
-__version__ = '1.6.1'
+__version__ = '2.0.0'
 __license__ = 'GPLv3'
 __copyright__ = '2019, Paweł Jastrzębski <pawelj@iosphe.re>'
 __docformat__ = 'restructuredtext en'
@@ -21,6 +21,7 @@ def retry(custom_error=False):
                 if custom_error:
                     raise RuntimeError(custom_error)
                 else:
-                    raise RuntimeError('Failed to parse addon page. URL is wrong or your source has some issues.')
+                    raise RuntimeError('Failed to parse addon data. There is some issue with the website or this addon '
+                                       'don\'t have release for your client version.')
         return inner
     return wraps

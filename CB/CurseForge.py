@@ -9,7 +9,7 @@ from xml.dom.minidom import parseString
 
 class CurseForgeAddon:
     @retry()
-    def __init__(self, url, idcache, checkcache, allowdev):
+    def __init__(self, url, idcache, checkcache, clienttype, allowdev):
         if url in idcache:
             project = idcache[url]
         else:
@@ -23,6 +23,7 @@ class CurseForgeAddon:
         if not len(self.payload['latestFiles']) > 0:
             raise RuntimeError
         self.name = self.payload['name'].strip().strip('\u200b')
+        self.clientType = clienttype
         self.allowDev = allowdev
         self.downloadUrl = None
         self.currentVersion = None
@@ -34,7 +35,8 @@ class CurseForgeAddon:
         files = sorted(self.payload['latestFiles'], key=itemgetter('id'), reverse=True)
         for status in [[3, 2, 1]] if self.allowDev else [[1], [2], [3]]:
             for f in files:
-                if f['releaseType'] in status and '-nolib' not in f['displayName'] and not f['isAlternate']:
+                if f['gameVersionFlavor'] == self.clientType and f['releaseType'] in status \
+                        and '-nolib' not in f['displayName'] and not f['isAlternate']:
                     self.downloadUrl = f['downloadUrl']
                     self.currentVersion = f['displayName']
                     break
