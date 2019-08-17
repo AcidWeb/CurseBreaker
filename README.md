@@ -1,6 +1,10 @@
 # CurseBreaker
 
+![GitHub release](https://img.shields.io/github/release/AcidWeb/CurseBreaker) ![AppVeyor](https://img.shields.io/appveyor/ci/AcidWeb/cursebreaker) ![GitHub Releases](https://img.shields.io/github/downloads/AcidWeb/CurseBreaker/latest/total) ![GitHub All Releases](https://img.shields.io/github/downloads/AcidWeb/CurseBreaker/total)
+
 CLI addon updater for World of Warcraft.
+
+![Screenshot](https://i.imgur.com/Fn9MULH.png)
 
 ## USAGE
 Should be pretty self-explanatory. Place **CurseBreaker** EXE inside WoW directory and start it up.\
