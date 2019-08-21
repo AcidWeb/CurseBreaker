@@ -10,14 +10,5 @@ install:
 build_script:
     - "pyinstaller --additional-hooks-dir=Hooks/ -y -F -i CurseBreaker.ico -n CurseBreaker -c --noupx CurseBreaker.py"
 
-after_build:
-  - ps: Get-ChildItem .\dist\CurseBreaker* | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
-
-deploy:
-  provider: S3
-  access_key_id:
-    secure: pWfyU8wtAHt354mBILwM41TemOjb+My9n3CRMnrpLzI=
-  secret_access_key:
-    secure: G0Xpxe355LMqV3s8v+TsdJYdmhFoKKA+mxK37Tlu8yNwKXKJgcnY7pcFKSdX5xS5
-  bucket: kcc-deploy
-  region: eu-central-1
+artifacts:
+  - path: dist\CurseBreaker.exe
