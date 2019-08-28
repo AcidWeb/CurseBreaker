@@ -6,6 +6,7 @@ import shutil
 import requests
 import traceback
 from tqdm import tqdm
+from pathlib import Path
 from colorama import init, Fore
 from terminaltables import SingleTable
 from prompt_toolkit import PromptSession, HTML, print_formatted_text as printft
@@ -14,6 +15,7 @@ from ctypes import windll, wintypes, byref
 from distutils.version import StrictVersion
 from CB import __version__
 from CB.Core import Core
+from CB.WeakAura import WeakAuraUpdater
 
 
 class TUI:
@@ -96,7 +98,7 @@ class TUI:
                 elif time.time() - starttime > 5:
                     break
             if not keypress:
-                if len(self.core.config['Addons']) > 37:
+                if len(self.core.config['Addons']) > 35:
                     self.setup_console(True)
                 self.print_header()
                 try:
@@ -105,6 +107,10 @@ class TUI:
                         self.setup_table()
                         printft(HTML('\n<ansigreen>Backing up WTF directory:</ansigreen>'))
                         self.core.backup_wtf()
+                    if self.core.config['WAUsername'] != 'DISABLED' and \
+                            os.path.isdir(Path('Interface/AddOns/WeakAuras')):
+                        self.setup_table()
+                        self.c_wa_status(False, False)
                 except Exception as e:
                     self.handle_exception(e)
                 printft('')
@@ -185,7 +191,7 @@ class TUI:
 
     def setup_completer(self):
         commands = ['install', 'uninstall', 'update', 'force_update', 'status', 'orphans', 'search', 'toggle_backup',
-                    'toggle_dev', 'uri_integration', 'help', 'exit']
+                    'toggle_dev', 'toggle_wa', 'uri_integration', 'wa_status', 'help', 'exit']
         addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         for addon in addons:
             commands.extend([f'uninstall {addon["Name"]}', f'update {addon["Name"]}', f'force_update {addon["Name"]}',
@@ -309,6 +315,35 @@ class TUI:
         printft('Backup of WTF directory is now:',
                 HTML('<ansigreen>ENABLED</ansigreen>') if status else HTML('<ansired>DISABLED</ansired>'))
 
+    def c_toggle_wa(self, args):
+        if args:
+            if args == self.core.config['WAUsername']:
+                printft(HTML(f'Auras created by <ansiwhite>{self.core.config["WAUsername"]}</ansiwhite>'
+                             f' are now included.'))
+                self.core.config['WAUsername'] = ''
+            else:
+                self.core.config['WAUsername'] = args.strip()
+                printft(HTML(f'Auras created by <ansiwhite>{self.core.config["WAUsername"]}</ansiwhite>'
+                             f' are now ignored.'))
+        else:
+            if self.core.config['WAUsername'] == 'DISABLED':
+                self.core.config['WAUsername'] = ''
+                printft(HTML('WeakAuras version check is now: <ansigreen>ENABLED</ansigreen>'))
+            else:
+                self.core.config['WAUsername'] = 'DISABLED'
+                printft(HTML('WeakAuras version check is now: <ansired>DISABLED</ansired>'))
+        self.core.save_config()
+
+    def c_wa_status(self, _, verbose=True):
+        wa = WeakAuraUpdater('' if self.core.config['WAUsername'] == 'DISABLED' else self.core.config['WAUsername'])
+        status = wa.check_updates()
+        if verbose:
+            printft(HTML('<ansigreen>Outdated WeakAuras:</ansigreen>'))
+            for aura in status:
+                printft(aura)
+        else:
+            printft(HTML(f'\n<ansigreen>The number of outdated WeakAuras:</ansigreen> {len(status)}'))
+
     def c_search(self, args):
         if args:
             results = self.core.search(args)
@@ -336,6 +371,8 @@ class TUI:
         printft(HTML('<ansigreen>toggle_backup</ansigreen>\n\tEnable/disable automatic daily backup of WTF directory.'))
         printft(HTML('<ansigreen>toggle_dev</ansigreen>\n\tThis command accepts an addon name as an argument.\n\tPriori'
                      'tize alpha/beta versions for the provided addon.'))
+        printft(HTML('<ansigreen>toggle_wa [Username]</ansigreen>\n\tEnable/disable automatic WeakAuras version check.'
+                     '\n\tIf a username is provided check will start to ignore the specified author.'))
         printft(HTML('<ansigreen>uri_integration</ansigreen>\n\tEnable integration with CurseForge page. "Install" butt'
                      'on will now start this application.'))
         printft(HTML('\n<ansibrightgreen>Supported URLs:</ansibrightgreen>\n\thttps://www.curseforge.com/wow/addons/[ad'

@@ -1,4 +1,4 @@
-__version__ = '2.0.0'
+__version__ = '2.1.0'
 __license__ = 'GPLv3'
 __copyright__ = '2019, Paweł Jastrzębski <pawelj@iosphe.re>'
 __docformat__ = 'restructuredtext en'

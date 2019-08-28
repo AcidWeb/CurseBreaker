@@ -30,7 +30,8 @@ class Core:
             self.config = {'Addons': [],
                            'CurseCache': {},
                            'Backup': {'Enabled': True, 'Number': 7},
-                           'Version': __version__}
+                           'Version': __version__,
+                           'WAUsername': ''}
             self.save_config()
         if not os.path.isdir('WTF-Backup') and self.config['Backup']['Enabled']:
             os.mkdir('WTF-Backup')
@@ -57,6 +58,9 @@ class Core:
                 self.config.pop('URLCache', None)
             if 'CurseCache' not in self.config.keys():
                 self.config['CurseCache'] = {}
+            # 2.1.0
+            if 'WAUsername' not in self.config.keys():
+                self.config['WAUsername'] = ''
             self.config['Version'] = __version__
             self.save_config()
 
