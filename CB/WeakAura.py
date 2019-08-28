@@ -29,7 +29,9 @@ class WeakAuraUpdater:
                 for _, line in enumerate(fp):
                     if '["url"]' in line:
                         search = self.url.search(line)
-                        if search.group(1) and search.group(2):
+                        if search.group(1) and search.group(2) and \
+                                (search.group(1) not in self.wa_list.keys() or
+                                 int(search.group(2)) > self.wa_list[search.group(1)]):
                             self.wa_list[search.group(1)] = int(search.group(2))
                             self.wa_ids.append(search.group(1))
         self.wa_ids = list(dict.fromkeys(self.wa_ids))
