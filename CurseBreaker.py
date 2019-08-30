@@ -335,7 +335,8 @@ class TUI:
         self.core.save_config()
 
     def c_wa_status(self, _, verbose=True):
-        wa = WeakAuraUpdater('' if self.core.config['WAUsername'] == 'DISABLED' else self.core.config['WAUsername'])
+        wa = WeakAuraUpdater('' if self.core.config['WAUsername'] == 'DISABLED' else self.core.config['WAUsername'],
+                             self.core.clientType)
         status = wa.check_updates()
         if verbose:
             printft(HTML('<ansigreen>Outdated WeakAuras:</ansigreen>'))
