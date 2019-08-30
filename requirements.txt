@@ -4,3 +4,4 @@ checksumdir
 requests
 colorama
 tqdm
+lupa
