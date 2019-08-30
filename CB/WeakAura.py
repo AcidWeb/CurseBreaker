@@ -5,17 +5,19 @@ from lupa import LuaRuntime
 from pathlib import Path
 from . import retry
 
-# TODO: Update Companion, API key support
+# TODO: Update Companion
 
 class WeakAuraUpdater:
-    def __init__(self, username, clienttype):
+    def __init__(self, username, apikey, clienttype):
         self.username = username
+        self.api_key = apikey
         self.client_type = clienttype
         self.lua = LuaRuntime()
         self.url_parser = re.compile('(\w+)/(\d+)')
         self.storage_location = []
-        self.wa_outdated = []
+        self.wa_detected = [[], []]
         self.wa_list = {}
+        self.wa_ignored = {}
         self.uid_cache = {}
         self.id_cache = {}
         self.data_cache = {'slugs': [], 'uids': [], 'ids': []}
@@ -43,25 +45,34 @@ class WeakAuraUpdater:
                         self.id_cache[wadata['displays'][wa]['id']] = search.group(1)
                         if not wadata['displays'][wa]['parent'] and not wadata['displays'][wa]['ignoreWagoUpdate']:
                             if wadata['displays'][wa]['skipWagoUpdate']:
-                                self.wa_list[search.group(1)] = int(wadata['displays'][wa]['skipWagoUpdate'])
-                            else:
-                                self.wa_list[search.group(1)] = int(search.group(2))
+                                self.wa_ignored[search.group(1)] = int(wadata['displays'][wa]['skipWagoUpdate'])
+                            self.wa_list[search.group(1)] = int(search.group(2))
 
     @retry('Failed to parse WeakAura data.')
     def check_updates(self):
-        payload = requests.get(f'https://data.wago.io/api/check/weakauras?ids={",".join(self.wa_list.keys())}').json()
+        payload = requests.get(f'https://data.wago.io/api/check/weakauras?ids={",".join(self.wa_list.keys())}',
+                               headers={'api-key': self.api_key}).json()
+        if 'error' in payload or 'msg' in payload:
+            raise RuntimeError
         for aura in payload:
             if 'username' in aura and (not self.username or aura['username'] != self.username):
-                if aura['version'] > self.wa_list[aura['slug']]:
-                    self.wa_outdated.append(aura['name'])
+                if aura['version'] > self.wa_list[aura['slug']] and\
+                        (not aura['slug'] in self.wa_ignored or
+                         (aura['slug'] in self.wa_ignored and aura['version'] != self.wa_ignored[aura['slug']])):
+                    print(aura['version'], self.wa_list[aura['slug']])
+                    self.wa_detected[0].append(aura['name'])
                     self.update_aura(aura)
-        self.wa_outdated.sort()
+                else:
+                    self.wa_detected[1].append(aura['name'])
+        self.wa_detected[0].sort()
+        self.wa_detected[1].sort()
         self.install_data()
-        return self.wa_outdated
+        return self.wa_detected
 
     @retry('Failed to parse WeakAura data.')
     def update_aura(self, aura):
-        raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={aura["slug"]}').text
+        raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={aura["slug"]}',
+                           headers={'api-key': self.api_key}).text
         slug = f'    ["{aura["slug"]}"] = {{\n      name = [=[{aura["name"]}]=],\n      author = [=[' \
                f'{aura["username"]}]=],\n      encoded = [=[{raw}]=],\n      wagoVersion = [=[' \
                f'{aura["version"]}]=],\n      wagoSemver = [=[{aura["versionString"]}]=],\n    }},\n'

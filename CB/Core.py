@@ -31,7 +31,8 @@ class Core:
                            'CurseCache': {},
                            'Backup': {'Enabled': True, 'Number': 7},
                            'Version': __version__,
-                           'WAUsername': ''}
+                           'WAUsername': '',
+                           'WAAPIKey': ''}
             self.save_config()
         if not os.path.isdir('WTF-Backup') and self.config['Backup']['Enabled']:
             os.mkdir('WTF-Backup')
@@ -61,6 +62,9 @@ class Core:
             # 2.1.0
             if 'WAUsername' not in self.config.keys():
                 self.config['WAUsername'] = ''
+            # 2.2.0
+            if 'WAAPIKey' not in self.config.keys():
+                self.config['WAAPIKey'] = ''
             self.config['Version'] = __version__
             self.save_config()
 

@@ -191,7 +191,7 @@ class TUI:
 
     def setup_completer(self):
         commands = ['install', 'uninstall', 'update', 'force_update', 'status', 'orphans', 'search', 'toggle_backup',
-                    'toggle_dev', 'toggle_wa', 'uri_integration', 'wa_status', 'help', 'exit']
+                    'toggle_dev', 'toggle_wa', 'toggle_wa_api', 'uri_integration', 'wa_status', 'help', 'exit']
         addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         for addon in addons:
             commands.extend([f'uninstall {addon["Name"]}', f'update {addon["Name"]}', f'force_update {addon["Name"]}',
@@ -334,16 +334,31 @@ class TUI:
                 printft(HTML('WeakAuras version check is now: <ansired>DISABLED</ansired>'))
         self.core.save_config()
 
+    def c_toggle_wa_api(self, args):
+        if args:
+            printft('Wago API key is now set.')
+            self.core.config['WAAPIKey'] = args.strip()
+            self.core.save_config()
+        elif self.core.config['WAAPIKey'] != '':
+            printft('Wago API key is now removed.')
+            self.core.config['WAAPIKey'] = ''
+            self.core.save_config()
+        else:
+            printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts API key as an argument.'))
+
     def c_wa_status(self, _, verbose=True):
         wa = WeakAuraUpdater('' if self.core.config['WAUsername'] == 'DISABLED' else self.core.config['WAUsername'],
-                             self.core.clientType)
+                             self.core.config['WAAPIKey'], self.core.clientType)
         status = wa.check_updates()
         if verbose:
             printft(HTML('<ansigreen>Outdated WeakAuras:</ansigreen>'))
-            for aura in status:
+            for aura in status[0]:
+                printft(aura)
+            printft(HTML('\n<ansigreen>Detected WeakAuras:</ansigreen>'))
+            for aura in status[1]:
                 printft(aura)
         else:
-            printft(HTML(f'\n<ansigreen>The number of outdated WeakAuras:</ansigreen> {len(status)}'))
+            printft(HTML(f'\n<ansigreen>The number of outdated WeakAuras:</ansigreen> {len(status[0])}'))
 
     def c_search(self, args):
         if args:
@@ -374,6 +389,8 @@ class TUI:
                      'tize alpha/beta versions for the provided addon.'))
         printft(HTML('<ansigreen>toggle_wa [Username]</ansigreen>\n\tEnable/disable automatic WeakAuras version check.'
                      '\n\tIf a username is provided check will start to ignore the specified author.'))
+        printft(HTML('<ansigreen>toggle_wa_api [API key]</ansigreen>\n\tCommand set WAGO API key required to access pri'
+                     'vate auras.\n\tIt can be procured here: https://wago.io/account'))
         printft(HTML('<ansigreen>uri_integration</ansigreen>\n\tEnable integration with CurseForge page. "Install" butt'
                      'on will now start this application.'))
         printft(HTML('\n<ansibrightgreen>Supported URLs:</ansibrightgreen>\n\thttps://www.curseforge.com/wow/addons/[ad'
