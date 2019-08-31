@@ -34,6 +34,7 @@ class Core:
                            'Backup': {'Enabled': True, 'Number': 7},
                            'Version': __version__,
                            'WAUsername': '',
+                           'WAAccountName': '',
                            'WAAPIKey': '',
                            'WACompanionVersion': 0}
             self.save_config()
@@ -70,6 +71,8 @@ class Core:
             if 'WAUsername' not in self.config.keys():
                 self.config['WAUsername'] = ''
             # 2.2.0
+            if 'WAAccountName' not in self.config.keys():
+                self.config['WAAccountName'] = ''
             if 'WAAPIKey' not in self.config.keys():
                 self.config['WAAPIKey'] = ''
             if 'WACompanionVersion' not in self.config.keys():

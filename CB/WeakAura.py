@@ -7,42 +7,48 @@ from . import retry
 
 
 class WeakAuraUpdater:
-    def __init__(self, username, apikey):
+    def __init__(self, username, accountname, apikey):
         self.username = username
+        self.accountName = accountname
         self.apiKey = apikey
-        self.lua = LuaRuntime()
-        self.urlParser = re.compile('(\w+)/(\d+)')
-        self.storageLocation = []
+        self.lua = None
+        self.urlParser = None
         self.waList = {}
         self.waIgnored = {}
         self.uidCache = {}
         self.idCache = {}
         self.dataCache = {'slugs': [], 'uids': [], 'ids': []}
-        self.locate_storage()
-        self.parse_storage()
 
-    def locate_storage(self):
+    def get_accounts(self):
+        if self.accountName:
+            if os.path.isfile(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua')):
+                return [self.accountName]
+            else:
+                raise RuntimeError('Incorrect WoW account name!')
         accounts = os.listdir(Path('WTF/Account'))
+        accountswa = []
         for account in accounts:
-            storage_path = Path(f'WTF/Account/{account}/SavedVariables/WeakAuras.lua')
-            if os.path.isfile(storage_path):
-                self.storageLocation.append(storage_path)
+            if os.path.isfile(Path(f'WTF/Account/{account}/SavedVariables/WeakAuras.lua')):
+                accountswa.append(account)
+        self.accountName = accountswa[0]
+        return accountswa
 
     def parse_storage(self):
-        for storage in self.storageLocation:
-            with open(storage, 'r') as file:
-                data = file.read().replace('WeakAurasSaved = {', '{')
-            wadata = self.lua.eval(data)
-            for wa in wadata['displays']:
-                if wadata['displays'][wa]['url']:
-                    search = self.urlParser.search(wadata['displays'][wa]['url'])
-                    if search.group(1) and search.group(2):
-                        self.uidCache[wadata['displays'][wa]['uid']] = search.group(1)
-                        self.idCache[wadata['displays'][wa]['id']] = search.group(1)
-                        if not wadata['displays'][wa]['parent'] and not wadata['displays'][wa]['ignoreWagoUpdate']:
-                            if wadata['displays'][wa]['skipWagoUpdate']:
-                                self.waIgnored[search.group(1)] = int(wadata['displays'][wa]['skipWagoUpdate'])
-                            self.waList[search.group(1)] = int(search.group(2))
+        self.lua = LuaRuntime()
+        self.urlParser = re.compile('(\w+)/(\d+)')
+        with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua'), 'r') as file:
+            data = file.read().replace('WeakAurasSaved = {', '{')
+        wadata = self.lua.eval(data)
+        for wa in wadata['displays']:
+            if wadata['displays'][wa]['url']:
+                search = self.urlParser.search(wadata['displays'][wa]['url'])
+                if search.group(1) and search.group(2):
+                    self.uidCache[wadata['displays'][wa]['uid']] = search.group(1)
+                    self.idCache[wadata['displays'][wa]['id']] = search.group(1)
+                    if not wadata['displays'][wa]['parent'] and not wadata['displays'][wa]['ignoreWagoUpdate']:
+                        if wadata['displays'][wa]['skipWagoUpdate']:
+                            self.waIgnored[search.group(1)] = int(wadata['displays'][wa]['skipWagoUpdate'])
+                        self.waList[search.group(1)] = int(search.group(2))
 
     @retry('Failed to parse WeakAura data.')
     def check_updates(self):

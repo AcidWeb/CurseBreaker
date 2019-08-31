@@ -190,11 +190,16 @@ class TUI:
 
     def setup_completer(self):
         commands = ['install', 'uninstall', 'update', 'force_update', 'status', 'orphans', 'search', 'toggle_backup',
-                    'toggle_dev', 'toggle_wa', 'toggle_wa_api', 'uri_integration', 'wa_update', 'help', 'exit']
+                    'toggle_dev', 'toggle_wa', 'set_wa_api', 'set_wa_wow_account', 'uri_integration', 'wa_update',
+                    'help', 'exit']
         addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         for addon in addons:
             commands.extend([f'uninstall {addon["Name"]}', f'update {addon["Name"]}', f'force_update {addon["Name"]}',
                              f'toggle_dev {addon["Name"]}', f'status {addon["Name"]}'])
+        wa = WeakAuraUpdater('', '', '')
+        accounts = wa.get_accounts()
+        for account in accounts:
+            commands.append(f'set_wa_wow_account {account}')
         self.completer = WordCompleter(commands, ignore_case=True, sentence=True)
 
     def setup_table(self):
@@ -334,7 +339,7 @@ class TUI:
                 printft(HTML('WeakAuras version check is now: <ansired>DISABLED</ansired>'))
         self.core.save_config()
 
-    def c_toggle_wa_api(self, args):
+    def c_set_wa_api(self, args):
         if args:
             printft('Wago API key is now set.')
             self.core.config['WAAPIKey'] = args.strip()
@@ -346,10 +351,35 @@ class TUI:
         else:
             printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts API key as an argument.'))
 
+    def c_set_wa_wow_account(self, args):
+        if args:
+            args = args.strip()
+            if os.path.isfile(Path(f'WTF/Account/{args}/SavedVariables/WeakAuras.lua')):
+                printft(HTML(f'WoW account name set to: <ansiwhite>{args}</ansiwhite>'))
+                self.core.config['WAAccountName'] = args
+                self.core.save_config()
+            else:
+                printft('Incorrect WoW account name.')
+        else:
+            printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts the WoW account name as an argument.'))
+
     def c_wa_update(self, _, verbose=True):
         if os.path.isdir(Path('Interface/AddOns/WeakAuras')):
             wa = WeakAuraUpdater('' if self.core.config['WAUsername'] == 'DISABLED' else self.core.config['WAUsername'],
-                                 self.core.config['WAAPIKey'])
+                                 self.core.config['WAAccountName'], self.core.config['WAAPIKey'])
+            accounts = wa.get_accounts()
+            if len(accounts) > 1:
+                if verbose:
+                    printft(HTML('More than one WoW account detected.\nPlease use <ansiwhite>set_wa_wow_account</ansiwh'
+                                 'ite> command to set the correct account name.'))
+                else:
+                    printft(HTML('\n<ansigreen>More than one WoW account detected.</ansigreen>\nPlease use <ansiwhite>t'
+                                 'oggle_wa_account</ansiwhite> command to set the correct account name.'))
+                return
+            if not self.core.config['WAAccountName']:
+                self.core.config['WAAccountName'] = accounts[0]
+                self.core.save_config()
+            wa.parse_storage()
             if self.core.waCompanionVersion != self.core.config['WACompanionVersion']:
                 self.core.config['WACompanionVersion'] = self.core.waCompanionVersion
                 self.core.save_config()
@@ -358,8 +388,7 @@ class TUI:
                 force = False
             wa.install_companion(self.core.clientType, force)
             status = wa.check_updates()
-            if len(status[0]) > 0:
-                wa.install_data()
+            wa.install_data()
             if verbose:
                 printft(HTML('<ansigreen>Outdated WeakAuras:</ansigreen>'))
                 for aura in status[0]:
@@ -404,12 +433,14 @@ class TUI:
                      'izes alpha/beta versions for the provided addon.'))
         printft(HTML('<ansigreen>toggle_wa [Username]</ansigreen>\n\tEnables/disables automatic WeakAuras updates.\n\tI'
                      'f a username is provided check will start to ignore the specified author.'))
-        printft(HTML('<ansigreen>toggle_wa_api [API key]</ansigreen>\n\tSets Wago API key required to access private au'
-                     'ras.\n\tIt can be procured here: https://wago.io/account'))
+        printft(HTML('<ansigreen>set_wa_api [API key]</ansigreen>\n\tSets Wago API key required to access private auras'
+                     '.\n\tIt can be procured here: https://wago.io/account'))
+        printft(HTML('<ansigreen>set_wa_wow_account [Account name]</ansigreen>\n\tSets WoW account used by WeakAuras up'
+                     'dater.\n\tNeeded only if WeakAuras are used on more than one WoW account.'))
         printft(HTML('<ansigreen>uri_integration</ansigreen>\n\tEnables integration with CurseForge page. "Install" but'
                      'ton will now start this application.'))
-        printft(HTML('\n<ansibrightgreen>Supported URLs:</ansibrightgreen>\n\thttps://www.curseforge.com/wow/addons/[ad'
-                     'don_name]\n\thttps://www.wowinterface.com/downloads/[addon_name]\n\tElvUI\n\tElvUI:Dev\n\tTukUI'))
+        printft(HTML('\n<ansibrightgreen>Supported URL:</ansibrightgreen>\n\thttps://www.curseforge.com/wow/addons/[add'
+                     'on_name]\n\thttps://www.wowinterface.com/downloads/[addon_name]\n\tElvUI\n\tElvUI:Dev\n\tTukUI'))
 
     def c_exit(self, _):
         sys.exit(0)
