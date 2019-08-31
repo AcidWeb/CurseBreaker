@@ -409,8 +409,7 @@ class TUI:
         printft(HTML('<ansigreen>uri_integration</ansigreen>\n\tEnables integration with CurseForge page. "Install" but'
                      'ton will now start this application.'))
         printft(HTML('\n<ansibrightgreen>Supported URLs:</ansibrightgreen>\n\thttps://www.curseforge.com/wow/addons/[ad'
-                     'don_name]\n\thttps://www.wowinterface.com/downloads/[addon_name]\n\tElvUI\n\tElvUI:Dev\n\tElvUI-C'
-                     'lassic\n\tElvUI-Classic:Dev\n\tTukUI\n\tTukUI-Classic'))
+                     'don_name]\n\thttps://www.wowinterface.com/downloads/[addon_name]\n\tElvUI\n\tElvUI:Dev\n\tTukUI'))
 
     def c_exit(self, _):
         sys.exit(0)

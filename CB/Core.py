@@ -47,6 +47,7 @@ class Core:
 
     def update_config(self):
         if 'Version' not in self.config.keys() or self.config['Version'] != __version__:
+            urlupdate = {'elvui-classic': 'elvui', 'elvui-classic:dev': 'elvui:dev', 'tukui-classic': 'tukui'}
             for addon in self.config['Addons']:
                 # 1.1.0
                 if 'Checksums' not in addon.keys():
@@ -57,6 +58,9 @@ class Core:
                 # 1.1.1
                 if addon['Version'] is None:
                     addon['Version'] = "1"
+                # 2.2.0
+                if addon['URL'].lower() in urlupdate:
+                    addon['URL'] = urlupdate[addon['URL'].lower()]
             # 1.3.0
             if 'URLCache' in self.config.keys():
                 self.config.pop('URLCache', None)
@@ -104,17 +108,20 @@ class Core:
         if url.startswith('https://www.wowinterface.com/downloads/'):
             return WoWInterfaceAddon(url)
         elif url.lower() == 'elvui':
-            return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'master')
+            if self.clientType == 'wow_retail':
+                return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'master')
+            else:
+                return GitLabAddon('ElvUI', '492', 'elvui/elvui-classic', 'master')
         elif url.lower() == 'elvui:dev':
-            return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'development')
-        elif url.lower() == 'elvui-classic':
-            return GitLabAddon('ElvUI', '492', 'elvui/elvui-classic', 'master')
-        elif url.lower() == 'elvui-classic:dev':
-            return GitLabAddon('ElvUI', '492', 'elvui/elvui-classic', 'development')
+            if self.clientType == 'wow_retail':
+                return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'development')
+            else:
+                return GitLabAddon('ElvUI', '492', 'elvui/elvui-classic', 'development')
         elif url.lower() == 'tukui':
-            return GitLabAddon('TukUI', '77', 'Tukz/Tukui', 'master')
-        elif url.lower() == 'tukui-classic':
-            return GitLabAddon('TukUI', '77', 'Tukz/Tukui', 'Classic')
+            if self.clientType == 'wow_retail':
+                return GitLabAddon('TukUI', '77', 'Tukz/Tukui', 'master')
+            else:
+                return GitLabAddon('TukUI', '77', 'Tukz/Tukui', 'Classic')
         else:
             raise NotImplementedError('Provided URL is not supported.')
 
