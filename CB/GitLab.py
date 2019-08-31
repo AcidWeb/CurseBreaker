@@ -1,4 +1,3 @@
-import os
 import io
 import shutil
 import zipfile
@@ -33,5 +32,6 @@ class GitLabAddon:
         self.get_addon()
         self.archive.extractall(path)
         for directory in self.directories:
-            shutil.move(os.path.join(path, f'{self.shorthPath}-{self.branch}', directory), path)
-        shutil.rmtree(os.path.join(path, f'{self.shorthPath}-{self.branch}'))
+            # FIXME - Python bug #32689
+            shutil.move(str(path / f'{self.shorthPath}-{self.branch}' / directory), str(path))
+        shutil.rmtree(path / f'{self.shorthPath}-{self.branch}')

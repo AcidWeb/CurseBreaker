@@ -7,6 +7,7 @@ import zipfile
 import datetime
 import requests
 from tqdm import tqdm
+from pathlib import Path
 from checksumdir import dirhash
 from xml.dom.minidom import parse
 from . import retry, __version__
@@ -17,8 +18,9 @@ from .WoWInterface import WoWInterfaceAddon
 
 class Core:
     def __init__(self):
-        self.path = os.path.join('Interface', 'AddOns')
+        self.path = Path('Interface/AddOns')
         self.clientType = 'wow_retail'
+        self.waCompanionVersion = 20190123023201
         self.config = None
         self.cfCache = {}
 
@@ -32,7 +34,8 @@ class Core:
                            'Backup': {'Enabled': True, 'Number': 7},
                            'Version': __version__,
                            'WAUsername': '',
-                           'WAAPIKey': ''}
+                           'WAAPIKey': '',
+                           'WACompanionVersion': 0}
             self.save_config()
         if not os.path.isdir('WTF-Backup') and self.config['Backup']['Enabled']:
             os.mkdir('WTF-Backup')
@@ -49,7 +52,7 @@ class Core:
                 if 'Checksums' not in addon.keys():
                     checksums = {}
                     for directory in addon['Directories']:
-                        checksums[directory] = dirhash(os.path.join(self.path, directory))
+                        checksums[directory] = dirhash(self.path / directory)
                     addon['Checksums'] = checksums
                 # 1.1.1
                 if addon['Version'] is None:
@@ -65,6 +68,8 @@ class Core:
             # 2.2.0
             if 'WAAPIKey' not in self.config.keys():
                 self.config['WAAPIKey'] = ''
+            if 'WACompanionVersion' not in self.config.keys():
+                self.config['WACompanionVersion'] = 0
             self.config['Version'] = __version__
             self.save_config()
 
@@ -86,7 +91,7 @@ class Core:
     def cleanup(self, directories):
         if len(directories) > 0:
             for directory in directories:
-                shutil.rmtree(os.path.join(self.path, directory), ignore_errors=True)
+                shutil.rmtree(self.path / directory, ignore_errors=True)
 
     def parse_url(self, url):
         if url.startswith('https://www.curseforge.com/wow/addons/'):
@@ -122,7 +127,7 @@ class Core:
             new.install(self.path)
             checksums = {}
             for directory in new.directories:
-                checksums[directory] = dirhash(os.path.join(self.path, directory))
+                checksums[directory] = dirhash(self.path / directory)
             self.config['Addons'].append({'Name': new.name,
                                           'URL': url,
                                           'Version': new.currentVersion,
@@ -154,7 +159,7 @@ class Core:
                 new.install(self.path)
                 checksums = {}
                 for directory in new.directories:
-                    checksums[directory] = dirhash(os.path.join(self.path, directory))
+                    checksums[directory] = dirhash(self.path / directory)
                 old['Name'] = new.name
                 old['Version'] = new.currentVersion
                 old['Directories'] = new.directories
@@ -168,7 +173,7 @@ class Core:
         if old:
             checksums = {}
             for directory in old['Directories']:
-                checksums[directory] = dirhash(os.path.join(self.path, directory))
+                checksums[directory] = dirhash(self.path / directory)
             return len(checksums.items() & old['Checksums'].items()) != len(old['Checksums'])
         return False
 
@@ -191,9 +196,9 @@ class Core:
 
     def backup_check(self):
         if self.config['Backup']['Enabled']:
-            if not os.path.isfile(os.path.join('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip')):
+            if not os.path.isfile(Path('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip')):
                 listofbackups = os.listdir('WTF-Backup')
-                fullpath = [os.path.join('WTF-Backup', x) for x in listofbackups]
+                fullpath = [Path('WTF-Backup', x) for x in listofbackups]
                 if len([name for name in listofbackups]) == self.config['Backup']['Number']:
                     oldest_file = min(fullpath, key=os.path.getctime)
                     os.remove(oldest_file)
@@ -204,7 +209,7 @@ class Core:
             return False
 
     def backup_wtf(self):
-        zipf = zipfile.ZipFile(os.path.join('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip'), 'w',
+        zipf = zipfile.ZipFile(Path('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip'), 'w',
                                zipfile.ZIP_DEFLATED)
         filecount = 0
         for root, dirs, files in os.walk('WTF/', topdown=True):
@@ -216,7 +221,7 @@ class Core:
                 files = [f for f in files if not f[0] == '.']
                 dirs[:] = [d for d in dirs if not d[0] == '.']
                 for f in files:
-                    zipf.write(os.path.join(root, f))
+                    zipf.write(Path(root, f))
                     pbar.update(1)
         zipf.close()
 
@@ -230,7 +235,7 @@ class Core:
                 directories.append(directory)
         for directory in os.listdir(self.path):
             if directory not in directories:
-                if os.path.isdir(os.path.join(self.path, directory, '.git')):
+                if os.path.isdir(self.path / directory / '.git'):
                     orphanedaddon.append(f'{directory} [GIT]')
                     directoriesgit.append(directory)
                 else:
@@ -241,7 +246,7 @@ class Core:
                 if 'Blizzard_' not in f and f.endswith('.lua'):
                     name = f.split('.')[0]
                     if name not in directories:
-                        orphaneconfig.append(os.path.join(root, f)[4:])
+                        orphaneconfig.append(str(Path(root, f))[4:])
         return orphanedaddon, orphaneconfig
 
     @retry(custom_error='Failed to execute the search.')

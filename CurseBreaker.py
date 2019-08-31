@@ -33,7 +33,7 @@ class TUI:
         self.setup_console()
         self.print_header()
         # Check if executable is in good location
-        if not os.path.isfile('Wow.exe') or not os.path.isdir(os.path.join('Interface', 'AddOns')) or \
+        if not os.path.isfile('Wow.exe') or not os.path.isdir(Path('Interface/AddOns')) or \
                 not os.path.isdir('WTF'):
             printft(HTML('<ansibrightred>This executable should be placed in the same directory where Wow.exe is locate'
                          'd.</ansibrightred>\n'))
@@ -107,10 +107,9 @@ class TUI:
                         self.setup_table()
                         printft(HTML('\n<ansigreen>Backing up WTF directory:</ansigreen>'))
                         self.core.backup_wtf()
-                    if self.core.config['WAUsername'] != 'DISABLED' and \
-                            os.path.isdir(Path('Interface/AddOns/WeakAuras')):
+                    if self.core.config['WAUsername'] != 'DISABLED':
                         self.setup_table()
-                        self.c_wa_status(False, False)
+                        self.c_wa_update(False, False)
                 except Exception as e:
                     self.handle_exception(e)
                 printft('')
@@ -191,7 +190,7 @@ class TUI:
 
     def setup_completer(self):
         commands = ['install', 'uninstall', 'update', 'force_update', 'status', 'orphans', 'search', 'toggle_backup',
-                    'toggle_dev', 'toggle_wa', 'toggle_wa_api', 'uri_integration', 'wa_status', 'help', 'exit']
+                    'toggle_dev', 'toggle_wa', 'toggle_wa_api', 'uri_integration', 'wa_update', 'help', 'exit']
         addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         for addon in addons:
             commands.extend([f'uninstall {addon["Name"]}', f'update {addon["Name"]}', f'force_update {addon["Name"]}',
@@ -290,9 +289,10 @@ class TUI:
             printft(orphan)
 
     def c_uri_integration(self, _):
+        exit()
         self.core.create_reg()
         printft('CurseBreaker.reg file was created. Attempting to import...')
-        out = os.system('"' + os.path.join(os.path.dirname(sys.executable), 'CurseBreaker.reg') + '"')
+        out = os.system('"' + str(Path(os.path.dirname(sys.executable), 'CurseBreaker.reg')) + '"')
         if out != 0:
             printft('Import failed. Please try to import REG file manually.')
         else:
@@ -346,19 +346,31 @@ class TUI:
         else:
             printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts API key as an argument.'))
 
-    def c_wa_status(self, _, verbose=True):
-        wa = WeakAuraUpdater('' if self.core.config['WAUsername'] == 'DISABLED' else self.core.config['WAUsername'],
-                             self.core.config['WAAPIKey'], self.core.clientType)
-        status = wa.check_updates()
-        if verbose:
-            printft(HTML('<ansigreen>Outdated WeakAuras:</ansigreen>'))
-            for aura in status[0]:
-                printft(aura)
-            printft(HTML('\n<ansigreen>Detected WeakAuras:</ansigreen>'))
-            for aura in status[1]:
-                printft(aura)
-        else:
-            printft(HTML(f'\n<ansigreen>The number of outdated WeakAuras:</ansigreen> {len(status[0])}'))
+    def c_wa_update(self, _, verbose=True):
+        if os.path.isdir(Path('Interface/AddOns/WeakAuras')):
+            wa = WeakAuraUpdater('' if self.core.config['WAUsername'] == 'DISABLED' else self.core.config['WAUsername'],
+                                 self.core.config['WAAPIKey'])
+            if self.core.waCompanionVersion != self.core.config['WACompanionVersion']:
+                self.core.config['WACompanionVersion'] = self.core.waCompanionVersion
+                self.core.save_config()
+                force = True
+            else:
+                force = False
+            wa.install_companion(self.core.clientType, force)
+            status = wa.check_updates()
+            if len(status[0]) > 0:
+                wa.install_data()
+            if verbose:
+                printft(HTML('<ansigreen>Outdated WeakAuras:</ansigreen>'))
+                for aura in status[0]:
+                    printft(aura)
+                printft(HTML('\n<ansigreen>Detected WeakAuras:</ansigreen>'))
+                for aura in status[1]:
+                    printft(aura)
+            else:
+                printft(HTML(f'\n<ansigreen>The number of outdated WeakAuras:</ansigreen> {len(status[0])}'))
+        elif verbose:
+            printft('WeakAuras addon is not installed.')
 
     def c_search(self, args):
         if args:
@@ -381,18 +393,21 @@ class TUI:
         printft(HTML('<ansigreen>force_update [URL/Name]</ansigreen>\n\tCommand accepts a comma-separated list of links'
                      ' or addon names.\n\tSelected addons will be reinstalled or updated regardless of their current st'
                      'ate.'))
+        printft(HTML('<ansigreen>wa_update</ansigreen>\n\tCommand detects all installed WeakAuras and generate WeakAura'
+                     's Companion payload.'))
         printft(HTML('<ansigreen>status</ansigreen>\n\tPrints the current state of all installed addons.'))
         printft(HTML('<ansigreen>orphans</ansigreen>\n\tPrints list of orphaned directories and files.'))
-        printft(HTML('<ansigreen>search [Keyword]</ansigreen>\n\tExecute addon search on CurseForge.'))
-        printft(HTML('<ansigreen>toggle_backup</ansigreen>\n\tEnable/disable automatic daily backup of WTF directory.'))
-        printft(HTML('<ansigreen>toggle_dev</ansigreen>\n\tThis command accepts an addon name as an argument.\n\tPriori'
-                     'tize alpha/beta versions for the provided addon.'))
-        printft(HTML('<ansigreen>toggle_wa [Username]</ansigreen>\n\tEnable/disable automatic WeakAuras version check.'
-                     '\n\tIf a username is provided check will start to ignore the specified author.'))
-        printft(HTML('<ansigreen>toggle_wa_api [API key]</ansigreen>\n\tCommand set WAGO API key required to access pri'
-                     'vate auras.\n\tIt can be procured here: https://wago.io/account'))
-        printft(HTML('<ansigreen>uri_integration</ansigreen>\n\tEnable integration with CurseForge page. "Install" butt'
-                     'on will now start this application.'))
+        printft(HTML('<ansigreen>search [Keyword]</ansigreen>\n\tExecutes addon search on CurseForge.'))
+        printft(HTML('<ansigreen>toggle_backup</ansigreen>\n\tEnables/disables automatic daily backup of WTF directory.'
+                     ))
+        printft(HTML('<ansigreen>toggle_dev [Name]</ansigreen>\n\tCommand accepts an addon name as argument.\n\tPriorit'
+                     'izes alpha/beta versions for the provided addon.'))
+        printft(HTML('<ansigreen>toggle_wa [Username]</ansigreen>\n\tEnables/disables automatic WeakAuras updates.\n\tI'
+                     'f a username is provided check will start to ignore the specified author.'))
+        printft(HTML('<ansigreen>toggle_wa_api [API key]</ansigreen>\n\tSets Wago API key required to access private au'
+                     'ras.\n\tIt can be procured here: https://wago.io/account'))
+        printft(HTML('<ansigreen>uri_integration</ansigreen>\n\tEnables integration with CurseForge page. "Install" but'
+                     'ton will now start this application.'))
         printft(HTML('\n<ansibrightgreen>Supported URLs:</ansibrightgreen>\n\thttps://www.curseforge.com/wow/addons/[ad'
                      'don_name]\n\thttps://www.wowinterface.com/downloads/[addon_name]\n\tElvUI\n\tElvUI:Dev\n\tElvUI-C'
                      'lassic\n\tElvUI-Classic:Dev\n\tTukUI\n\tTukUI-Classic'))
