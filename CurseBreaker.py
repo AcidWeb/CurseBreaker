@@ -10,13 +10,12 @@ import requests
 import traceback
 from tqdm import tqdm
 from pathlib import Path
-from colorama import init, Fore
 from terminaltables import SingleTable
-from prompt_toolkit import PromptSession, HTML, print_formatted_text as printft
+from prompt_toolkit import PromptSession, HTML, ANSI, print_formatted_text as printft
 from prompt_toolkit.completion import WordCompleter
 from ctypes import windll, wintypes, byref
 from distutils.version import StrictVersion
-from CB import __version__
+from CB import AC, __version__
 from CB.Core import Core
 from CB.WeakAura import WeakAuraUpdater
 
@@ -31,7 +30,6 @@ class TUI:
         self.completer = None
         self.chandle = windll.kernel32.GetStdHandle(-11)
         sys.tracebacklimit = 0
-        init()
 
     def start(self):
         self.setup_console()
@@ -170,7 +168,7 @@ class TUI:
 
     def handle_exception(self, e):
         if len(self.tableData) > 1:
-            print(self.table.table)
+            printft(ANSI(self.table.table))
         if getattr(sys, 'frozen', False):
             printft(HTML(f'\n<ansibrightred>{str(e)}</ansibrightred>'))
         else:
@@ -213,8 +211,8 @@ class TUI:
         self.completer = WordCompleter(commands, ignore_case=True, sentence=True)
 
     def setup_table(self):
-        self.tableData = [[f'{Fore.LIGHTWHITE_EX}Status{Fore.RESET}', f'{Fore.LIGHTWHITE_EX}Name{Fore.RESET}',
-                           f'{Fore.LIGHTWHITE_EX}Version{Fore.RESET}']]
+        self.tableData = [[f'{AC.LIGHTWHITE_EX}Status{AC.RESET}', f'{AC.LIGHTWHITE_EX}Name{AC.RESET}',
+                           f'{AC.LIGHTWHITE_EX}Version{AC.RESET}']]
         self.table = SingleTable(self.tableData)
         self.table.justify_columns[0] = 'center'
 
@@ -225,11 +223,11 @@ class TUI:
                 for addon in addons:
                     installed, name, version = self.core.add_addon(addon)
                     if installed:
-                        self.tableData.append([f'{Fore.GREEN}Installed{Fore.RESET}', name, version])
+                        self.tableData.append([f'{AC.GREEN}Installed{AC.RESET}', name, version])
                     else:
-                        self.tableData.append([f'{Fore.LIGHTBLACK_EX}Already installed{Fore.RESET}', name, version])
+                        self.tableData.append([f'{AC.LIGHTBLACK_EX}Already installed{AC.RESET}', name, version])
                     pbar.update(1)
-            print(self.table.table)
+            printft(ANSI(self.table.table))
         else:
             printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a comma-separated list of links as an a'
                          'rgument.\n<ansigreen>Supported URLs:</ansigreen>\n\thttps://www.curseforge.com/wow/addons/[ad'
@@ -244,11 +242,11 @@ class TUI:
                 for addon in addons:
                     name, version = self.core.del_addon(addon)
                     if name:
-                        self.tableData.append([f'{Fore.LIGHTRED_EX}Uninstalled{Fore.RESET}', name, version])
+                        self.tableData.append([f'{AC.LIGHTRED_EX}Uninstalled{AC.RESET}', name, version])
                     else:
-                        self.tableData.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
+                        self.tableData.append([f'{AC.LIGHTBLACK_EX}Not installed{AC.RESET}', addon, ''])
                     pbar.update(1)
-            print(self.table.table)
+            printft(ANSI(self.table.table))
         else:
             printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a comma-separated list of links or addo'
                          'n names as an argument.\n<ansigreen>Supported URLs:</ansigreen>\n\thttps://www.curseforge.com'
@@ -270,20 +268,19 @@ class TUI:
                 if versionold:
                     if versionold == versionnew:
                         if modified:
-                            self.tableData.append([f'{Fore.LIGHTRED_EX}Modified{Fore.RESET}', name, versionold])
+                            self.tableData.append([f'{AC.LIGHTRED_EX}Modified{AC.RESET}', name, versionold])
                         else:
-                            self.tableData.append([f'{Fore.GREEN}Up-to-date{Fore.RESET}', name, versionold])
+                            self.tableData.append([f'{AC.GREEN}Up-to-date{AC.RESET}', name, versionold])
                     else:
                         if modified:
-                            self.tableData.append([f'{Fore.LIGHTRED_EX}Update suppressed{Fore.RESET}', name,
-                                                   versionold])
+                            self.tableData.append([f'{AC.LIGHTRED_EX}Update suppressed{AC.RESET}', name, versionold])
                         else:
-                            self.tableData.append([f'{Fore.YELLOW}{"Updated" if update else "Update available"}'
-                                                   f'{Fore.RESET}', name, f'{Fore.YELLOW}{versionnew}{Fore.RESET}'])
+                            self.tableData.append([f'{AC.YELLOW}{"Updated" if update else "Update available"}'
+                                                   f'{AC.RESET}', name, f'{AC.YELLOW}{versionnew}{AC.RESET}'])
                 else:
-                    self.tableData.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
+                    self.tableData.append([f'{AC.LIGHTBLACK_EX}Not installed{AC.RESET}', addon, ''])
                 pbar.update(1)
-        print('\n' + self.table.table if addline else self.table.table)
+        printft(ANSI('\n' + self.table.table if addline else self.table.table))
 
     def c_force_update(self, args):
         if args:
