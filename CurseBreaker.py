@@ -1,8 +1,11 @@
 import os
+import io
 import sys
 import time
+import gzip
 import msvcrt
 import shutil
+import pickle
 import requests
 import traceback
 from tqdm import tqdm
@@ -22,8 +25,9 @@ class TUI:
     def __init__(self):
         self.core = Core()
         self.session = PromptSession()
-        self.table_data = None
+        self.tableData = None
         self.table = None
+        self.cfSlugs = None
         self.completer = None
         self.chandle = windll.kernel32.GetStdHandle(-11)
         sys.tracebacklimit = 0
@@ -165,7 +169,7 @@ class TUI:
                 sys.exit(1)
 
     def handle_exception(self, e):
-        if len(self.table_data) > 1:
+        if len(self.tableData) > 1:
             print(self.table.table)
         if getattr(sys, 'frozen', False):
             printft(HTML(f'\n<ansibrightred>{str(e)}</ansibrightred>'))
@@ -189,6 +193,9 @@ class TUI:
             os.system('mode con: cols=100 lines=50')
 
     def setup_completer(self):
+        if not self.cfSlugs:
+            self.cfSlugs = pickle.load(gzip.open(io.BytesIO(
+                 requests.get('https://storage.googleapis.com/cursebreaker/cfslugs.pickle.gz').content)))
         commands = ['install', 'uninstall', 'update', 'force_update', 'wa_update', 'status', 'orphans', 'search',
                     'toggle_backup', 'toggle_dev', 'toggle_wa', 'set_wa_api', 'set_wa_wow_account', 'uri_integration',
                     'help', 'exit']
@@ -196,6 +203,9 @@ class TUI:
         for addon in addons:
             commands.extend([f'uninstall {addon["Name"]}', f'update {addon["Name"]}', f'force_update {addon["Name"]}',
                              f'toggle_dev {addon["Name"]}', f'status {addon["Name"]}'])
+        for item in self.cfSlugs:
+            commands.append(f'install cf:{item}')
+        commands.extend(['install ElvUI', 'install ElvUI:Dev', 'install TukUI'])
         wa = WeakAuraUpdater('', '', '')
         accounts = wa.get_accounts()
         for account in accounts:
@@ -203,9 +213,9 @@ class TUI:
         self.completer = WordCompleter(commands, ignore_case=True, sentence=True)
 
     def setup_table(self):
-        self.table_data = [[f'{Fore.LIGHTWHITE_EX}Status{Fore.RESET}', f'{Fore.LIGHTWHITE_EX}Name{Fore.RESET}',
-                            f'{Fore.LIGHTWHITE_EX}Version{Fore.RESET}']]
-        self.table = SingleTable(self.table_data)
+        self.tableData = [[f'{Fore.LIGHTWHITE_EX}Status{Fore.RESET}', f'{Fore.LIGHTWHITE_EX}Name{Fore.RESET}',
+                           f'{Fore.LIGHTWHITE_EX}Version{Fore.RESET}']]
+        self.table = SingleTable(self.tableData)
         self.table.justify_columns[0] = 'center'
 
     def c_install(self, args):
@@ -215,16 +225,17 @@ class TUI:
                 for addon in addons:
                     installed, name, version = self.core.add_addon(addon)
                     if installed:
-                        self.table_data.append([f'{Fore.GREEN}Installed{Fore.RESET}', name, version])
+                        self.tableData.append([f'{Fore.GREEN}Installed{Fore.RESET}', name, version])
                     else:
-                        self.table_data.append([f'{Fore.LIGHTBLACK_EX}Already installed{Fore.RESET}', name, version])
+                        self.tableData.append([f'{Fore.LIGHTBLACK_EX}Already installed{Fore.RESET}', name, version])
                     pbar.update(1)
             print(self.table.table)
         else:
             printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a comma-separated list of links as an a'
                          'rgument.\n<ansigreen>Supported URLs:</ansigreen>\n\thttps://www.curseforge.com/wow/addons/[ad'
-                         'don_name]\n\thttps://www.wowinterface.com/downloads/[addon_name]\n\tElvUI\n\tElvUI:Dev\n\tTuk'
-                         'UI'))
+                         'don_name] <ansiwhite>|</ansiwhite> cf:[addon_name]\n\thttps://www.wowinterface.com/downloads/'
+                         '[addon_name] <ansiwhite>|</ansiwhite> wowi:[addon_id]\n\tElvUI <ansiwhite>|</ansiwhite> ElvUI'
+                         ':Dev\n\tTukUI'))
 
     def c_uninstall(self, args):
         if args:
@@ -233,9 +244,9 @@ class TUI:
                 for addon in addons:
                     name, version = self.core.del_addon(addon)
                     if name:
-                        self.table_data.append([f'{Fore.LIGHTRED_EX}Uninstalled{Fore.RESET}', name, version])
+                        self.tableData.append([f'{Fore.LIGHTRED_EX}Uninstalled{Fore.RESET}', name, version])
                     else:
-                        self.table_data.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
+                        self.tableData.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
                     pbar.update(1)
             print(self.table.table)
         else:
@@ -259,18 +270,18 @@ class TUI:
                 if versionold:
                     if versionold == versionnew:
                         if modified:
-                            self.table_data.append([f'{Fore.LIGHTRED_EX}Modified{Fore.RESET}', name, versionold])
+                            self.tableData.append([f'{Fore.LIGHTRED_EX}Modified{Fore.RESET}', name, versionold])
                         else:
-                            self.table_data.append([f'{Fore.GREEN}Up-to-date{Fore.RESET}', name, versionold])
+                            self.tableData.append([f'{Fore.GREEN}Up-to-date{Fore.RESET}', name, versionold])
                     else:
                         if modified:
-                            self.table_data.append([f'{Fore.LIGHTRED_EX}Update suppressed{Fore.RESET}', name,
-                                                    versionold])
+                            self.tableData.append([f'{Fore.LIGHTRED_EX}Update suppressed{Fore.RESET}', name,
+                                                   versionold])
                         else:
-                            self.table_data.append([f'{Fore.YELLOW}{"Updated" if update else "Update available"}'
-                                                    f'{Fore.RESET}', name, f'{Fore.YELLOW}{versionnew}{Fore.RESET}'])
+                            self.tableData.append([f'{Fore.YELLOW}{"Updated" if update else "Update available"}'
+                                                   f'{Fore.RESET}', name, f'{Fore.YELLOW}{versionnew}{Fore.RESET}'])
                 else:
-                    self.table_data.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
+                    self.tableData.append([f'{Fore.LIGHTBLACK_EX}Not installed{Fore.RESET}', addon, ''])
                 pbar.update(1)
         print('\n' + self.table.table if addline else self.table.table)
 
@@ -338,6 +349,7 @@ class TUI:
                 printft(HTML('WeakAuras version check is now: <ansigreen>ENABLED</ansigreen>'))
             else:
                 self.core.config['WAUsername'] = 'DISABLED'
+                shutil.rmtree(Path('Interface\AddOns\WeakAurasCompanion'), ignore_errors=True)
                 printft(HTML('WeakAuras version check is now: <ansired>DISABLED</ansired>'))
         self.core.save_config()
 
@@ -443,7 +455,9 @@ class TUI:
         printft(HTML('<ansigreen>uri_integration</ansigreen>\n\tEnables integration with CurseForge page. "Install" but'
                      'ton will now start this application.'))
         printft(HTML('\n<ansibrightgreen>Supported URL:</ansibrightgreen>\n\thttps://www.curseforge.com/wow/addons/[add'
-                     'on_name]\n\thttps://www.wowinterface.com/downloads/[addon_name]\n\tElvUI\n\tElvUI:Dev\n\tTukUI'))
+                     'on_name] <ansiwhite>|</ansiwhite> cf:[addon_name]\n\thttps://www.wowinterface.com/downloads/[addo'
+                     'n_name] <ansiwhite>|</ansiwhite> wowi:[addon_id]\n\tElvUI <ansiwhite>|</ansiwhite> ElvUI:Dev\n\tT'
+                     'ukUI'))
 
     def c_exit(self, _):
         sys.exit(0)

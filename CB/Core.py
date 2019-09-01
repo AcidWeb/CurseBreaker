@@ -131,6 +131,10 @@ class Core:
     def add_addon(self, url):
         if 'twitch://' in url:
             url = url.split('/download-client')[0].replace('twitch://', 'https://').strip()
+        elif url.startswith('cf:'):
+            url = f'https://www.curseforge.com/wow/addons/{url[3:]}'
+        elif url.startswith('wowi:'):
+            url = f'https://www.wowinterface.com/downloads/info{url[5:]}.html'
         addon = self.check_if_installed(url)
         if not addon:
             new = self.parse_url(url)
