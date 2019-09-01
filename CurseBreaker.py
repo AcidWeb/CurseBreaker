@@ -102,14 +102,14 @@ class TUI:
                     self.setup_console(True)
                 self.print_header()
                 try:
-                    self.c_update(False, True)
+                    self.c_update(None, True)
                     if self.core.backup_check():
                         self.setup_table()
                         printft(HTML('\n<ansigreen>Backing up WTF directory:</ansigreen>'))
                         self.core.backup_wtf()
                     if self.core.config['WAUsername'] != 'DISABLED':
                         self.setup_table()
-                        self.c_wa_update(False, False)
+                        self.c_wa_update(None, False)
                 except Exception as e:
                     self.handle_exception(e)
                 printft('')
@@ -189,8 +189,8 @@ class TUI:
             os.system('mode con: cols=100 lines=50')
 
     def setup_completer(self):
-        commands = ['install', 'uninstall', 'update', 'force_update', 'status', 'orphans', 'search', 'toggle_backup',
-                    'toggle_dev', 'toggle_wa', 'set_wa_api', 'set_wa_wow_account', 'uri_integration', 'wa_update',
+        commands = ['install', 'uninstall', 'update', 'force_update', 'wa_update', 'status', 'orphans', 'search',
+                    'toggle_backup', 'toggle_dev', 'toggle_wa', 'set_wa_api', 'set_wa_wow_account', 'uri_integration',
                     'help', 'exit']
         addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         for addon in addons:
@@ -323,12 +323,14 @@ class TUI:
     def c_toggle_wa(self, args):
         if args:
             if args == self.core.config['WAUsername']:
-                printft(HTML(f'Auras created by <ansiwhite>{self.core.config["WAUsername"]}</ansiwhite>'
+                printft(HTML(f'WeakAuras version check is now: <ansigreen>ENABLED</ansigreen>\n'
+                             f'Auras created by <ansiwhite>{self.core.config["WAUsername"]}</ansiwhite>'
                              f' are now included.'))
                 self.core.config['WAUsername'] = ''
             else:
                 self.core.config['WAUsername'] = args.strip()
-                printft(HTML(f'Auras created by <ansiwhite>{self.core.config["WAUsername"]}</ansiwhite>'
+                printft(HTML(f'WeakAuras version check is now: <ansigreen>ENABLED</ansigreen>\n'
+                             f'Auras created by <ansiwhite>{self.core.config["WAUsername"]}</ansiwhite>'
                              f' are now ignored.'))
         else:
             if self.core.config['WAUsername'] == 'DISABLED':
@@ -376,28 +378,29 @@ class TUI:
                     printft(HTML('\n<ansigreen>More than one WoW account detected.</ansigreen>\nPlease use <ansiwhite>t'
                                  'oggle_wa_account</ansiwhite> command to set the correct account name.'))
                 return
-            if not self.core.config['WAAccountName']:
-                self.core.config['WAAccountName'] = accounts[0]
-                self.core.save_config()
-            wa.parse_storage()
-            if self.core.waCompanionVersion != self.core.config['WACompanionVersion']:
-                self.core.config['WACompanionVersion'] = self.core.waCompanionVersion
-                self.core.save_config()
-                force = True
-            else:
-                force = False
-            wa.install_companion(self.core.clientType, force)
-            status = wa.check_updates()
-            wa.install_data()
-            if verbose:
-                printft(HTML('<ansigreen>Outdated WeakAuras:</ansigreen>'))
-                for aura in status[0]:
-                    printft(aura)
-                printft(HTML('\n<ansigreen>Detected WeakAuras:</ansigreen>'))
-                for aura in status[1]:
-                    printft(aura)
-            else:
-                printft(HTML(f'\n<ansigreen>The number of outdated WeakAuras:</ansigreen> {len(status[0])}'))
+            if wa.accountName:
+                if not self.core.config['WAAccountName']:
+                    self.core.config['WAAccountName'] = wa.accountName
+                    self.core.save_config()
+                if self.core.waCompanionVersion != self.core.config['WACompanionVersion']:
+                    self.core.config['WACompanionVersion'] = self.core.waCompanionVersion
+                    self.core.save_config()
+                    force = True
+                else:
+                    force = False
+                wa.parse_storage()
+                status = wa.check_updates()
+                wa.install_companion(self.core.clientType, force)
+                wa.install_data()
+                if verbose:
+                    printft(HTML('<ansigreen>Outdated WeakAuras:</ansigreen>'))
+                    for aura in status[0]:
+                        printft(aura)
+                    printft(HTML('\n<ansigreen>Detected WeakAuras:</ansigreen>'))
+                    for aura in status[1]:
+                        printft(aura)
+                else:
+                    printft(HTML(f'\n<ansigreen>The number of outdated WeakAuras:</ansigreen> {len(status[0])}'))
         elif verbose:
             printft('WeakAuras addon is not installed.')
 

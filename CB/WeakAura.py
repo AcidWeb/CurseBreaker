@@ -30,7 +30,8 @@ class WeakAuraUpdater:
         for account in accounts:
             if os.path.isfile(Path(f'WTF/Account/{account}/SavedVariables/WeakAuras.lua')):
                 accountswa.append(account)
-        self.accountName = accountswa[0]
+        if len(accountswa) > 0:
+            self.accountName = accountswa[0]
         return accountswa
 
     def parse_storage(self):
@@ -53,21 +54,23 @@ class WeakAuraUpdater:
     @retry('Failed to parse WeakAura data.')
     def check_updates(self):
         wa = [[], []]
-        payload = requests.get(f'https://data.wago.io/api/check/weakauras?ids={",".join(self.waList.keys())}',
-                               headers={'api-key': self.apiKey}).json()
-        if 'error' in payload or 'msg' in payload:
-            raise RuntimeError
-        for aura in payload:
-            if 'username' in aura and (not self.username or aura['username'] != self.username):
-                if aura['version'] > self.waList[aura['slug']] and\
-                        (not aura['slug'] in self.waIgnored or
-                         (aura['slug'] in self.waIgnored and aura['version'] != self.waIgnored[aura['slug']])):
-                    wa[0].append(aura['name'])
-                    self.update_aura(aura)
-                else:
-                    wa[1].append(aura['name'])
-        wa[0].sort()
-        wa[1].sort()
+        if len(self.waList) > 0:
+            payload = requests.get(f'https://data.wago.io/api/check/weakauras?ids={",".join(self.waList.keys())}',
+                                   headers={'api-key': self.apiKey}).json()
+            if 'error' in payload or 'msg' in payload:
+                raise RuntimeError('Wago API failed to return proper data. '
+                                   'The page is down or provided API key is incorrect.')
+            for aura in payload:
+                if 'username' in aura and (not self.username or aura['username'] != self.username):
+                    if aura['version'] > self.waList[aura['slug']] and \
+                       (not aura['slug'] in self.waIgnored or
+                       (aura['slug'] in self.waIgnored and aura['version'] != self.waIgnored[aura['slug']])):
+                        wa[0].append(aura['name'])
+                        self.update_aura(aura)
+                    else:
+                        wa[1].append(aura['name'])
+            wa[0].sort()
+            wa[1].sort()
         return wa
 
     @retry('Failed to parse WeakAura data.')

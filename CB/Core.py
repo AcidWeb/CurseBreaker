@@ -183,7 +183,8 @@ class Core:
         if old:
             checksums = {}
             for directory in old['Directories']:
-                checksums[directory] = dirhash(self.path / directory)
+                if os.path.isdir(self.path / directory):
+                    checksums[directory] = dirhash(self.path / directory)
             return len(checksums.items() & old['Checksums'].items()) != len(old['Checksums'])
         return False
 
