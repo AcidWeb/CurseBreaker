@@ -56,7 +56,6 @@ class TUI:
             sys.exit(1)
         self.auto_update()
         self.core.init_config()
-        self.setup_completer()
         self.setup_table()
         # Curse URI Support
         if len(sys.argv) == 2 and 'twitch://' in sys.argv[1]:
@@ -117,6 +116,7 @@ class TUI:
                 printft('')
                 os.system('pause')
                 sys.exit(0)
+        self.setup_completer()
         self.setup_console(True)
         self.print_header()
         printft(HTML('Use command <ansigreen>help</ansigreen> or press <ansigreen>TAB</ansigreen> to see a list of avai'
@@ -192,8 +192,12 @@ class TUI:
 
     def setup_completer(self):
         if not self.cfSlugs:
-            self.cfSlugs = pickle.load(gzip.open(io.BytesIO(
-                 requests.get('https://storage.googleapis.com/cursebreaker/cfslugs.pickle.gz').content)))
+            # noinspection PyBroadException
+            try:
+                self.cfSlugs = pickle.load(gzip.open(io.BytesIO(
+                    requests.get('https://storage.googleapis.com/cursebreaker/cfslugs.pickle.gz').content)))
+            except Exception:
+                self.cfSlugs = []
         commands = ['install', 'uninstall', 'update', 'force_update', 'wa_update', 'status', 'orphans', 'search',
                     'toggle_backup', 'toggle_dev', 'toggle_wa', 'set_wa_api', 'set_wa_wow_account', 'uri_integration',
                     'help', 'exit']
@@ -302,7 +306,6 @@ class TUI:
             printft(orphan)
 
     def c_uri_integration(self, _):
-        exit()
         self.core.create_reg()
         printft('CurseBreaker.reg file was created. Attempting to import...')
         out = os.system('"' + str(Path(os.path.dirname(sys.executable), 'CurseBreaker.reg')) + '"')
@@ -426,32 +429,31 @@ class TUI:
             printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a search query as an argument.'))
 
     def c_help(self, _):
-        printft(HTML('<ansigreen>install [URL]</ansigreen>\n\tCommand accepts a comma-separated list of links.'))
-        printft(HTML('<ansigreen>uninstall [URL/Name]</ansigreen>\n\tCommand accepts a comma-separated list of links or'
-                     ' addon names.'))
-        printft(HTML('<ansigreen>update [URL/Name]</ansigreen>\n\tCommand accepts a comma-separated list of links or ad'
-                     'don names.\n\tIf no argument is provided all non-modified addons will be updated.'))
-        printft(HTML('<ansigreen>force_update [URL/Name]</ansigreen>\n\tCommand accepts a comma-separated list of links'
+        printft(HTML('<ansigreen>install [URL]</ansigreen>\n\tCommand accepts a comma-separated list of links.\n'
+                     '<ansigreen>uninstall [URL/Name]</ansigreen>\n\tCommand accepts a comma-separated list of links or'
+                     ' addon names.\n'
+                     '<ansigreen>update [URL/Name]</ansigreen>\n\tCommand accepts a comma-separated list of links or ad'
+                     'don names.\n\tIf no argument is provided all non-modified addons will be updated.\n'
+                     '<ansigreen>force_update [URL/Name]</ansigreen>\n\tCommand accepts a comma-separated list of links'
                      ' or addon names.\n\tSelected addons will be reinstalled or updated regardless of their current st'
-                     'ate.'))
-        printft(HTML('<ansigreen>wa_update</ansigreen>\n\tCommand detects all installed WeakAuras and generate WeakAura'
-                     's Companion payload.'))
-        printft(HTML('<ansigreen>status</ansigreen>\n\tPrints the current state of all installed addons.'))
-        printft(HTML('<ansigreen>orphans</ansigreen>\n\tPrints list of orphaned directories and files.'))
-        printft(HTML('<ansigreen>search [Keyword]</ansigreen>\n\tExecutes addon search on CurseForge.'))
-        printft(HTML('<ansigreen>toggle_backup</ansigreen>\n\tEnables/disables automatic daily backup of WTF directory.'
-                     ))
-        printft(HTML('<ansigreen>toggle_dev [Name]</ansigreen>\n\tCommand accepts an addon name as argument.\n\tPriorit'
-                     'izes alpha/beta versions for the provided addon.'))
-        printft(HTML('<ansigreen>toggle_wa [Username]</ansigreen>\n\tEnables/disables automatic WeakAuras updates.\n\tI'
-                     'f a username is provided check will start to ignore the specified author.'))
-        printft(HTML('<ansigreen>set_wa_api [API key]</ansigreen>\n\tSets Wago API key required to access private auras'
-                     '.\n\tIt can be procured here: https://wago.io/account'))
-        printft(HTML('<ansigreen>set_wa_wow_account [Account name]</ansigreen>\n\tSets WoW account used by WeakAuras up'
-                     'dater.\n\tNeeded only if WeakAuras are used on more than one WoW account.'))
-        printft(HTML('<ansigreen>uri_integration</ansigreen>\n\tEnables integration with CurseForge page. "Install" but'
-                     'ton will now start this application.'))
-        printft(HTML('\n<ansibrightgreen>Supported URL:</ansibrightgreen>\n\thttps://www.curseforge.com/wow/addons/[add'
+                     'ate.\n'
+                     '<ansigreen>wa_update</ansigreen>\n\tCommand detects all installed WeakAuras and generate WeakAura'
+                     's Companion payload.\n'
+                     '<ansigreen>status</ansigreen>\n\tPrints the current state of all installed addons.\n'
+                     '<ansigreen>orphans</ansigreen>\n\tPrints list of orphaned directories and files.\n'
+                     '<ansigreen>search [Keyword]</ansigreen>\n\tExecutes addon search on CurseForge.\n'
+                     '<ansigreen>toggle_backup</ansigreen>\n\tEnables/disables automatic daily backup of WTF directory.'
+                     '\n<ansigreen>toggle_dev [Name]</ansigreen>\n\tCommand accepts an addon name as argument.\n\tPrior'
+                     'itizes alpha/beta versions for the provided addon.\n'
+                     '<ansigreen>toggle_wa [Username]</ansigreen>\n\tEnables/disables automatic WeakAuras updates.\n\tI'
+                     'f a username is provided check will start to ignore the specified author.\n'
+                     '<ansigreen>set_wa_api [API key]</ansigreen>\n\tSets Wago API key required to access private auras'
+                     '.\n\tIt can be procured here: https://wago.io/account\n'
+                     '<ansigreen>set_wa_wow_account [Account name]</ansigreen>\n\tSets WoW account used by WeakAuras up'
+                     'dater.\n\tNeeded only if WeakAuras are used on more than one WoW account.\n'
+                     '<ansigreen>uri_integration</ansigreen>\n\tEnables integration with CurseForge page. "Install" but'
+                     'ton will now start this application.\n'
+                     '\n<ansibrightgreen>Supported URL:</ansibrightgreen>\n\thttps://www.curseforge.com/wow/addons/[add'
                      'on_name] <ansiwhite>|</ansiwhite> cf:[addon_name]\n\thttps://www.wowinterface.com/downloads/[addo'
                      'n_name] <ansiwhite>|</ansiwhite> wowi:[addon_id]\n\tElvUI <ansiwhite>|</ansiwhite> ElvUI:Dev\n\tT'
                      'ukUI'))

@@ -4,12 +4,24 @@
 
 CLI addon updater for World of Warcraft.
 
-![Screenshot](https://i.imgur.com/Fn9MULH.png)
+![Screenshot](https://i.imgur.com/RQBNS4y.png)
 
 ## USAGE
-Should be pretty self-explanatory. Place **CurseBreaker** EXE inside WoW directory and start it up.\
+Should be pretty self-explanatory. Place **CurseBreaker** EXE inside directory containing `Wow.exe` and start it up.\
 Already installed addons will not be recognized by **CurseBreaker** and they need to be reinstalled.\
+Both _Retail_ and _Classic_ clients are supported. The client version is detected automatically.\
 By default **CurseBreaker** create backups of entire `WTF` directory.
+
+## SUPPORTED URL
+- CurseForge: `https://www.curseforge.com/wow/addons/[addon_name]`, `cf:[addon_name]`
+- WoWInterface: `https://www.wowinterface.com/downloads/[addon_name]`, `wowi:[addon_id]`
+- TukUI GitLab: `ElvUI`, `ElvUI:Dev`, `TukUI`
+- Wago: **CurseBreaker** can update auras like WeakAuras Companion.
+
+## WEAKAURAS SUPPORT
+**CurseBreaker** by default will try to update all detected WeakAuras. Process work the same as WeakAuras Companion.\
+Command `toggle_wa` can be used to set a single author name that will be ignored during the update.\
+Additionally Wago API key can be set with `set_wa_api` command so non-public auras will also be upgradeable.
 
 ## COPYRIGHT
 **CurseBreaker** is free software/open source, and is distributed under the GNU General Public License v3.
