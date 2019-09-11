@@ -27,6 +27,7 @@ class TUI:
         self.tableData = None
         self.table = None
         self.cfSlugs = None
+        self.wowiSlugs = None
         self.completer = None
         self.chandle = windll.kernel32.GetStdHandle(-11)
         sys.tracebacklimit = 0
@@ -191,13 +192,16 @@ class TUI:
             os.system('mode con: cols=100 lines=50')
 
     def setup_completer(self):
-        if not self.cfSlugs:
+        if not self.cfSlugs or not self.wowiSlugs:
             # noinspection PyBroadException
             try:
                 self.cfSlugs = pickle.load(gzip.open(io.BytesIO(
                     requests.get('https://storage.googleapis.com/cursebreaker/cfslugs.pickle.gz').content)))
+                self.wowiSlugs = pickle.load(gzip.open(io.BytesIO(
+                    requests.get('https://storage.googleapis.com/cursebreaker/wowislugs.pickle.gz').content)))
             except Exception:
                 self.cfSlugs = []
+                self.wowiSlugs = []
         commands = ['install', 'uninstall', 'update', 'force_update', 'wa_update', 'status', 'orphans', 'search',
                     'toggle_backup', 'toggle_dev', 'toggle_wa', 'set_wa_api', 'set_wa_wow_account', 'uri_integration',
                     'help', 'exit']
@@ -207,6 +211,8 @@ class TUI:
                              f'toggle_dev {addon["Name"]}', f'status {addon["Name"]}'])
         for item in self.cfSlugs:
             commands.append(f'install cf:{item}')
+        for item in self.wowiSlugs:
+            commands.append(f'install wowi:{item}')
         commands.extend(['install ElvUI', 'install ElvUI:Dev', 'install TukUI'])
         wa = WeakAuraUpdater('', '', '')
         accounts = wa.get_accounts()
