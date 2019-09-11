@@ -258,13 +258,14 @@ class TUI:
                          'lvUI:Dev\n\tTukUI'))
 
     def c_update(self, args, addline=False, update=True, force=False):
-        if len(self.core.cfCache) > 0:
+        if len(self.core.cfCache) > 0 or len(self.core.wowiCache) > 0:
             self.core.cfCache = {}
+            self.core.wowiCache = {}
         if args:
             addons = args.split(',')
         else:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
-            self.core.bulk_cf_check(addons)
+            self.core.bulk_check(addons)
         with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
             for addon in addons:
                 name, versionnew, versionold, modified = self.core.\

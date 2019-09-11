@@ -8,9 +8,12 @@ from . import retry
 
 class WoWInterfaceAddon:
     @retry()
-    def __init__(self, url):
+    def __init__(self, url, checkcache):
         project = re.findall(r'\d+', url)[0]
-        self.payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{project}.json').json()[0]
+        if project in checkcache:
+            self.payload = checkcache[project]
+        else:
+            self.payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{project}.json').json()[0]
         if not self.payload['UID'] == project:
             raise RuntimeError
         self.name = self.payload['UIName'].strip().strip('\u200b')

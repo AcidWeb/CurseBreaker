@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import json
 import html
@@ -23,6 +24,7 @@ class Core:
         self.waCompanionVersion = 20190123023201
         self.config = None
         self.cfCache = {}
+        self.wowiCache = {}
 
     def init_config(self):
         if os.path.isfile('CurseBreaker.json'):
@@ -109,7 +111,7 @@ class Core:
                 self.save_config()
             return parser
         if url.startswith('https://www.wowinterface.com/downloads/'):
-            return WoWInterfaceAddon(url)
+            return WoWInterfaceAddon(url, self.wowiCache)
         elif url.lower() == 'elvui':
             if self.clientType == 'wow_retail':
                 return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'master')
@@ -294,12 +296,19 @@ class Core:
         return url
 
     @retry(custom_error='Failed to execute bulk version check.')
-    def bulk_cf_check(self, addons):
-        ids = []
+    def bulk_check(self, addons):
+        ids_cf = []
+        ids_wowi = []
         for addon in addons:
             if addon['URL'] in self.config['CurseCache']:
-                ids.append(int(self.config['CurseCache'][addon['URL']]))
-        if len(ids) > 0:
-            payload = requests.post('https://addons-ecs.forgesvc.net/api/v2/addon', json=ids).json()
+                ids_cf.append(int(self.config['CurseCache'][addon['URL']]))
+            elif addon['URL'].startswith('https://www.wowinterface.com/downloads/'):
+                ids_wowi.append(re.findall(r'\d+', addon['URL'])[0].strip())
+        if len(ids_cf) > 0:
+            payload = requests.post('https://addons-ecs.forgesvc.net/api/v2/addon', json=ids_cf).json()
             for addon in payload:
                 self.cfCache[str(addon['id'])] = addon
+        if len(ids_wowi) > 0:
+            payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{",".join(ids_wowi)}.json').json()
+            for addon in payload:
+                self.wowiCache[str(addon['UID'])] = addon
