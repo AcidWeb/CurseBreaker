@@ -3,7 +3,7 @@ import re
 import requests
 from lupa import LuaRuntime
 from pathlib import Path
-from . import retry
+from . import retry, HEADERS
 
 
 class WeakAuraUpdater:
@@ -56,7 +56,7 @@ class WeakAuraUpdater:
         wa = [[], []]
         if len(self.waList) > 0:
             payload = requests.get(f'https://data.wago.io/api/check/weakauras?ids={",".join(self.waList.keys())}',
-                                   headers={'api-key': self.apiKey}).json()
+                                   headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']}).json()
             if 'error' in payload or 'msg' in payload:
                 raise RuntimeError('Wago API failed to return proper data. '
                                    'The page is down or provided API key is incorrect.')
@@ -76,7 +76,7 @@ class WeakAuraUpdater:
     @retry('Failed to parse WeakAura data.')
     def update_aura(self, aura):
         raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={aura["slug"]}',
-                           headers={'api-key': self.apiKey}).text
+                           headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']}).text
         slug = f'    ["{aura["slug"]}"] = {{\n      name = [=[{aura["name"]}]=],\n      author = [=[' \
                f'{aura["username"]}]=],\n      encoded = [=[{raw}]=],\n      wagoVersion = [=[' \
                f'{aura["version"]}]=],\n      wagoSemver = [=[{aura["versionString"]}]=],\n    }},\n'

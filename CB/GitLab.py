@@ -2,14 +2,14 @@ import io
 import shutil
 import zipfile
 import requests
-from . import retry
+from . import retry, HEADERS
 
 
 class GitLabAddon:
     @retry()
     def __init__(self, name, projectid, path, branch):
-        self.payload = requests.get(f'https://git.tukui.org/api/v4/projects/{projectid}/repository/branches/{branch}')\
-            .json()
+        self.payload = requests.get(f'https://git.tukui.org/api/v4/projects/{projectid}/repository/branches/{branch}',
+                                    headers=HEADERS).json()
         if not self.payload['commit']:
             raise RuntimeError
         self.name = name
@@ -22,7 +22,7 @@ class GitLabAddon:
 
     @retry()
     def get_addon(self):
-        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl).content))
+        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS).content))
         for file in self.archive.namelist():
             file_info = self.archive.getinfo(file)
             if file_info.is_dir() and file_info.filename.count('/') == 2 and '.gitlab' not in file_info.filename:

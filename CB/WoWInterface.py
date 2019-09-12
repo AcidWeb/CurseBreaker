@@ -3,7 +3,7 @@ import io
 import re
 import zipfile
 import requests
-from . import retry
+from . import retry, HEADERS
 
 
 class WoWInterfaceAddon:
@@ -13,7 +13,8 @@ class WoWInterfaceAddon:
         if project in checkcache:
             self.payload = checkcache[project]
         else:
-            self.payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{project}.json').json()[0]
+            self.payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{project}.json',
+                                        headers=HEADERS).json()[0]
         if not self.payload['UID'] == project:
             raise RuntimeError
         self.name = self.payload['UIName'].strip().strip('\u200b')
@@ -24,7 +25,7 @@ class WoWInterfaceAddon:
 
     @retry()
     def get_addon(self):
-        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl).content))
+        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS).content))
         for file in self.archive.namelist():
             if '/' not in os.path.dirname(file):
                 self.directories.append(os.path.dirname(file))

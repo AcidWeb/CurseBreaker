@@ -11,7 +11,7 @@ from tqdm import tqdm
 from pathlib import Path
 from checksumdir import dirhash
 from xml.dom.minidom import parse
-from . import retry, __version__
+from . import retry, HEADERS, __version__
 from .GitLab import GitLabAddon
 from .CurseForge import CurseForgeAddon
 from .WoWInterface import WoWInterfaceAddon
@@ -270,7 +270,7 @@ class Core:
     def search(self, query):
         results = []
         payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/search?gameId=1&pageSize=10&searchFilter='
-                               f'{html.escape(query.strip())}').json()
+                               f'{html.escape(query.strip())}', headers=HEADERS).json()
         for result in payload:
             results.append(result['websiteUrl'])
         return results
@@ -289,7 +289,7 @@ class Core:
     def parse_cf_xml(self, path):
         xml = parse(path)
         project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
-        payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/{project}').json()
+        payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/{project}', headers=HEADERS).json()
         url = payload['websiteUrl'].strip()
         self.config['CurseCache'][url] = project
         self.save_config()
@@ -305,10 +305,11 @@ class Core:
             elif addon['URL'].startswith('https://www.wowinterface.com/downloads/'):
                 ids_wowi.append(re.findall(r'\d+', addon['URL'])[0].strip())
         if len(ids_cf) > 0:
-            payload = requests.post('https://addons-ecs.forgesvc.net/api/v2/addon', json=ids_cf).json()
+            payload = requests.post('https://addons-ecs.forgesvc.net/api/v2/addon', json=ids_cf, headers=HEADERS).json()
             for addon in payload:
                 self.cfCache[str(addon['id'])] = addon
         if len(ids_wowi) > 0:
-            payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{",".join(ids_wowi)}.json').json()
+            payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{",".join(ids_wowi)}.json',
+                                   headers=HEADERS).json()
             for addon in payload:
                 self.wowiCache[str(addon['UID'])] = addon

@@ -15,7 +15,7 @@ from prompt_toolkit import PromptSession, HTML, ANSI, print_formatted_text as pr
 from prompt_toolkit.completion import WordCompleter
 from ctypes import windll, wintypes, byref
 from distutils.version import StrictVersion
-from CB import AC, __version__
+from CB import AC, HEADERS, __version__
 from CB.Core import Core
 from CB.WeakAura import WeakAuraUpdater
 
@@ -146,7 +146,8 @@ class TUI:
     def auto_update(self):
         if getattr(sys, 'frozen', False):
             try:
-                payload = requests.get('https://api.github.com/repos/AcidWeb/CurseBreaker/releases/latest').json()
+                payload = requests.get('https://api.github.com/repos/AcidWeb/CurseBreaker/releases/latest',
+                                       headers=HEADERS).json()
                 remoteversion = payload['name']
                 changelog = payload['body']
                 url = payload['assets'][0]['browser_download_url']
@@ -155,7 +156,7 @@ class TUI:
                     if os.path.isfile(sys.executable + '.old'):
                         os.remove(sys.executable + '.old')
                     shutil.move(sys.executable, sys.executable + '.old')
-                    payload = requests.get(url)
+                    payload = requests.get(url, headers=HEADERS)
                     with open(sys.executable, 'wb') as f:
                         f.write(payload.content)
                     printft(HTML(f'<ansibrightgreen>Update complete! Please restart the application.</ansibrightgreen'
@@ -196,9 +197,11 @@ class TUI:
             # noinspection PyBroadException
             try:
                 self.cfSlugs = pickle.load(gzip.open(io.BytesIO(
-                    requests.get('https://storage.googleapis.com/cursebreaker/cfslugs.pickle.gz').content)))
+                    requests.get('https://storage.googleapis.com/cursebreaker/cfslugs.pickle.gz',
+                                 headers=HEADERS).content)))
                 self.wowiSlugs = pickle.load(gzip.open(io.BytesIO(
-                    requests.get('https://storage.googleapis.com/cursebreaker/wowislugs.pickle.gz').content)))
+                    requests.get('https://storage.googleapis.com/cursebreaker/wowislugs.pickle.gz',
+                                 headers=HEADERS).content)))
             except Exception:
                 self.cfSlugs = []
                 self.wowiSlugs = []

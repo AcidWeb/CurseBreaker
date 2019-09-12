@@ -1,4 +1,7 @@
-__version__ = '2.3.0'
+import string
+import random
+
+__version__ = '2.3.1'
 __license__ = 'GPLv3'
 __copyright__ = '2019, Paweł Jastrzębski <pawelj@iosphe.re>'
 __docformat__ = 'restructuredtext en'
@@ -53,3 +56,4 @@ class AnsiCodes(object):
 
 
 AC = AnsiCodes()
+HEADERS = {'User-Agent': f'CB-{"".join(random.choices(string.ascii_uppercase + string.digits, k=10))}/{__version__}'}
