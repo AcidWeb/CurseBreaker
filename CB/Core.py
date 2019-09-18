@@ -12,6 +12,7 @@ from pathlib import Path
 from checksumdir import dirhash
 from xml.dom.minidom import parse
 from . import retry, HEADERS, __version__
+from .Tukui import TukuiAddon
 from .GitLab import GitLabAddon
 from .CurseForge import CurseForgeAddon
 from .WoWInterface import WoWInterfaceAddon
@@ -114,8 +115,16 @@ class Core:
                 self.config['CurseCache'][url] = parser.cacheID
                 self.save_config()
             return parser
-        if url.startswith('https://www.wowinterface.com/downloads/'):
+        elif url.startswith('https://www.wowinterface.com/downloads/'):
             return WoWInterfaceAddon(url, self.wowiCache)
+        elif url.startswith('https://www.tukui.org/addons.php?id='):
+            if self.clientType == 'wow_classic':
+                raise RuntimeError('Incorrect client version.')
+            return TukuiAddon(url, False)
+        elif url.startswith('https://www.tukui.org/classic-addons.php?id='):
+            if self.clientType == 'wow_retail' or url.endswith('1') or url.endswith('2'):
+                raise RuntimeError('Incorrect client version.')
+            return TukuiAddon(url, True)
         elif url.lower() == 'elvui':
             if self.clientType == 'wow_retail':
                 return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'master')

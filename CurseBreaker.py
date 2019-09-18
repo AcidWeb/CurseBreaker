@@ -23,7 +23,7 @@ from CB.WeakAura import WeakAuraUpdater
 class TUI:
     def __init__(self):
         self.core = Core()
-        self.session = PromptSession()
+        self.session = PromptSession(reserve_space_for_menu=7)
         self.tableData = None
         self.table = None
         self.cfSlugs = None
@@ -245,8 +245,9 @@ class TUI:
             printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a comma-separated list of links as an a'
                          'rgument.\n<ansigreen>Supported URLs:</ansigreen>\n\thttps://www.curseforge.com/wow/addons/[ad'
                          'don_name] <ansiwhite>|</ansiwhite> cf:[addon_name]\n\thttps://www.wowinterface.com/downloads/'
-                         '[addon_name] <ansiwhite>|</ansiwhite> wowi:[addon_id]\n\tElvUI <ansiwhite>|</ansiwhite> ElvUI'
-                         ':Dev\n\tTukui'))
+                         '[addon_name] <ansiwhite>|</ansiwhite> wowi:[addon_id]\n\thttps://www.tukui.org/addons.php?id='
+                         '[addon_id]\n\thttps://www.tukui.org/classic-addons.php?id=[addon_id]\n\tElvUI <ansiwhite>|</a'
+                         'nsiwhite> ElvUI:Dev\n\tTukui'))
 
     def c_uninstall(self, args):
         if args:
@@ -261,10 +262,12 @@ class TUI:
                     pbar.update(1)
             printft(ANSI(self.table.table))
         else:
-            printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a comma-separated list of links or addo'
-                         'n names as an argument.\n<ansigreen>Supported URLs:</ansigreen>\n\thttps://www.curseforge.com'
-                         '/wow/addons/[addon_name]\n\thttps://www.wowinterface.com/downloads/[addon_name]\n\tElvUI\n\tE'
-                         'lvUI:Dev\n\tTukui'))
+            printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a comma-separated list of links as an a'
+                         'rgument.\n<ansigreen>Supported URLs:</ansigreen>\n\thttps://www.curseforge.com/wow/addons/[ad'
+                         'don_name] <ansiwhite>|</ansiwhite> cf:[addon_name]\n\thttps://www.wowinterface.com/downloads/'
+                         '[addon_name] <ansiwhite>|</ansiwhite> wowi:[addon_id]\n\thttps://www.tukui.org/addons.php?id='
+                         '[addon_id]\n\thttps://www.tukui.org/classic-addons.php?id=[addon_id]\n\tElvUI <ansiwhite>|</a'
+                         'nsiwhite> ElvUI:Dev\n\tTukui'))
 
     def c_update(self, args, addline=False, update=True, force=False):
         if len(self.core.cfCache) > 0 or len(self.core.wowiCache) > 0:
@@ -465,8 +468,9 @@ class TUI:
                      'ton will now start this application.\n'
                      '\n<ansibrightgreen>Supported URL:</ansibrightgreen>\n\thttps://www.curseforge.com/wow/addons/[add'
                      'on_name] <ansiwhite>|</ansiwhite> cf:[addon_name]\n\thttps://www.wowinterface.com/downloads/[addo'
-                     'n_name] <ansiwhite>|</ansiwhite> wowi:[addon_id]\n\tElvUI <ansiwhite>|</ansiwhite> ElvUI:Dev\n\tT'
-                     'ukUI'))
+                     'n_name] <ansiwhite>|</ansiwhite> wowi:[addon_id]\n\thttps://www.tukui.org/addons.php?id=[addon_id'
+                     ']\n\thttps://www.tukui.org/classic-addons.php?id=[addon_id]\n\tElvUI <ansiwhite>|</ansiwhite> Elv'
+                     'UI:Dev\n\tTukui'))
 
     def c_exit(self, _):
         sys.exit(0)
