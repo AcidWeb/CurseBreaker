@@ -216,7 +216,7 @@ class TUI:
             commands.append(f'install cf:{item}')
         for item in self.wowiSlugs:
             commands.append(f'install wowi:{item}')
-        commands.extend(['install ElvUI', 'install ElvUI:Dev', 'install TukUI'])
+        commands.extend(['install ElvUI', 'install ElvUI:Dev', 'install Tukui'])
         wa = WeakAuraUpdater('', '', '')
         accounts = wa.get_accounts()
         for account in accounts:
@@ -246,7 +246,7 @@ class TUI:
                          'rgument.\n<ansigreen>Supported URLs:</ansigreen>\n\thttps://www.curseforge.com/wow/addons/[ad'
                          'don_name] <ansiwhite>|</ansiwhite> cf:[addon_name]\n\thttps://www.wowinterface.com/downloads/'
                          '[addon_name] <ansiwhite>|</ansiwhite> wowi:[addon_id]\n\tElvUI <ansiwhite>|</ansiwhite> ElvUI'
-                         ':Dev\n\tTukUI'))
+                         ':Dev\n\tTukui'))
 
     def c_uninstall(self, args):
         if args:
@@ -264,7 +264,7 @@ class TUI:
             printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a comma-separated list of links or addo'
                          'n names as an argument.\n<ansigreen>Supported URLs:</ansigreen>\n\thttps://www.curseforge.com'
                          '/wow/addons/[addon_name]\n\thttps://www.wowinterface.com/downloads/[addon_name]\n\tElvUI\n\tE'
-                         'lvUI:Dev\n\tTukUI'))
+                         'lvUI:Dev\n\tTukui'))
 
     def c_update(self, args, addline=False, update=True, force=False):
         if len(self.core.cfCache) > 0 or len(self.core.wowiCache) > 0:

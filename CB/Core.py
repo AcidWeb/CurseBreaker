@@ -64,6 +64,10 @@ class Core:
                 # 2.2.0
                 if addon['URL'].lower() in urlupdate:
                     addon['URL'] = urlupdate[addon['URL'].lower()]
+                # 2.4.0
+                if addon['Name'] == 'TukUI':
+                    addon['Name'] = 'Tukui'
+                    addon['URL'] = 'Tukui'
             # 1.3.0
             if 'URLCache' in self.config.keys():
                 self.config.pop('URLCache', None)
@@ -124,9 +128,9 @@ class Core:
                 return GitLabAddon('ElvUI', '492', 'elvui/elvui-classic', 'development')
         elif url.lower() == 'tukui':
             if self.clientType == 'wow_retail':
-                return GitLabAddon('TukUI', '77', 'Tukz/Tukui', 'master')
+                return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'master')
             else:
-                return GitLabAddon('TukUI', '77', 'Tukz/Tukui', 'Classic')
+                return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'Classic')
         else:
             raise NotImplementedError('Provided URL is not supported.')
 
