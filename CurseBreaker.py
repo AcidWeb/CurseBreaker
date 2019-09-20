@@ -251,7 +251,7 @@ class TUI:
 
     def c_uninstall(self, args):
         if args:
-            addons = args.split(',')
+            addons = [addon.strip() for addon in args.split(',')]
             with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
                 for addon in addons:
                     name, version = self.core.del_addon(addon)
