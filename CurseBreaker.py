@@ -146,6 +146,8 @@ class TUI:
     def auto_update(self):
         if getattr(sys, 'frozen', False):
             try:
+                if os.path.isfile(sys.executable + '.old'):
+                    os.remove(sys.executable + '.old')
                 payload = requests.get('https://api.github.com/repos/AcidWeb/CurseBreaker/releases/latest',
                                        headers=HEADERS).json()
                 remoteversion = payload['name']
@@ -153,8 +155,6 @@ class TUI:
                 url = payload['assets'][0]['browser_download_url']
                 if StrictVersion(remoteversion[1:]) > StrictVersion(__version__):
                     printft(HTML('<ansigreen>Updating CurseBreaker...</ansigreen>'))
-                    if os.path.isfile(sys.executable + '.old'):
-                        os.remove(sys.executable + '.old')
                     shutil.move(sys.executable, sys.executable + '.old')
                     payload = requests.get(url, headers=HEADERS)
                     with open(sys.executable, 'wb') as f:
@@ -292,7 +292,7 @@ class TUI:
                         if modified:
                             self.tableData.append([f'{AC.LIGHTRED_EX}Update suppressed{AC.RESET}', name, versionold])
                         else:
-                            self.tableData.append([f'{AC.YELLOW}{"Updated" if update else "Update available"}'
+                            self.tableData.append([f'{AC.YELLOW}{"Updated " if update else "Update available"}'
                                                    f'{AC.RESET}', name, f'{AC.YELLOW}{versionnew}{AC.RESET}'])
                 else:
                     self.tableData.append([f'{AC.LIGHTBLACK_EX}Not installed{AC.RESET}', addon, ''])

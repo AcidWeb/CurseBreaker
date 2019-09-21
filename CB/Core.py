@@ -21,6 +21,7 @@ from .WoWInterface import WoWInterfaceAddon
 class Core:
     def __init__(self):
         self.path = Path('Interface/AddOns')
+        self.configPath = Path('WTF/CurseBreaker.json')
         self.clientType = 'wow_retail'
         self.waCompanionVersion = 20190123023201
         self.config = None
@@ -29,7 +30,9 @@ class Core:
 
     def init_config(self):
         if os.path.isfile('CurseBreaker.json'):
-            with open('CurseBreaker.json', 'r') as f:
+            shutil.move('CurseBreaker.json', 'WTF')
+        if os.path.isfile(self.configPath):
+            with open(self.configPath, 'r') as f:
                 self.config = json.load(f)
         else:
             self.config = {'Addons': [],
@@ -46,7 +49,7 @@ class Core:
         self.update_config()
 
     def save_config(self):
-        with open('CurseBreaker.json', 'w') as outfile:
+        with open(self.configPath, 'w') as outfile:
             json.dump(self.config, outfile, sort_keys=True, indent=4, separators=(',', ': '))
 
     def update_config(self):
