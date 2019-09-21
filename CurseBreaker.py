@@ -231,7 +231,7 @@ class TUI:
 
     def c_install(self, args):
         if args:
-            addons = args.split(',')
+            addons = [addon.strip() for addon in args.split(',')]
             with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
                 for addon in addons:
                     installed, name, version = self.core.add_addon(addon)
@@ -251,7 +251,7 @@ class TUI:
 
     def c_uninstall(self, args):
         if args:
-            addons = args.split(',')
+            addons = [addon.strip() for addon in args.split(',')]
             with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
                 for addon in addons:
                     name, version = self.core.del_addon(addon)
@@ -274,7 +274,7 @@ class TUI:
             self.core.cfCache = {}
             self.core.wowiCache = {}
         if args:
-            addons = args.split(',')
+            addons = [addon.strip() for addon in args.split(',')]
         else:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
             self.core.bulk_check(addons)
