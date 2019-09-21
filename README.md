@@ -6,11 +6,18 @@ CLI addon updater for World of Warcraft.
 
 ![Screenshot](https://i.imgur.com/RQBNS4y.png)
 
+## DOWNLOAD
+The latest release can be found [here](https://github.com/AcidWeb/CurseBreaker/releases/latest).
+
 ## USAGE
 Should be pretty self-explanatory. Place **CurseBreaker** EXE inside directory containing `Wow.exe` and start it up.\
 Already installed addons will not be recognized by **CurseBreaker** and they need to be reinstalled.\
 Both _Retail_ and _Classic_ clients are supported. The client version is detected automatically.\
 By default **CurseBreaker** create backups of entire `WTF` directory.
+
+## TIPS & TRICKS
+- Command `uri_integration` can be used to enable integration with the CurseForge page.
+- Most of the commands support the comma-separated list of addons.
 
 ## SUPPORTED URL
 - CurseForge: `https://www.curseforge.com/wow/addons/[addon_name]`, `cf:[addon_name]`
