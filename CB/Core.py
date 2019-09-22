@@ -329,3 +329,36 @@ class Core:
                                    headers=HEADERS).json()
             for addon in payload:
                 self.wowiCache[str(addon['UID'])] = addon
+
+    def detect_addons(self, cfdata):
+        addon_dirs = os.listdir(self.path)
+        ignored = ['ElvUI_OptionsUI', 'Tukui_Config']
+        hit = []
+        partial_hit = []
+        partial_hit_tmp = []
+        partial_hit_raw = []
+        miss = []
+        for directory in addon_dirs:
+            if not os.path.isdir(self.path / directory / '.git'):
+                if directory in cfdata:
+                    if len(cfdata[directory]) > 1:
+                        partial_hit_raw.append(cfdata[directory])
+                    elif not self.check_if_installed(f'https://www.curseforge.com/wow/addons/{cfdata[directory][0]}'):
+                        hit.append(f'cf:{cfdata[directory][0]}')
+                else:
+                    if directory == 'ElvUI' or directory == 'Tukui':
+                        if not self.check_if_installed(directory):
+                            hit.append(directory)
+                    elif directory not in ignored:
+                        miss.append(directory)
+        for partial in partial_hit_raw:
+            for slug in partial:
+                if f'cf:{slug}' in hit or self.check_if_installed(f'https://www.curseforge.com/wow/addons/{slug}'):
+                    break
+            else:
+                partial = [f'cf:{s}' for s in partial]
+                partial_hit_tmp.append(sorted(partial))
+        for partial in partial_hit_tmp:
+            if partial not in partial_hit:
+                partial_hit.append(partial)
+        return sorted(list(set(hit))), partial_hit, sorted(list(set(miss)))

@@ -27,6 +27,7 @@ class TUI:
         self.tableData = None
         self.table = None
         self.cfSlugs = None
+        self.cfDirectories = None
         self.wowiSlugs = None
         self.completer = None
         self.chandle = windll.kernel32.GetStdHandle(-11)
@@ -45,6 +46,7 @@ class TUI:
         # Detect Classic client
         if os.path.basename(os.path.dirname(sys.executable)) == '_classic_':
             self.core.clientType = 'wow_classic'
+            os.system(f'title CurseBreaker v{__version__} - Classic')
         # Check if client have write access
         try:
             with open('PermissionTest', 'w') as _:
@@ -123,6 +125,8 @@ class TUI:
         printft(HTML('Use command <ansigreen>help</ansigreen> or press <ansigreen>TAB</ansigreen> to see a list of avai'
                      'lable commands.\nCommand <ansigreen>exit</ansigreen> or pressing <ansigreen>CTRL+D</ansigreen> wi'
                      'll close the application.\n'))
+        if len(self.core.config['Addons']) == 0:
+            printft(HTML('Command <ansigreen>import</ansigreen> might be used to detect already installed addons.\n'))
         # Prompt session
         while True:
             try:
@@ -206,8 +210,8 @@ class TUI:
                 self.cfSlugs = []
                 self.wowiSlugs = []
         commands = ['install', 'uninstall', 'update', 'force_update', 'wa_update', 'status', 'orphans', 'search',
-                    'toggle_backup', 'toggle_dev', 'toggle_wa', 'set_wa_api', 'set_wa_wow_account', 'uri_integration',
-                    'help', 'exit']
+                    'import', 'toggle_backup', 'toggle_dev', 'toggle_wa', 'set_wa_api', 'set_wa_wow_account',
+                    'uri_integration', 'help', 'exit']
         addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         for addon in addons:
             commands.extend([f'uninstall {addon["Name"]}', f'update {addon["Name"]}', f'force_update {addon["Name"]}',
@@ -441,6 +445,28 @@ class TUI:
         else:
             printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a search query as an argument.'))
 
+    def c_import(self, args):
+        if not self.cfDirectories:
+            self.cfDirectories = pickle.load(gzip.open(io.BytesIO(
+                requests.get(f'https://storage.googleapis.com/cursebreaker/cfdir{self.core.clientType}.pickle.gz',
+                             headers=HEADERS).content)))
+        hit, partial_hit, miss = self.core.detect_addons(self.cfDirectories)
+        if args == 'install' and len(hit) > 0:
+            self.c_install(','.join(hit))
+        else:
+            printft(HTML(f'<ansigreen>Addons found:</ansigreen>'))
+            for addon in hit:
+                printft(addon)
+            printft(HTML(f'\n<ansiyellow>Possible matches:</ansiyellow>'))
+            for addon in partial_hit:
+                printft(HTML(' <ansiwhite>or</ansiwhite> '.join(addon)))
+            printft(HTML(f'\n<ansired>Unknown directories:</ansired>'))
+            for addon in miss:
+                printft(f'{addon}')
+            printft(HTML(f'\nExecute <ansiwhite>import install</ansiwhite> command to install all detected addons.\n'
+                         f'Possible matches need to be installed manually with the <ansiwhite>install</ansiwhite>'
+                         f' command.'))
+
     def c_help(self, _):
         printft(HTML('<ansigreen>install [URL]</ansigreen>\n\tCommand accepts a comma-separated list of links.\n'
                      '<ansigreen>uninstall [URL/Name]</ansigreen>\n\tCommand accepts a comma-separated list of links or'
@@ -455,6 +481,7 @@ class TUI:
                      '<ansigreen>status</ansigreen>\n\tPrints the current state of all installed addons.\n'
                      '<ansigreen>orphans</ansigreen>\n\tPrints list of orphaned directories and files.\n'
                      '<ansigreen>search [Keyword]</ansigreen>\n\tExecutes addon search on CurseForge.\n'
+                     '<ansigreen>import</ansigreen>\n\tCommand attempts to import already installed addons.\n'
                      '<ansigreen>toggle_backup</ansigreen>\n\tEnables/disables automatic daily backup of WTF directory.'
                      '\n<ansigreen>toggle_dev [Name]</ansigreen>\n\tCommand accepts an addon name as argument.\n\tPrior'
                      'itizes alpha/beta versions for the provided addon.\n'

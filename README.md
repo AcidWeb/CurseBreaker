@@ -12,6 +12,7 @@ The latest release can be found [here](https://github.com/AcidWeb/CurseBreaker/r
 ## USAGE
 Should be pretty self-explanatory. Place **CurseBreaker** EXE inside directory containing `Wow.exe` and start it up.\
 Already installed addons will not be recognized by **CurseBreaker** and they need to be reinstalled.\
+This process can be partially automated by using the `import` command.\
 Both _Retail_ and _Classic_ clients are supported. The client version is detected automatically.\
 By default **CurseBreaker** create backups of entire `WTF` directory.
 
