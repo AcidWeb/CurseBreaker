@@ -1,16 +1,20 @@
 import os
 import re
+import io
 import sys
 import json
 import html
+import gzip
+import pickle
 import shutil
 import zipfile
 import datetime
 import requests
+import cfscrape
 from tqdm import tqdm
 from pathlib import Path
 from checksumdir import dirhash
-from xml.dom.minidom import parse
+from xml.dom.minidom import parse, parseString
 from . import retry, HEADERS, __version__
 from .Tukui import TukuiAddon
 from .GitLab import GitLabAddon
@@ -25,6 +29,8 @@ class Core:
         self.clientType = 'wow_retail'
         self.waCompanionVersion = 20190123023201
         self.config = None
+        self.cfIDs = None
+        self.cfDirs = None
         self.cfCache = {}
         self.wowiCache = {}
 
@@ -112,11 +118,7 @@ class Core:
 
     def parse_url(self, url):
         if url.startswith('https://www.curseforge.com/wow/addons/'):
-            parser = CurseForgeAddon(url, self.config['CurseCache'], self.cfCache,
-                                     self.clientType, self.check_if_dev(url))
-            if hasattr(parser, 'cacheID'):
-                self.config['CurseCache'][url] = parser.cacheID
-                self.save_config()
+            parser = CurseForgeAddon(self.parse_cf_id(url), self.cfCache, self.clientType, self.check_if_dev(url))
             return parser
         elif url.startswith('https://www.wowinterface.com/downloads/'):
             return WoWInterfaceAddon(url, self.wowiCache)
@@ -301,6 +303,24 @@ class Core:
                           'ell\open]\n[HKEY_CURRENT_USER\Software\Classes\\twitch\shell\open\command]\n@="\\"'
                           + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""')
 
+    @retry(custom_error='Failed to parse project ID.')
+    def parse_cf_id(self, url):
+        if url in self.config['CurseCache']:
+            return self.config['CurseCache'][url]
+        if not self.cfIDs:
+            self.cfIDs = pickle.load(gzip.open(io.BytesIO(
+                requests.get(f'https://storage.googleapis.com/cursebreaker/cfid.pickle.gz', headers=HEADERS).content)))
+        slug = url.split('/')[-1]
+        if slug in self.cfIDs:
+            project = self.cfIDs[slug]
+        else:
+            scraper = cfscrape.create_scraper()
+            xml = parseString(scraper.get(url + '/download-client').text)
+            project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
+        self.config['CurseCache'][url] = project
+        self.save_config()
+        return project
+
     @retry(custom_error='Failed to parse the XML file.')
     def parse_cf_xml(self, path):
         xml = parse(path)
@@ -330,7 +350,11 @@ class Core:
             for addon in payload:
                 self.wowiCache[str(addon['UID'])] = addon
 
-    def detect_addons(self, cfdata):
+    def detect_addons(self):
+        if not self.cfDirs:
+            self.cfDirs = pickle.load(gzip.open(io.BytesIO(
+                requests.get(f'https://storage.googleapis.com/cursebreaker/cfdir{self.clientType}.pickle.gz',
+                             headers=HEADERS).content)))
         addon_dirs = os.listdir(self.path)
         ignored = ['ElvUI_OptionsUI', 'Tukui_Config']
         hit = []
@@ -340,11 +364,12 @@ class Core:
         miss = []
         for directory in addon_dirs:
             if not os.path.isdir(self.path / directory / '.git'):
-                if directory in cfdata:
-                    if len(cfdata[directory]) > 1:
-                        partial_hit_raw.append(cfdata[directory])
-                    elif not self.check_if_installed(f'https://www.curseforge.com/wow/addons/{cfdata[directory][0]}'):
-                        hit.append(f'cf:{cfdata[directory][0]}')
+                if directory in self.cfDirs:
+                    if len(self.cfDirs[directory]) > 1:
+                        partial_hit_raw.append(self.cfDirs[directory])
+                    elif not self.check_if_installed(f'https://www.curseforge.com/wow/addons/'
+                                                     f'{self.cfDirs[directory][0]}'):
+                        hit.append(f'cf:{self.cfDirs[directory][0]}')
                 else:
                     if directory == 'ElvUI' or directory == 'Tukui':
                         if not self.check_if_installed(directory):

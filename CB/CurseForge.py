@@ -1,23 +1,14 @@
 import os
 import io
 import zipfile
-import cfscrape
 import requests
 from . import retry, HEADERS
 from operator import itemgetter
-from xml.dom.minidom import parseString
 
 
 class CurseForgeAddon:
     @retry()
-    def __init__(self, url, idcache, checkcache, clienttype, allowdev):
-        if url in idcache:
-            project = idcache[url]
-        else:
-            scraper = cfscrape.create_scraper()
-            xml = parseString(scraper.get(url + '/download-client').text)
-            project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
-            self.cacheID = project
+    def __init__(self, project, checkcache, clienttype, allowdev):
         if project in checkcache:
             self.payload = checkcache[project]
         else:

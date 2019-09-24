@@ -27,7 +27,6 @@ class TUI:
         self.tableData = None
         self.table = None
         self.cfSlugs = None
-        self.cfDirectories = None
         self.wowiSlugs = None
         self.completer = None
         self.chandle = windll.kernel32.GetStdHandle(-11)
@@ -446,11 +445,7 @@ class TUI:
             printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a search query as an argument.'))
 
     def c_import(self, args):
-        if not self.cfDirectories:
-            self.cfDirectories = pickle.load(gzip.open(io.BytesIO(
-                requests.get(f'https://storage.googleapis.com/cursebreaker/cfdir{self.core.clientType}.pickle.gz',
-                             headers=HEADERS).content)))
-        hit, partial_hit, miss = self.core.detect_addons(self.cfDirectories)
+        hit, partial_hit, miss = self.core.detect_addons()
         if args == 'install' and len(hit) > 0:
             self.c_install(','.join(hit))
         else:
