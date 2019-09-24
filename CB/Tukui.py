@@ -27,6 +27,8 @@ class TukuiAddon:
             if '/' not in os.path.dirname(file):
                 self.directories.append(os.path.dirname(file))
         self.directories = list(set(self.directories))
+        if len(self.directories) == 0 or self.directories == ['']:
+            raise RuntimeError
 
     def install(self, path):
         self.get_addon()

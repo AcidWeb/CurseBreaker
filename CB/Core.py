@@ -112,7 +112,7 @@ class Core:
             return False
 
     def cleanup(self, directories):
-        if len(directories) > 0:
+        if len(directories) > 0 and directories != ['']:
             for directory in directories:
                 shutil.rmtree(self.path / directory, ignore_errors=True)
 
