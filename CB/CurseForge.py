@@ -1,6 +1,7 @@
 import os
 import io
 import zipfile
+import cfscrape
 import requests
 from . import retry, HEADERS
 from operator import itemgetter
@@ -13,7 +14,8 @@ class CurseForgeAddon:
         if url in idcache:
             project = idcache[url]
         else:
-            xml = parseString(requests.get(url + '/download-client', headers=HEADERS).text)
+            scraper = cfscrape.create_scraper()
+            xml = parseString(scraper.get(url + '/download-client').text)
             project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
             self.cacheID = project
         if project in checkcache:
