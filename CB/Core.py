@@ -127,8 +127,10 @@ class Core:
                 raise RuntimeError('Incorrect client version.')
             return TukuiAddon(url, False)
         elif url.startswith('https://www.tukui.org/classic-addons.php?id='):
-            if self.clientType == 'wow_retail' or url.endswith('1') or url.endswith('2'):
+            if self.clientType == 'wow_retail':
                 raise RuntimeError('Incorrect client version.')
+            elif url.endswith('1') or url.endswith('2'):
+                raise RuntimeError('ElvUI and Tukui cannot be installed this way.')
             return TukuiAddon(url, True)
         elif url.lower() == 'elvui':
             if self.clientType == 'wow_retail':

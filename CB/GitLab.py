@@ -27,11 +27,14 @@ class GitLabAddon:
             file_info = self.archive.getinfo(file)
             if file_info.is_dir() and file_info.filename.count('/') == 2 and '.gitlab' not in file_info.filename:
                 self.directories.append(file_info.filename.split('/')[1])
+        if len(self.directories) == 0 or self.directories == ['']:
+            raise RuntimeError
 
     def install(self, path):
         self.get_addon()
         self.archive.extractall(path)
         for directory in self.directories:
+            shutil.rmtree(path / directory, ignore_errors=True)
             # FIXME - Python bug #32689
             shutil.move(str(path / f'{self.shorthPath}-{self.branch}' / directory), str(path))
         shutil.rmtree(path / f'{self.shorthPath}-{self.branch}')
