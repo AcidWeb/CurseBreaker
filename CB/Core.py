@@ -393,3 +393,19 @@ class Core:
             if partial not in partial_hit:
                 partial_hit.append(partial)
         return sorted(list(set(hit))), partial_hit, sorted(list(set(miss)))
+
+    def export_addons(self):
+        addons = []
+        for addon in self.config['Addons']:
+            if addon['URL'].startswith('https://www.curseforge.com/wow/addons/'):
+                url = f'cf:{addon["URL"].split("/")[-1]}'
+            elif addon['URL'].startswith('https://www.wowinterface.com/downloads/info'):
+                url = f'wowi:{addon["URL"].split("/info")[-1].replace(".html", "")}'
+            elif addon['URL'].startswith('https://www.tukui.org/addons.php?id='):
+                url = f'tu:{addon["URL"].split("?id=")[-1]}'
+            elif addon['URL'].startswith('https://www.tukui.org/classic-addons.php?id='):
+                url = f'tuc:{addon["URL"].split("?id=")[-1]}'
+            else:
+                url = addon['URL'].lower()
+            addons.append(url)
+        return f'install {",".join(sorted(addons))}'

@@ -209,7 +209,7 @@ class TUI:
                 self.cfSlugs = []
                 self.wowiSlugs = []
         commands = ['install', 'uninstall', 'update', 'force_update', 'wa_update', 'status', 'orphans', 'search',
-                    'import', 'toggle_backup', 'toggle_dev', 'toggle_wa', 'set_wa_api', 'set_wa_wow_account',
+                    'import', 'export', 'toggle_backup', 'toggle_dev', 'toggle_wa', 'set_wa_api', 'set_wa_wow_account',
                     'uri_integration', 'help', 'exit']
         addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         for addon in addons:
@@ -464,6 +464,9 @@ class TUI:
                          f'Possible matches need to be installed manually with the <ansiwhite>install</ansiwhite>'
                          f' command.'))
 
+    def c_export(self, _):
+        printft(self.core.export_addons())
+
     def c_help(self, _):
         printft(HTML('<ansigreen>install [URL]</ansigreen>\n\tCommand accepts a comma-separated list of links.\n'
                      '<ansigreen>uninstall [URL/Name]</ansigreen>\n\tCommand accepts a comma-separated list of links or'
@@ -479,6 +482,8 @@ class TUI:
                      '<ansigreen>orphans</ansigreen>\n\tPrints list of orphaned directories and files.\n'
                      '<ansigreen>search [Keyword]</ansigreen>\n\tExecutes addon search on CurseForge.\n'
                      '<ansigreen>import</ansigreen>\n\tCommand attempts to import already installed addons.\n'
+                     '<ansigreen>export</ansigreen>\n\tCommand prints list of all installed addons in a form suitable f'
+                     'or sharing.\n'
                      '<ansigreen>toggle_backup</ansigreen>\n\tEnables/disables automatic daily backup of WTF directory.'
                      '\n<ansigreen>toggle_dev [Name]</ansigreen>\n\tCommand accepts an addon name as argument.\n\tPrior'
                      'itizes alpha/beta versions for the provided addon.\n'
