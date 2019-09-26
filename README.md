@@ -23,7 +23,7 @@ By default **CurseBreaker** create backups of entire `WTF` directory.
 ## SUPPORTED URL
 - CurseForge: `https://www.curseforge.com/wow/addons/[addon_name]`, `cf:[addon_name]`
 - WoWInterface: `https://www.wowinterface.com/downloads/[addon_name]`, `wowi:[addon_id]`
-- Tukui: `https://www.tukui.org/addons.php?id=[addon_id]`, `https://www.tukui.org/classic-addons.php?id=[addon_id]`
+- Tukui: `https://www.tukui.org/addons.php?id=[addon_id]`, `https://www.tukui.org/classic-addons.php?id=[addon_id]`, `tu:[addon_id]`, `tuc:[addon_id]`
 - Tukui GitLab: `ElvUI`, `ElvUI:Dev`, `Tukui`
 - Wago: **CurseBreaker** can update auras like WeakAuras Companion.
 

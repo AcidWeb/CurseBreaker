@@ -249,8 +249,9 @@ class TUI:
                          'rgument.\n<ansigreen>Supported URLs:</ansigreen>\n\thttps://www.curseforge.com/wow/addons/[ad'
                          'don_name] <ansiwhite>|</ansiwhite> cf:[addon_name]\n\thttps://www.wowinterface.com/downloads/'
                          '[addon_name] <ansiwhite>|</ansiwhite> wowi:[addon_id]\n\thttps://www.tukui.org/addons.php?id='
-                         '[addon_id]\n\thttps://www.tukui.org/classic-addons.php?id=[addon_id]\n\tElvUI <ansiwhite>|</a'
-                         'nsiwhite> ElvUI:Dev\n\tTukui'))
+                         '[addon_id] <ansiwhite>|</ansiwhite> tu:[addon_id]\n\thttps://www.tukui.org/classic-addons.php'
+                         '?id=[addon_id] <ansiwhite>|</ansiwhite> tuc:[addon_id]\n\tElvUI <ansiwhite>|</ansiwhite> ElvU'
+                         'I:Dev\n\tTukui'))
 
     def c_uninstall(self, args):
         if args:
@@ -269,8 +270,9 @@ class TUI:
                          'rgument.\n<ansigreen>Supported URLs:</ansigreen>\n\thttps://www.curseforge.com/wow/addons/[ad'
                          'don_name] <ansiwhite>|</ansiwhite> cf:[addon_name]\n\thttps://www.wowinterface.com/downloads/'
                          '[addon_name] <ansiwhite>|</ansiwhite> wowi:[addon_id]\n\thttps://www.tukui.org/addons.php?id='
-                         '[addon_id]\n\thttps://www.tukui.org/classic-addons.php?id=[addon_id]\n\tElvUI <ansiwhite>|</a'
-                         'nsiwhite> ElvUI:Dev\n\tTukui'))
+                         '[addon_id] <ansiwhite>|</ansiwhite> tu:[addon_id]\n\thttps://www.tukui.org/classic-addons.php'
+                         '?id=[addon_id] <ansiwhite>|</ansiwhite> tuc:[addon_id]\n\tElvUI <ansiwhite>|</ansiwhite> ElvU'
+                         'I:Dev\n\tTukui'))
 
     def c_update(self, args, addline=False, update=True, force=False):
         if len(self.core.cfCache) > 0 or len(self.core.wowiCache) > 0:
@@ -491,8 +493,8 @@ class TUI:
                      '\n<ansibrightgreen>Supported URL:</ansibrightgreen>\n\thttps://www.curseforge.com/wow/addons/[add'
                      'on_name] <ansiwhite>|</ansiwhite> cf:[addon_name]\n\thttps://www.wowinterface.com/downloads/[addo'
                      'n_name] <ansiwhite>|</ansiwhite> wowi:[addon_id]\n\thttps://www.tukui.org/addons.php?id=[addon_id'
-                     ']\n\thttps://www.tukui.org/classic-addons.php?id=[addon_id]\n\tElvUI <ansiwhite>|</ansiwhite> Elv'
-                     'UI:Dev\n\tTukui'))
+                     '] <ansiwhite>|</ansiwhite> tu:[addon_id]\n\thttps://www.tukui.org/classic-addons.php?id=[addon_id'
+                     '] <ansiwhite>|</ansiwhite> tuc:[addon_id]\n\tElvUI <ansiwhite>|</ansiwhite> ElvUI:Dev\n\tTukui'))
 
     def c_exit(self, _):
         sys.exit(0)
