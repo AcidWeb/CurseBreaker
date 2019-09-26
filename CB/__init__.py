@@ -1,7 +1,7 @@
 import string
 import random
 
-__version__ = '2.6.1'
+__version__ = '2.7.0'
 __license__ = 'GPLv3'
 __copyright__ = '2019, Paweł Jastrzębski <pawelj@iosphe.re>'
 __docformat__ = 'restructuredtext en'
@@ -10,13 +10,14 @@ __docformat__ = 'restructuredtext en'
 def retry(custom_error=False):
     def wraps(func):
         def inner(*args, **kwargs):
+            description = None
             for i in range(3):
-                # noinspection PyBroadException
                 try:
                     result = func(*args, **kwargs)
                 except KeyboardInterrupt:
                     raise
-                except Exception:
+                except Exception as e:
+                    description = e
                     continue
                 else:
                     return result
@@ -24,8 +25,11 @@ def retry(custom_error=False):
                 if custom_error:
                     raise RuntimeError(custom_error)
                 else:
-                    raise RuntimeError('Failed to parse addon data. There is some issue with the website or this addon '
-                                       'don\'t have release for your client version.')
+                    if description:
+                        raise RuntimeError(f'Failed to parse addon data: {description}')
+                    else:
+                        raise RuntimeError('Unknown error during parsing addon data. '
+                                           'There may be some issue with the website.')
         return inner
     return wraps
 

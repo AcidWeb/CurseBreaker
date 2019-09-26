@@ -28,7 +28,7 @@ class GitLabAddon:
             if file_info.is_dir() and file_info.filename.count('/') == 2 and '.gitlab' not in file_info.filename:
                 self.directories.append(file_info.filename.split('/')[1])
         if len(self.directories) == 0 or self.directories == ['']:
-            raise RuntimeError
+            raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
 
     def install(self, path):
         self.get_addon()

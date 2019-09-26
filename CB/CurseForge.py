@@ -14,9 +14,9 @@ class CurseForgeAddon:
         else:
             self.payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/{project}',
                                         headers=HEADERS).json()
-        if not len(self.payload['latestFiles']) > 0:
-            raise RuntimeError
         self.name = self.payload['name'].strip().strip('\u200b')
+        if not len(self.payload['latestFiles']) > 0:
+            raise RuntimeError(f'{self.name}.\nThe project doesn\'t have any releases.')
         self.clientType = clienttype
         self.allowDev = allowdev
         self.downloadUrl = None
@@ -37,7 +37,7 @@ class CurseForgeAddon:
             if self.downloadUrl and self.currentVersion:
                 break
         else:
-            raise RuntimeError
+            raise RuntimeError(f'{self.name}.\nFailed to find release for your client version.')
 
     @retry()
     def get_addon(self):
@@ -47,7 +47,7 @@ class CurseForgeAddon:
                 self.directories.append(os.path.dirname(file))
         self.directories = list(set(self.directories))
         if len(self.directories) == 0 or self.directories == ['']:
-            raise RuntimeError
+            raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
 
     def install(self, path):
         self.get_addon()

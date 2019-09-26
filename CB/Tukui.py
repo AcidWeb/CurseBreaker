@@ -28,7 +28,7 @@ class TukuiAddon:
                 self.directories.append(os.path.dirname(file))
         self.directories = list(set(self.directories))
         if len(self.directories) == 0 or self.directories == ['']:
-            raise RuntimeError
+            raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
 
     def install(self, path):
         self.get_addon()

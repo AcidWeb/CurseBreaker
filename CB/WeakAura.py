@@ -58,8 +58,7 @@ class WeakAuraUpdater:
             payload = requests.get(f'https://data.wago.io/api/check/weakauras?ids={",".join(self.waList.keys())}',
                                    headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']}).json()
             if 'error' in payload or 'msg' in payload:
-                raise RuntimeError('Wago API failed to return proper data. '
-                                   'The page is down or provided API key is incorrect.')
+                raise RuntimeError
             for aura in payload:
                 if 'username' in aura and (not self.username or aura['username'] != self.username):
                     if aura['version'] > self.waList[aura['slug']] and \
