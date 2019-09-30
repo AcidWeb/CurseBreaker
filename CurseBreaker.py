@@ -102,7 +102,7 @@ class TUI:
                     break
             if not keypress:
                 if len(self.core.config['Addons']) > 35:
-                    self.setup_console(True)
+                    self.setup_console(len(self.core.config['Addons']))
                 self.print_header()
                 try:
                     self.c_update(None, True)
@@ -119,7 +119,7 @@ class TUI:
                 os.system('pause')
                 sys.exit(0)
         self.setup_completer()
-        self.setup_console(True)
+        self.setup_console(len(self.core.config['Addons']))
         self.print_header()
         printft(HTML('Use command <ansigreen>help</ansigreen> or press <ansigreen>TAB</ansigreen> to see a list of avai'
                      'lable commands.\nCommand <ansigreen>exit</ansigreen> or pressing <ansigreen>CTRL+D</ansigreen> wi'
@@ -185,10 +185,10 @@ class TUI:
         printft(HTML(f'<ansibrightblack>~~~ <ansibrightgreen>CurseBreaker</ansibrightgreen> <ansibrightred>v'
                      f'{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
 
-    def setup_console(self, buffer=False):
+    def setup_console(self, buffer=0):
         if getattr(sys, 'frozen', False):
-            if buffer:
-                windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 100))
+            if buffer > 0:
+                windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 100 + round(buffer, -2)))
             else:
                 windll.kernel32.SetConsoleWindowInfo(self.chandle, True, byref(wintypes.SMALL_RECT(0, 0, 99, 49)))
                 windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 50))
