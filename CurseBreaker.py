@@ -171,14 +171,21 @@ class TUI:
                 os.system('pause')
                 sys.exit(1)
 
-    def handle_exception(self, e):
-        if len(self.tableData) > 1:
+    def handle_exception(self, e, table=True):
+        if len(self.tableData) > 1 and table:
             printft(ANSI(self.table.table))
         if getattr(sys, 'frozen', False):
-            printft(HTML(f'\n<ansibrightred>{str(e)}</ansibrightred>'))
+            if isinstance(e, list):
+                for es in e:
+                    printft(HTML(f'\n<ansibrightred>{str(es)}</ansibrightred>'))
+            else:
+                printft(HTML(f'\n<ansibrightred>{str(e)}</ansibrightred>'))
         else:
-            sys.tracebacklimit = 1000
-            traceback.print_exc()
+            if isinstance(e, list):
+                for es in e:
+                    traceback.print_exception(es, es, es.__traceback__, limit=1000)
+            else:
+                traceback.print_exc(limit=1000)
 
     def print_header(self):
         os.system('cls')
@@ -284,25 +291,32 @@ class TUI:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
             self.core.bulk_check(addons)
         with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
+            exceptions = []
             for addon in addons:
-                name, versionnew, versionold, modified = self.core.\
-                    update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
-                if versionold:
-                    if versionold == versionnew:
-                        if modified:
-                            self.tableData.append([f'{AC.LIGHTRED_EX}Modified{AC.RESET}', name, versionold])
+                try:
+                    name, versionnew, versionold, modified = self.core.\
+                        update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
+                    if versionold:
+                        if versionold == versionnew:
+                            if modified:
+                                self.tableData.append([f'{AC.LIGHTRED_EX}Modified{AC.RESET}', name, versionold])
+                            else:
+                                self.tableData.append([f'{AC.GREEN}Up-to-date{AC.RESET}', name, versionold])
                         else:
-                            self.tableData.append([f'{AC.GREEN}Up-to-date{AC.RESET}', name, versionold])
+                            if modified:
+                                self.tableData.append([f'{AC.LIGHTRED_EX}Update suppressed{AC.RESET}',
+                                                       name, versionold])
+                            else:
+                                self.tableData.append([f'{AC.YELLOW}{"Updated " if update else "Update available"}'
+                                                       f'{AC.RESET}', name, f'{AC.YELLOW}{versionnew}{AC.RESET}'])
                     else:
-                        if modified:
-                            self.tableData.append([f'{AC.LIGHTRED_EX}Update suppressed{AC.RESET}', name, versionold])
-                        else:
-                            self.tableData.append([f'{AC.YELLOW}{"Updated " if update else "Update available"}'
-                                                   f'{AC.RESET}', name, f'{AC.YELLOW}{versionnew}{AC.RESET}'])
-                else:
-                    self.tableData.append([f'{AC.LIGHTBLACK_EX}Not installed{AC.RESET}', addon, ''])
+                        self.tableData.append([f'{AC.LIGHTBLACK_EX}Not installed{AC.RESET}', addon, ''])
+                except Exception as e:
+                    exceptions.append(e)
                 pbar.update(1)
         printft(ANSI('\n' + self.table.table if addline else self.table.table))
+        if len(exceptions) > 0:
+            self.handle_exception(exceptions, False)
 
     def c_force_update(self, args):
         if args:
