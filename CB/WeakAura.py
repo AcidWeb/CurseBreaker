@@ -37,7 +37,7 @@ class WeakAuraUpdater:
     def parse_storage(self):
         self.lua = LuaRuntime()
         self.urlParser = re.compile('(\w+)/(\d+)')
-        with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua'), 'r') as file:
+        with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua'), 'r', encoding='utf-8') as file:
             data = file.read().replace('WeakAurasSaved = {', '{')
         wadata = self.lua.eval(data)
         for wa in wadata['displays']:
