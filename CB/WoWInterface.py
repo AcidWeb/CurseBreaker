@@ -29,8 +29,8 @@ class WoWInterfaceAddon:
         for file in self.archive.namelist():
             if '/' not in os.path.dirname(file):
                 self.directories.append(os.path.dirname(file))
-        self.directories = list(set(self.directories))
-        if len(self.directories) == 0 or self.directories == ['']:
+        self.directories = list(filter(None, set(self.directories)))
+        if len(self.directories) == 0:
             raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
 
     def install(self, path):

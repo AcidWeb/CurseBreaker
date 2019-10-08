@@ -78,6 +78,8 @@ class Core:
                 if addon['Name'] == 'TukUI':
                     addon['Name'] = 'Tukui'
                     addon['URL'] = 'Tukui'
+                # 2.7.3
+                addon['Directories'] = list(filter(None, set(addon['Directories'])))
             # 1.3.0
             if 'URLCache' in self.config.keys():
                 self.config.pop('URLCache', None)
@@ -112,7 +114,7 @@ class Core:
             return False
 
     def cleanup(self, directories):
-        if len(directories) > 0 and directories != ['']:
+        if len(directories) > 0:
             for directory in directories:
                 shutil.rmtree(self.path / directory, ignore_errors=True)
 
