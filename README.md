@@ -19,6 +19,7 @@ By default **CurseBreaker** will create backups of entire `WTF` directory.
 ## TIPS & TRICKS
 - Command `uri_integration` can be used to enable integration with the CurseForge page.
 - Most of the commands support the comma-separated list of addons.
+- `install` command have optional `-i` flag that can be used to disable version client check.
 
 ## SUPPORTED URL
 - CurseForge: `https://www.curseforge.com/wow/addons/[addon_name]`, `cf:[addon_name]`

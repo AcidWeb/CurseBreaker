@@ -29,8 +29,8 @@ class CurseForgeAddon:
         files = sorted(self.payload['latestFiles'], key=itemgetter('id'), reverse=True)
         for status in [[3, 2, 1]] if self.allowDev else [[1], [2], [3]]:
             for f in files:
-                if f['gameVersionFlavor'] == self.clientType and f['releaseType'] in status \
-                        and '-nolib' not in f['displayName'] and not f['isAlternate']:
+                if (self.clientType == 'wow' or f['gameVersionFlavor'] == self.clientType) and \
+                        f['releaseType'] in status and '-nolib' not in f['displayName'] and not f['isAlternate']:
                     self.downloadUrl = f['downloadUrl']
                     self.currentVersion = f['displayName']
                     break

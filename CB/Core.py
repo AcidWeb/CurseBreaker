@@ -43,6 +43,7 @@ class Core:
         else:
             self.config = {'Addons': [],
                            'CurseCache': {},
+                           'IgnoreClientVersion': {},
                            'Backup': {'Enabled': True, 'Number': 7},
                            'Version': __version__,
                            'WAUsername': '',
@@ -95,6 +96,9 @@ class Core:
                 self.config['WAAPIKey'] = ''
             if 'WACompanionVersion' not in self.config.keys():
                 self.config['WACompanionVersion'] = 0
+            # 2.8.0
+            if 'IgnoreClientVersion' not in self.config.keys():
+                self.config['IgnoreClientVersion'] = {}
             self.config['Version'] = __version__
             self.save_config()
 
@@ -120,7 +124,9 @@ class Core:
 
     def parse_url(self, url):
         if url.startswith('https://www.curseforge.com/wow/addons/'):
-            return CurseForgeAddon(self.parse_cf_id(url), self.cfCache, self.clientType, self.check_if_dev(url))
+            return CurseForgeAddon(self.parse_cf_id(url), self.cfCache,
+                                   'wow' if url in self.config['IgnoreClientVersion'].keys() else self.clientType,
+                                   self.check_if_dev(url))
         elif url.startswith('https://www.wowinterface.com/downloads/'):
             return WoWInterfaceAddon(url, self.wowiCache)
         elif url.startswith('https://www.tukui.org/addons.php?id='):
@@ -151,7 +157,7 @@ class Core:
         else:
             raise NotImplementedError('Provided URL is not supported.')
 
-    def add_addon(self, url):
+    def add_addon(self, url, ignore):
         if 'twitch://' in url:
             url = url.split('/download-client')[0].replace('twitch://', 'https://').strip()
         elif url.startswith('cf:'):
@@ -164,6 +170,8 @@ class Core:
             url = f'https://www.tukui.org/classic-addons.php?id={url[4:]}'
         addon = self.check_if_installed(url)
         if not addon:
+            if ignore:
+                self.config['IgnoreClientVersion'][url] = True
             new = self.parse_url(url)
             new.install(self.path)
             checksums = {}
@@ -183,6 +191,7 @@ class Core:
         old = self.check_if_installed(url)
         if old:
             self.cleanup(old['Directories'])
+            self.config['IgnoreClientVersion'].pop(old['URL'], None)
             self.config['Addons'][:] = [d for d in self.config['Addons'] if d.get('URL') != url
                                         and d.get('Name') != url]
             self.save_config()

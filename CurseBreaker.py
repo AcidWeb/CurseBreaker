@@ -249,10 +249,15 @@ class TUI:
 
     def c_install(self, args):
         if args:
+            if args.startswith('-i '):
+                args = args[3:]
+                optignore = True
+            else:
+                optignore = False
             addons = [addon.strip() for addon in args.split(',')]
             with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
                 for addon in addons:
-                    installed, name, version = self.core.add_addon(addon)
+                    installed, name, version = self.core.add_addon(addon, optignore)
                     if installed:
                         self.tableData.append([f'{AC.GREEN}Installed{AC.RESET}', name, version])
                     else:
@@ -262,11 +267,12 @@ class TUI:
             printft(ANSI(self.table.table))
         else:
             printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a comma-separated list of links as an a'
-                         'rgument.\n<ansigreen>Supported URLs:</ansigreen>\n\thttps://www.curseforge.com/wow/addons/[ad'
-                         'don_name] <ansiwhite>|</ansiwhite> cf:[addon_name]\n\thttps://www.wowinterface.com/downloads/'
-                         '[addon_name] <ansiwhite>|</ansiwhite> wowi:[addon_id]\n\thttps://www.tukui.org/addons.php?id='
-                         '[addon_id] <ansiwhite>|</ansiwhite> tu:[addon_id]\n\thttps://www.tukui.org/classic-addons.php'
-                         '?id=[addon_id] <ansiwhite>|</ansiwhite> tuc:[addon_id]\n\tElvUI <ansiwhite>|</ansiwhite> ElvU'
+                         'rgument.\n\tOption <ansiwhite>-i</ansiwhite> will disable the client version check.\n<ansigre'
+                         'en>Supported URLs:</ansigreen>\n\thttps://www.curseforge.com/wow/addons/[addon_name] <ansiwhi'
+                         'te>|</ansiwhite> cf:[addon_name]\n\thttps://www.wowinterface.com/downloads/[addon_name] <ansi'
+                         'white>|</ansiwhite> wowi:[addon_id]\n\thttps://www.tukui.org/addons.php?id=[addon_id] <ansiwh'
+                         'ite>|</ansiwhite> tu:[addon_id]\n\thttps://www.tukui.org/classic-addons.php?id=[addon_id] <an'
+                         'siwhite>|</ansiwhite> tuc:[addon_id]\n\tElvUI <ansiwhite>|</ansiwhite> ElvU'
                          'I:Dev\n\tTukui'))
 
     def c_uninstall(self, args):
