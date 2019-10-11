@@ -11,3 +11,4 @@ WTF-Backup/
 /Setup.bat
 /Pipfile
 /Pipfile.lock
+.DS_Store
