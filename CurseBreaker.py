@@ -85,7 +85,7 @@ class TUI:
                          'Try starting it with administrative privileges.</ansibrightred>\n'))
             os.system('pause')
             sys.exit(1)
-        self.auto_update()
+        # self.auto_update()
         self.core.init_config()
         self.setup_table()
         # Curse URI Support
@@ -583,24 +583,14 @@ class TUI:
 # save the terminal settings
 fd = sys.stdin.fileno()
 new_term = termios.tcgetattr(fd)
-old_term = termios.tcgetattr(fd)
 
 # new terminal setting unbuffered
 new_term[3] = (new_term[3] & ~termios.ICANON & ~termios.ECHO)
 
 
-# switch to normal terminal
-def set_normal_term():
-    termios.tcsetattr(fd, termios.TCSAFLUSH, old_term)
-
-
 # switch to unbuffered terminal
 def set_curses_term():
     termios.tcsetattr(fd, termios.TCSAFLUSH, new_term)
-
-
-def putch(ch):
-    sys.stdout.write(ch)
 
 
 def kbhit():
@@ -614,7 +604,6 @@ if __name__ == '__main__':
     if current_os == 'Windows':
         os.system(f'title CurseBreaker v{__version__}')
     if current_os == 'Darwin':
-        atexit.register(set_normal_term)
         set_curses_term()
         os.system(f'echo "\033]0;CurseBreaker v{__version__}\007"')
     if current_os == 'Linux':
