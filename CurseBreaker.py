@@ -26,6 +26,9 @@ if current_os == 'Windows':
     from ctypes import windll, wintypes, byref
 
 if current_os == 'Darwin':
+    from select import select
+    import termios
+    import atexit
     import getch
 
 
@@ -121,11 +124,18 @@ class TUI:
             starttime = time.time()
             keypress = None
             while True:
-                if getch.kbhit():
-                    keypress = getch.getch()
-                    break
-                elif time.time() - starttime > 5:
-                    break
+                if current_os == 'Darwin':
+                    if kbhit():
+                        keypress = getch.getch()
+                        break
+                    elif time.time() - starttime > 5:
+                        break
+                if current_os == 'Windows':
+                    if msvcrt.kbhit():
+                        keypress = msvcrt.getch()
+                        break
+                    elif time.time() - starttime > 5:
+                        break
             if not keypress:
                 if len(self.core.config['Addons']) > 35:
                     self.setup_console(len(self.core.config['Addons']))
@@ -570,12 +580,42 @@ class TUI:
         sys.exit(0)
 
 
+# save the terminal settings
+fd = sys.stdin.fileno()
+new_term = termios.tcgetattr(fd)
+old_term = termios.tcgetattr(fd)
+
+# new terminal setting unbuffered
+new_term[3] = (new_term[3] & ~termios.ICANON & ~termios.ECHO)
+
+
+# switch to normal terminal
+def set_normal_term():
+    termios.tcsetattr(fd, termios.TCSAFLUSH, old_term)
+
+
+# switch to unbuffered terminal
+def set_curses_term():
+    termios.tcsetattr(fd, termios.TCSAFLUSH, new_term)
+
+
+def putch(ch):
+    sys.stdout.write(ch)
+
+
+def kbhit():
+    dr, dw, de = select([sys.stdin], [], [], 0)
+    return dr != []
+
+
 if __name__ == '__main__':
     if getattr(sys, 'frozen', False):
         os.chdir(os.path.dirname(os.path.abspath(sys.executable)))
     if current_os == 'Windows':
         os.system(f'title CurseBreaker v{__version__}')
     if current_os == 'Darwin':
+        atexit.register(set_normal_term)
+        set_curses_term()
         os.system(f'echo "\033]0;CurseBreaker v{__version__}\007"')
     if current_os == 'Linux':
         os.system('echo "Linux is not currently supported" && read -p "Press any key to exit" && exit')
