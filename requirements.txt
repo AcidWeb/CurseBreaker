@@ -1,3 +1,4 @@
+getch
 terminaltables
 prompt_toolkit
 checksumdir

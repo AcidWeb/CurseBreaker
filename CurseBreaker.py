@@ -3,21 +3,31 @@ import io
 import sys
 import time
 import gzip
-import msvcrt
 import shutil
 import pickle
 import requests
 import traceback
+import platform
 from tqdm import tqdm
 from pathlib import Path
 from terminaltables import SingleTable
 from prompt_toolkit import PromptSession, HTML, ANSI, print_formatted_text as printft
 from prompt_toolkit.completion import WordCompleter
-from ctypes import windll, wintypes, byref
 from distutils.version import StrictVersion
 from CB import AC, HEADERS, __version__
 from CB.Core import Core
 from CB.WeakAura import WeakAuraUpdater
+
+# Platform Specific Modules
+current_os = platform.system()
+
+if current_os == 'Windows':
+    import msvcrt
+    from ctypes import windll, wintypes, byref
+
+if current_os == 'Darwin':
+    import getch
+
 
 
 class TUI:
@@ -29,23 +39,39 @@ class TUI:
         self.cfSlugs = None
         self.wowiSlugs = None
         self.completer = None
-        self.chandle = windll.kernel32.GetStdHandle(-11)
+        if current_os == 'Windows':
+            self.chandle = windll.kernel32.GetStdHandle(-11)
         sys.tracebacklimit = 0
+
+    def faildir(self):
+        printft(HTML(
+            '<ansibrightred>This executable should be placed in the same directory where Wow.exe or World of Warcraft (macOS) is locate'
+            'd.</ansibrightred>\n'))
+        if current_os == 'Windows':
+            os.system('pause')
+        if current_os == 'Darwin':
+            os.system('read -p "Press any key to exit"')
+
+        sys.exit(1)
 
     def start(self):
         self.setup_console()
         self.print_header()
         # Check if executable is in good location
-        if not os.path.isfile('Wow.exe') or not os.path.isdir(Path('Interface/AddOns')) or \
-                not os.path.isdir('WTF'):
-            printft(HTML('<ansibrightred>This executable should be placed in the same directory where Wow.exe is locate'
-                         'd.</ansibrightred>\n'))
-            os.system('pause')
-            sys.exit(1)
+        if current_os == 'Darwin':
+            if not os.path.isdir('World of Warcraft.app') or not os.path.isdir(Path('Interface/AddOns')) or \
+            not os.path.isdir('WTF'):
+                self.faildir()
+
+        if current_os == 'Windows':
+            if not os.path.isfile('Wow.exe') or not os.path.isdir(Path('Interface/AddOns')) or \
+            not os.path.isdir('WTF'):
+                self.faildir()
+
         # Detect Classic client
         if os.path.basename(os.path.dirname(sys.executable)) == '_classic_':
             self.core.clientType = 'wow_classic'
-            os.system(f'title CurseBreaker v{__version__} - Classic')
+            self.update_titlebar(f'CurseBreaker v{__version__} - Classic')
         # Check if client have write access
         try:
             with open('PermissionTest', 'w') as _:
@@ -95,8 +121,8 @@ class TUI:
             starttime = time.time()
             keypress = None
             while True:
-                if msvcrt.kbhit():
-                    keypress = msvcrt.getch()
+                if getch.kbhit():
+                    keypress = getch.getch()
                     break
                 elif time.time() - starttime > 5:
                     break
@@ -188,18 +214,26 @@ class TUI:
             else:
                 traceback.print_exc(limit=1000)
 
+    def update_titlebar(self, s):
+        if current_os == 'Windows':
+            os.system(f'title {str(s)}')
+
+        if current_os == 'Darwin':
+            os.system(f'echo "\033]0;{str(s)}\007"')
+
     def print_header(self):
-        os.system('cls')
+        os.system('clear')
         printft(HTML(f'<ansibrightblack>~~~ <ansibrightgreen>CurseBreaker</ansibrightgreen> <ansibrightred>v'
                      f'{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
 
     def setup_console(self, buffer=0):
         if getattr(sys, 'frozen', False):
-            if buffer > 0:
-                windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 100 + round(buffer, -2)))
-            else:
-                windll.kernel32.SetConsoleWindowInfo(self.chandle, True, byref(wintypes.SMALL_RECT(0, 0, 99, 49)))
-                windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 50))
+            if current_os == 'Windows':
+                if buffer > 0:
+                    windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 100 + round(buffer, -2)))
+                else:
+                    windll.kernel32.SetConsoleWindowInfo(self.chandle, True, byref(wintypes.SMALL_RECT(0, 0, 99, 49)))
+                    windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 50))
         else:
             os.system('mode con: cols=100 lines=50')
 
@@ -539,6 +573,12 @@ class TUI:
 if __name__ == '__main__':
     if getattr(sys, 'frozen', False):
         os.chdir(os.path.dirname(os.path.abspath(sys.executable)))
-    os.system(f'title CurseBreaker v{__version__}')
+    if current_os == 'Windows':
+        os.system(f'title CurseBreaker v{__version__}')
+    if current_os == 'Darwin':
+        os.system(f'echo "\033]0;CurseBreaker v{__version__}\007"')
+    if current_os == 'Linux':
+        os.system('echo "Linux is not currently supported" && read -p "Press any key to exit" && exit')
+
     app = TUI()
     app.start()
