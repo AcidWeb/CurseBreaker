@@ -173,6 +173,7 @@ class TUI:
 
     def handle_exception(self, e, table=True):
         if len(self.tableData) > 1 and table:
+            self.sanitize_table()
             printft(ANSI(self.table.table))
         if getattr(sys, 'frozen', False):
             if isinstance(e, list):
@@ -239,6 +240,13 @@ class TUI:
         self.table = SingleTable(self.tableData)
         self.table.justify_columns[0] = 'center'
 
+    def sanitize_table(self):
+        if not self.table.ok:
+            mwidth = self.table.column_max_width(1)
+            for row in self.table.table_data[1:]:
+                if len(row[1]) > mwidth:
+                    row[1] = row[1][:mwidth - 3] + '...'
+
     def c_install(self, args):
         if args:
             addons = [addon.strip() for addon in args.split(',')]
@@ -250,6 +258,7 @@ class TUI:
                     else:
                         self.tableData.append([f'{AC.LIGHTBLACK_EX}Already installed{AC.RESET}', name, version])
                     pbar.update(1)
+            self.sanitize_table()
             printft(ANSI(self.table.table))
         else:
             printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a comma-separated list of links as an a'
@@ -271,6 +280,7 @@ class TUI:
                     else:
                         self.tableData.append([f'{AC.LIGHTBLACK_EX}Not installed{AC.RESET}', addon, ''])
                     pbar.update(1)
+            self.sanitize_table()
             printft(ANSI(self.table.table))
         else:
             printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a comma-separated list of links as an a'
@@ -314,6 +324,7 @@ class TUI:
                 except Exception as e:
                     exceptions.append(e)
                 pbar.update(1)
+        self.sanitize_table()
         printft(ANSI('\n' + self.table.table if addline else self.table.table))
         if len(exceptions) > 0:
             self.handle_exception(exceptions, False)
