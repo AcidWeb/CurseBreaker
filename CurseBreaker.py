@@ -83,7 +83,10 @@ class TUI:
         except IOError:
             printft(HTML('<ansibrightred>CurseBreaker doesn\'t have write rights for the current directory.\n'
                          'Try starting it with administrative privileges.</ansibrightred>\n'))
-            os.system('pause')
+            if current_os == 'Windows':
+                os.system('pause')
+            if current_os == 'Darwin':
+                os.system('read -p "Press any key to exit"')
             sys.exit(1)
         # self.auto_update()
         self.core.init_config()
@@ -152,7 +155,10 @@ class TUI:
                 except Exception as e:
                     self.handle_exception(e)
                 printft('')
-                os.system('pause')
+                if current_os == 'Windows':
+                    os.system('pause')
+                if current_os == 'Darwin':
+                    os.system('read -p "Press any key to exit"')
                 sys.exit(0)
         self.setup_completer()
         self.setup_console(len(self.core.config['Addons']))
@@ -200,11 +206,17 @@ class TUI:
                         f.write(payload.content)
                     printft(HTML(f'<ansibrightgreen>Update complete! Please restart the application.</ansibrightgreen'
                                  f'>\n\n<ansigreen>Changelog:</ansigreen>\n{changelog}\n'))
-                    os.system('pause')
+                    if current_os == 'Windows':
+                        os.system('pause')
+                    if current_os == 'Darwin':
+                        os.system('read -p "Press any key to exit"')
                     sys.exit(0)
             except Exception as e:
                 printft(HTML(f'<ansibrightred>Update failed!\n\nReason: {str(e)}</ansibrightred>\n'))
-                os.system('pause')
+                if current_os == 'Windows':
+                    os.system('pause')
+                if current_os == 'Darwin':
+                    os.system('read -p "Press any key to exit"')
                 sys.exit(1)
 
     def handle_exception(self, e, table=True):
