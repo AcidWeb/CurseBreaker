@@ -10,7 +10,6 @@ import traceback
 import platform
 from tqdm import tqdm
 from pathlib import Path
-from terminaltables import DoubleTable as SingleTable
 from prompt_toolkit import PromptSession, HTML, ANSI, print_formatted_text as printft
 from prompt_toolkit.completion import WordCompleter
 from distutils.version import StrictVersion
@@ -24,12 +23,14 @@ current_os = platform.system()
 if current_os == 'Windows':
     import msvcrt
     from ctypes import windll, wintypes, byref
+    from terminaltables import SingleTable
 
 if current_os == 'Darwin':
     from select import select
     import termios
     import atexit
     import getch
+    from terminaltables import DoubleTable as SingleTable
 
 
 
