@@ -10,7 +10,7 @@ import traceback
 import platform
 from tqdm import tqdm
 from pathlib import Path
-from terminaltables import SingleTable
+from terminaltables import DoubleTable as SingleTable
 from prompt_toolkit import PromptSession, HTML, ANSI, print_formatted_text as printft
 from prompt_toolkit.completion import WordCompleter
 from distutils.version import StrictVersion
