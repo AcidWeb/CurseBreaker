@@ -436,8 +436,8 @@ class TUI:
                     printft(HTML('More than one WoW account detected.\nPlease use <ansiwhite>set_wa_wow_account</ansiwh'
                                  'ite> command to set the correct account name.'))
                 else:
-                    printft(HTML('\n<ansigreen>More than one WoW account detected.</ansigreen>\nPlease use <ansiwhite>t'
-                                 'oggle_wa_account</ansiwhite> command to set the correct account name.'))
+                    printft(HTML('\n<ansigreen>More than one WoW account detected.</ansigreen>\nPlease use <ansiwhite>s'
+                                 'et_wa_wow_account</ansiwhite> command to set the correct account name.'))
                 return
             if wa.accountName:
                 if not self.core.config['WAAccountName']:
