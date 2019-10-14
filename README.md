@@ -1,6 +1,7 @@
 # CurseBreaker
 
 ![GitHub release](https://img.shields.io/github/release/AcidWeb/CurseBreaker) ![AppVeyor](https://img.shields.io/appveyor/ci/AcidWeb/cursebreaker) ![GitHub Releases](https://img.shields.io/github/downloads/AcidWeb/CurseBreaker/latest/total) ![GitHub All Releases](https://img.shields.io/github/downloads/AcidWeb/CurseBreaker/total)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FAcidWeb%2FCurseBreaker.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FAcidWeb%2FCurseBreaker?ref=badge_shield)
 
 CLI addon updater for World of Warcraft.
 
@@ -37,3 +38,7 @@ Additionally Wago API key can be set with `set_wa_api` command so non-public aur
 **CurseBreaker** is free software/open source, and is distributed under the GNU General Public License v3.
 
 Icon made by [Nikita Golubev](https://www.flaticon.com/authors/nikita-golubev) is licensed by [CC 3.0 BY](http://creativecommons.org/licenses/by/3.0/).
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FAcidWeb%2FCurseBreaker.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FAcidWeb%2FCurseBreaker?ref=badge_large)
