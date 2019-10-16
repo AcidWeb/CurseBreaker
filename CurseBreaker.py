@@ -32,11 +32,12 @@ if current_os == 'Darwin':
     import getch
     from terminaltables import DoubleTable as SingleTable
 
+
 def cbpause(msg):
     if current_os == 'Windows':
         os.system('pause')
     else:
-        if (msg):
+        if msg:
             os.system(f'read -p "s{__msg__}"')
         else:
             os.system('read -p "Press any key to exit"')
@@ -55,20 +56,17 @@ class TUI:
             self.chandle = windll.kernel32.GetStdHandle(-11)
         sys.tracebacklimit = 0
 
-    def faildir(self):
-        printft(HTML(
-            '<ansibrightred>This executable should be placed in the same directory where Wow.exe or World of Warcraft (macOS) is locate'
-            'd.</ansibrightred>\n'))
-        cbpause()
-        sys.exit(1)
-
     def start(self):
         self.setup_console()
         self.print_header()
         # Check if executable is in good location
         if not os.path.isdir('World of Warcraft.app') and not os.path.isfile('Wow.exe') or \
         not os.path.isdir(Path('Interface/AddOns')) or not os.path.isdir('WTF'):
-            self.faildir()
+            printft(HTML(
+                '<ansibrightred>This executable should be placed in the same directory where Wow.exe or '
+                ' World of Warcraft.app is located.</ansibrightred>\n'))
+            cbpause()
+            sys.exit(1)
 
         # Detect Classic client
         if os.path.basename(os.path.dirname(sys.executable)) == '_classic_':
