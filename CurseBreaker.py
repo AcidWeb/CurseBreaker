@@ -33,14 +33,11 @@ if current_os == 'Darwin':
     from terminaltables import DoubleTable as SingleTable
 
 
-def cbpause(msg):
+def cbpause(pausemsg = "Press any key to exit"):
     if current_os == 'Windows':
         os.system('pause')
     else:
-        if msg:
-            os.system(f'read -p "s{__msg__}"')
-        else:
-            os.system('read -p "Press any key to exit"')
+        os.system(f'read -p "{pausemsg}"')
 
 
 class TUI:
