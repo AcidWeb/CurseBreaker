@@ -281,6 +281,8 @@ class Core:
         orphaneconfig = []
         directories = []
         directoriesgit = []
+        ignoredirectories = ['.DS_Store']
+
         for addon in self.config['Addons']:
             for directory in addon['Directories']:
                 directories.append(directory)
@@ -289,7 +291,7 @@ class Core:
                 if os.path.isdir(self.path / directory / '.git'):
                     orphanedaddon.append(f'{directory} [GIT]')
                     directoriesgit.append(directory)
-                else:
+                elif directory not in ignoredirectories:
                     orphanedaddon.append(directory)
         directories += directoriesgit + orphanedaddon
         for root, dirs, files in os.walk('WTF/'):
