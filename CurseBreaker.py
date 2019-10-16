@@ -59,26 +59,16 @@ class TUI:
         printft(HTML(
             '<ansibrightred>This executable should be placed in the same directory where Wow.exe or World of Warcraft (macOS) is locate'
             'd.</ansibrightred>\n'))
-        if current_os == 'Windows':
-            os.system('pause')
-        if current_os == 'Darwin':
-            os.system('read -p "Press any key to exit"')
-
+        cbpause()
         sys.exit(1)
 
     def start(self):
         self.setup_console()
         self.print_header()
         # Check if executable is in good location
-        if current_os == 'Darwin':
-            if not os.path.isdir('World of Warcraft.app') or not os.path.isdir(Path('Interface/AddOns')) or \
-            not os.path.isdir('WTF'):
-                self.faildir()
-
-        if current_os == 'Windows':
-            if not os.path.isfile('Wow.exe') or not os.path.isdir(Path('Interface/AddOns')) or \
-            not os.path.isdir('WTF'):
-                self.faildir()
+        if not os.path.isdir('World of Warcraft.app') and not os.path.isfile('Wow.exe') or \
+        not os.path.isdir(Path('Interface/AddOns')) or not os.path.isdir('WTF'):
+            self.faildir()
 
         # Detect Classic client
         if os.path.basename(os.path.dirname(sys.executable)) == '_classic_':
@@ -92,10 +82,7 @@ class TUI:
         except IOError:
             printft(HTML('<ansibrightred>CurseBreaker doesn\'t have write rights for the current directory.\n'
                          'Try starting it with administrative privileges.</ansibrightred>\n'))
-            if current_os == 'Windows':
-                os.system('pause')
-            if current_os == 'Darwin':
-                os.system('read -p "Press any key to exit"')
+            cbpause()
             sys.exit(1)
         # self.auto_update()
         self.core.init_config()
@@ -164,10 +151,7 @@ class TUI:
                 except Exception as e:
                     self.handle_exception(e)
                 printft('')
-                if current_os == 'Windows':
-                    os.system('pause')
-                if current_os == 'Darwin':
-                    os.system('read -p "Press any key to exit"')
+                cbpause()
                 sys.exit(0)
         self.setup_completer()
         self.setup_console(len(self.core.config['Addons']))
@@ -215,17 +199,11 @@ class TUI:
                         f.write(payload.content)
                     printft(HTML(f'<ansibrightgreen>Update complete! Please restart the application.</ansibrightgreen'
                                  f'>\n\n<ansigreen>Changelog:</ansigreen>\n{changelog}\n'))
-                    if current_os == 'Windows':
-                        os.system('pause')
-                    if current_os == 'Darwin':
-                        os.system('read -p "Press any key to exit"')
+                    cbpause()
                     sys.exit(0)
             except Exception as e:
                 printft(HTML(f'<ansibrightred>Update failed!\n\nReason: {str(e)}</ansibrightred>\n'))
-                if current_os == 'Windows':
-                    os.system('pause')
-                if current_os == 'Darwin':
-                    os.system('read -p "Press any key to exit"')
+                cbpause()
                 sys.exit(1)
 
     def handle_exception(self, e, table=True):
@@ -601,22 +579,22 @@ class TUI:
         sys.exit(0)
 
 
-# save the terminal settings
-fd = sys.stdin.fileno()
-new_term = termios.tcgetattr(fd)
+if current_os != 'Windows':
+    if getattr(sys, 'frozen', False):
+        # save the terminal settings
+        fd = sys.stdin.fileno()
+        new_term = termios.tcgetattr(fd)
 
-# new terminal setting unbuffered
-new_term[3] = (new_term[3] & ~termios.ICANON & ~termios.ECHO)
+        # new terminal setting unbuffered
+        new_term[3] = (new_term[3] & ~termios.ICANON & ~termios.ECHO)
 
+    # switch to unbuffered terminal
+    def set_curses_term():
+        termios.tcsetattr(fd, termios.TCSAFLUSH, new_term)
 
-# switch to unbuffered terminal
-def set_curses_term():
-    termios.tcsetattr(fd, termios.TCSAFLUSH, new_term)
-
-
-def kbhit():
-    dr, dw, de = select([sys.stdin], [], [], 0)
-    return dr != []
+    def kbhit():
+        dr, dw, de = select([sys.stdin], [], [], 0)
+        return dr != []
 
 
 if __name__ == '__main__':
@@ -624,11 +602,16 @@ if __name__ == '__main__':
         os.chdir(os.path.dirname(os.path.abspath(sys.executable)))
     if current_os == 'Windows':
         os.system(f'title CurseBreaker v{__version__}')
-    if current_os == 'Darwin':
+    elif current_os == 'Darwin':
         set_curses_term()
         os.system(f'echo "\033]0;CurseBreaker v{__version__}\007"')
-    if current_os == 'Linux':
-        os.system('echo "Linux is not currently supported" && read -p "Press any key to exit" && exit')
+    else:
+        os.system('echo "We were unable to identify your OS, but you have built the script. We will go ahead'
+                  ' and try to launch the app but we make no promises of stability. To continue, press any'
+                  ' key or press CTRL+D to exit now."')
+        cbpause("Press any key to continue or CTRL+D to exit")
+        set_curses_term()
+        os.system(f'echo "\033]0;CurseBreaker v{__version__}\007"')
 
     app = TUI()
     app.start()
