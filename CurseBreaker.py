@@ -229,7 +229,7 @@ class TUI:
             os.system(f'echo "\033]0;{str(s)}\007"')
 
     def print_header(self):
-        os.system('clear')
+        os.system('cls') if current_os == 'Windows' else os.system('clear')
         printft(HTML(f'<ansibrightblack>~~~ <ansibrightgreen>CurseBreaker</ansibrightgreen> <ansibrightred>v'
                      f'{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
 
