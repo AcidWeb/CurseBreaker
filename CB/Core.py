@@ -374,14 +374,14 @@ class Core:
                 requests.get(f'https://storage.googleapis.com/cursebreaker/cfdir{self.clientType}.pickle.gz',
                              headers=HEADERS).content)))
         addon_dirs = os.listdir(self.path)
-        ignored = ['ElvUI_OptionsUI', 'Tukui_Config']
+        ignored = ['ElvUI_OptionsUI', 'Tukui_Config', '.DS_Store']
         hit = []
         partial_hit = []
         partial_hit_tmp = []
         partial_hit_raw = []
         miss = []
         for directory in addon_dirs:
-            if not os.path.isdir(self.path / directory / '.git') and directory != '.DS_Store':
+            if not os.path.isdir(self.path / directory / '.git'):
                 if directory in self.cfDirs:
                     if len(self.cfDirs[directory]) > 1:
                         partial_hit_raw.append(self.cfDirs[directory])
