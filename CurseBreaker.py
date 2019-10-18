@@ -153,7 +153,6 @@ class TUI:
                     printft('Command not found.')
 
     def auto_update(self):
-        # TODO Support other platforms
         if getattr(sys, 'frozen', False):
             try:
                 if os.path.isfile(sys.executable + '.old'):
@@ -162,8 +161,13 @@ class TUI:
                                        headers=HEADERS).json()
                 remoteversion = payload['name']
                 changelog = payload['body']
-                url = payload['assets'][0]['browser_download_url']
-                if StrictVersion(remoteversion[1:]) > StrictVersion(__version__):
+                url = None
+                for binary in payload['assets']:
+                    if (self.os == 'Windows' and '.exe' in binary['name']) or \
+                            (self.os != 'Windows' and '.exe' not in binary['name']):
+                        url = binary['browser_download_url']
+                        break
+                if url and StrictVersion(remoteversion[1:]) > StrictVersion(__version__):
                     printft(HTML('<ansigreen>Updating CurseBreaker...</ansigreen>'))
                     shutil.move(sys.executable, sys.executable + '.old')
                     payload = requests.get(url, headers=HEADERS)
