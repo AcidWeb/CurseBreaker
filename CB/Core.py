@@ -281,6 +281,7 @@ class Core:
         orphaneconfig = []
         directories = []
         directoriesgit = []
+        ignored = ['.DS_Store']
         for addon in self.config['Addons']:
             for directory in addon['Directories']:
                 directories.append(directory)
@@ -289,7 +290,7 @@ class Core:
                 if os.path.isdir(self.path / directory / '.git'):
                     orphanedaddon.append(f'{directory} [GIT]')
                     directoriesgit.append(directory)
-                else:
+                elif directory not in ignored:
                     orphanedaddon.append(directory)
         directories += directoriesgit + orphanedaddon
         for root, dirs, files in os.walk('WTF/'):
@@ -372,7 +373,7 @@ class Core:
                 requests.get(f'https://storage.googleapis.com/cursebreaker/cfdir{self.clientType}.pickle.gz',
                              headers=HEADERS).content)))
         addon_dirs = os.listdir(self.path)
-        ignored = ['ElvUI_OptionsUI', 'Tukui_Config']
+        ignored = ['ElvUI_OptionsUI', 'Tukui_Config', '.DS_Store']
         hit = []
         partial_hit = []
         partial_hit_tmp = []

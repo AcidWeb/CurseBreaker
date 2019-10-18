@@ -3,21 +3,25 @@ import io
 import sys
 import time
 import gzip
-import msvcrt
+import glob
 import shutil
 import pickle
 import requests
+import platform
 import traceback
 from tqdm import tqdm
 from pathlib import Path
 from terminaltables import SingleTable
 from prompt_toolkit import PromptSession, HTML, ANSI, print_formatted_text as printft
 from prompt_toolkit.completion import WordCompleter
-from ctypes import windll, wintypes, byref
 from distutils.version import StrictVersion
 from CB import AC, HEADERS, __version__
 from CB.Core import Core
+from CB.Compat import pause, timeout, clear, set_terminal_title, set_terminal_size, getch, kbhit, UnicodeSingleTable
 from CB.WeakAura import WeakAuraUpdater
+
+if platform.system() == 'Windows':
+    from ctypes import windll, wintypes, byref
 
 
 class TUI:
@@ -29,23 +33,25 @@ class TUI:
         self.cfSlugs = None
         self.wowiSlugs = None
         self.completer = None
-        self.chandle = windll.kernel32.GetStdHandle(-11)
+        self.os = platform.system()
+        if self.os == 'Windows':
+            self.chandle = windll.kernel32.GetStdHandle(-11)
         sys.tracebacklimit = 0
 
     def start(self):
         self.setup_console()
         self.print_header()
         # Check if executable is in good location
-        if not os.path.isfile('Wow.exe') or not os.path.isdir(Path('Interface/AddOns')) or \
-                not os.path.isdir('WTF'):
+        if not glob.glob('World*.app') and not os.path.isfile('Wow.exe') or \
+                not os.path.isdir(Path('Interface/AddOns')) or not os.path.isdir('WTF'):
             printft(HTML('<ansibrightred>This executable should be placed in the same directory where Wow.exe is locate'
                          'd.</ansibrightred>\n'))
-            os.system('pause')
+            pause()
             sys.exit(1)
         # Detect Classic client
         if os.path.basename(os.path.dirname(sys.executable)) == '_classic_':
             self.core.clientType = 'wow_classic'
-            os.system(f'title CurseBreaker v{__version__} - Classic')
+            set_terminal_title(f'title CurseBreaker v{__version__} - Classic')
         # Check if client have write access
         try:
             with open('PermissionTest', 'w') as _:
@@ -54,7 +60,7 @@ class TUI:
         except IOError:
             printft(HTML('<ansibrightred>CurseBreaker doesn\'t have write rights for the current directory.\n'
                          'Try starting it with administrative privileges.</ansibrightred>\n'))
-            os.system('pause')
+            pause()
             sys.exit(1)
         self.auto_update()
         self.core.init_config()
@@ -65,7 +71,7 @@ class TUI:
                 self.c_install(sys.argv[1].strip())
             except Exception as e:
                 self.handle_exception(e)
-            os.system('timeout /t 5')
+            timeout()
             sys.exit(0)
         if len(sys.argv) == 2 and '.ccip' in sys.argv[1]:
             try:
@@ -75,7 +81,7 @@ class TUI:
                     os.remove(path)
             except Exception as e:
                 self.handle_exception(e)
-            os.system('timeout /t 5')
+            timeout()
             sys.exit(0)
         # CLI command
         if len(sys.argv) >= 2:
@@ -95,8 +101,8 @@ class TUI:
             starttime = time.time()
             keypress = None
             while True:
-                if msvcrt.kbhit():
-                    keypress = msvcrt.getch()
+                if kbhit():
+                    keypress = getch()
                     break
                 elif time.time() - starttime > 5:
                     break
@@ -116,7 +122,7 @@ class TUI:
                 except Exception as e:
                     self.handle_exception(e)
                 printft('')
-                os.system('pause')
+                pause()
                 sys.exit(0)
         self.setup_completer()
         self.setup_console(len(self.core.config['Addons']))
@@ -147,6 +153,7 @@ class TUI:
                     printft('Command not found.')
 
     def auto_update(self):
+        # TODO Support other platforms
         if getattr(sys, 'frozen', False):
             try:
                 if os.path.isfile(sys.executable + '.old'):
@@ -164,11 +171,11 @@ class TUI:
                         f.write(payload.content)
                     printft(HTML(f'<ansibrightgreen>Update complete! Please restart the application.</ansibrightgreen'
                                  f'>\n\n<ansigreen>Changelog:</ansigreen>\n{changelog}\n'))
-                    os.system('pause')
+                    pause()
                     sys.exit(0)
             except Exception as e:
                 printft(HTML(f'<ansibrightred>Update failed!\n\nReason: {str(e)}</ansibrightred>\n'))
-                os.system('pause')
+                pause()
                 sys.exit(1)
 
     def handle_exception(self, e, table=True):
@@ -189,19 +196,19 @@ class TUI:
                 traceback.print_exc(limit=1000)
 
     def print_header(self):
-        os.system('cls')
+        clear()
         printft(HTML(f'<ansibrightblack>~~~ <ansibrightgreen>CurseBreaker</ansibrightgreen> <ansibrightred>v'
                      f'{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
 
     def setup_console(self, buffer=0):
-        if getattr(sys, 'frozen', False):
+        if getattr(sys, 'frozen', False) and self.os == 'Windows':
             if buffer > 0:
                 windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 100 + round(buffer, -2)))
             else:
                 windll.kernel32.SetConsoleWindowInfo(self.chandle, True, byref(wintypes.SMALL_RECT(0, 0, 99, 49)))
                 windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 50))
         else:
-            os.system('mode con: cols=100 lines=50')
+            set_terminal_size(100, 50)
 
     def setup_completer(self):
         if not self.cfSlugs or not self.wowiSlugs:
@@ -237,7 +244,7 @@ class TUI:
     def setup_table(self):
         self.tableData = [[f'{AC.LIGHTWHITE_EX}Status{AC.RESET}', f'{AC.LIGHTWHITE_EX}Name{AC.RESET}',
                            f'{AC.LIGHTWHITE_EX}Version{AC.RESET}']]
-        self.table = SingleTable(self.tableData)
+        self.table = SingleTable(self.tableData) if self.os == 'Windows' else UnicodeSingleTable(self.tableData)
         self.table.justify_columns[0] = 'center'
 
     def sanitize_table(self):
@@ -355,13 +362,16 @@ class TUI:
             printft(orphan)
 
     def c_uri_integration(self, _):
-        self.core.create_reg()
-        printft('CurseBreaker.reg file was created. Attempting to import...')
-        out = os.system('"' + str(Path(os.path.dirname(sys.executable), 'CurseBreaker.reg')) + '"')
-        if out != 0:
-            printft('Import failed. Please try to import REG file manually.')
+        if self.os == 'Windows':
+            self.core.create_reg()
+            printft('CurseBreaker.reg file was created. Attempting to import...')
+            out = os.system('"' + str(Path(os.path.dirname(sys.executable), 'CurseBreaker.reg')) + '"')
+            if out != 0:
+                printft('Import failed. Please try to import REG file manually.')
+            else:
+                os.remove('CurseBreaker.reg')
         else:
-            os.remove('CurseBreaker.reg')
+            printft('This feature is available only on Windows.')
 
     def c_toggle_dev(self, args):
         if args:
@@ -539,6 +549,6 @@ class TUI:
 if __name__ == '__main__':
     if getattr(sys, 'frozen', False):
         os.chdir(os.path.dirname(os.path.abspath(sys.executable)))
-    os.system(f'title CurseBreaker v{__version__}')
+    set_terminal_title(f'title CurseBreaker v{__version__}')
     app = TUI()
     app.start()
