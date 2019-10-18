@@ -398,7 +398,7 @@ class TUI:
                 printft(HTML('WeakAuras version check is now: <ansigreen>ENABLED</ansigreen>'))
             else:
                 self.core.config['WAUsername'] = 'DISABLED'
-                shutil.rmtree(Path('Interface\AddOns\WeakAurasCompanion'), ignore_errors=True)
+                shutil.rmtree(Path('Interface/AddOns/WeakAurasCompanion'), ignore_errors=True)
                 printft(HTML('WeakAuras version check is now: <ansired>DISABLED</ansired>'))
         self.core.save_config()
 

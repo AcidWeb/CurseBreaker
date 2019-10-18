@@ -92,7 +92,7 @@ class WeakAuraUpdater:
         self.dataCache['ids'].append(ids)
 
     def install_data(self):
-        with open(Path('Interface\AddOns\WeakAurasCompanion\data.lua'), 'w', newline='\n') as out:
+        with open(Path('Interface/AddOns/WeakAurasCompanion/data.lua'), 'w', newline='\n') as out:
             out.write('-- file generated automatically\nWeakAurasCompanion = {\n  slugs = {\n')
             for slug in self.dataCache['slugs']:
                 out.write(slug)
@@ -105,14 +105,14 @@ class WeakAuraUpdater:
             out.write('  },\n  stash = {\n  }\n}')
 
     def install_companion(self, client_type, force):
-        if not os.path.isdir(Path('Interface\AddOns\WeakAurasCompanion')) or force:
-            Path('Interface\AddOns\WeakAurasCompanion').mkdir(exist_ok=True)
-            with open(Path('Interface\AddOns\WeakAurasCompanion\WeakAurasCompanion.toc'), 'w', newline='\n') as out:
+        if not os.path.isdir(Path('Interface/AddOns/WeakAurasCompanion')) or force:
+            Path('Interface/AddOns/WeakAurasCompanion').mkdir(exist_ok=True)
+            with open(Path('Interface/AddOns/WeakAurasCompanion/WeakAurasCompanion.toc'), 'w', newline='\n') as out:
                 out.write(f'## Interface: {"11302" if client_type == "wow_classic" else "80205"}\n## Title: WeakAu'
                           f'ras Companion\n## Author: The WeakAuras Team\n## Version: 1.0.0\n## Notes: Keep your WeakAu'
                           f'ras updated!\n## X-Category: Interface Enhancements\n## DefaultState: Enabled\n## LoadOnDem'
                           f'and: 0\n## Dependencies: WeakAuras\n\ndata.lua\ninit.lua')
-            with open(Path('Interface\AddOns\WeakAurasCompanion\init.lua'), 'w', newline='\n') as out:
+            with open(Path('Interface/AddOns/WeakAurasCompanion/init.lua'), 'w', newline='\n') as out:
                 out.write('-- file generated automatically\nlocal buildTimeTarget = 20190123023201\nlocal waBuildTime ='
                           ' tonumber(WeakAuras.buildTime)\n\nif waBuildTime and waBuildTime < buildTimeTarget then\n  W'
                           'eakAurasCompanion = nil\nelse\n  local loadedFrame = CreateFrame("FRAME")\n  loadedFrame:Reg'
@@ -121,6 +121,6 @@ class WeakAuraUpdater:
                           ')\n      if count and count > 0 then\n        WeakAuras.prettyPrint(WeakAuras.L["There are %'
                           'i updates to your auras ready to be installed!"]:format(count))\n      end\n    end\n  end)'
                           '\nend')
-            with open(Path('Interface\AddOns\WeakAurasCompanion\data.lua'), 'w', newline='\n') as out:
+            with open(Path('Interface/AddOns/WeakAurasCompanion/data.lua'), 'w', newline='\n') as out:
                 out.write('-- file generated automatically\nWeakAurasCompanion = {\n  slugs = {\n  },\n  uids = {\n  },'
                           '\n  ids = {\n  },\n  stash = {\n  }\n}')
