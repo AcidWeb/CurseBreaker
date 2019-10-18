@@ -324,9 +324,14 @@ class Core:
     def parse_cf_id(self, url):
         if url in self.config['CurseCache']:
             return self.config['CurseCache'][url]
-        if not self.cfIDs:
-            self.cfIDs = pickle.load(gzip.open(io.BytesIO(
-                requests.get(f'https://storage.googleapis.com/cursebreaker/cfid.pickle.gz', headers=HEADERS).content)))
+        # noinspection PyBroadException
+        try:
+            if not self.cfIDs:
+                self.cfIDs = pickle.load(gzip.open(io.BytesIO(
+                    requests.get(f'https://storage.googleapis.com/cursebreaker/cfid.pickle.gz',
+                                 headers=HEADERS).content)))
+        except Exception:
+            self.cfIDs = []
         slug = url.split('/')[-1]
         if slug in self.cfIDs:
             project = self.cfIDs[slug]

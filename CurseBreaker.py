@@ -44,14 +44,14 @@ class TUI:
         # Check if executable is in good location
         if not glob.glob('World*.app') and not os.path.isfile('Wow.exe') or \
                 not os.path.isdir(Path('Interface/AddOns')) or not os.path.isdir('WTF'):
-            printft(HTML('<ansibrightred>This executable should be placed in the same directory where Wow.exe is locate'
-                         'd.</ansibrightred>\n'))
+            printft(HTML('<ansibrightred>This executable should be placed in the same directory where Wow.exe or World '
+                         'of Warcraft.app is located.</ansibrightred>\n'))
             pause()
             sys.exit(1)
         # Detect Classic client
         if os.path.basename(os.path.dirname(sys.executable)) == '_classic_':
             self.core.clientType = 'wow_classic'
-            set_terminal_title(f'title CurseBreaker v{__version__} - Classic')
+            set_terminal_title(f'CurseBreaker v{__version__} - Classic')
         # Check if client have write access
         try:
             with open('PermissionTest', 'w') as _:
@@ -163,8 +163,9 @@ class TUI:
                 changelog = payload['body']
                 url = None
                 for binary in payload['assets']:
-                    if (self.os == 'Windows' and '.exe' in binary['name']) or \
-                            (self.os != 'Windows' and '.exe' not in binary['name']):
+                    if (self.os == 'Windows' and '.exe' in binary['name'])\
+                            or (self.os == 'Darwin' and '.zip' in binary['name'])\
+                            or (self.os == 'Linux' and '.gz' in binary['name']):
                         url = binary['browser_download_url']
                         break
                 if url and StrictVersion(remoteversion[1:]) > StrictVersion(__version__):
@@ -553,6 +554,6 @@ class TUI:
 if __name__ == '__main__':
     if getattr(sys, 'frozen', False):
         os.chdir(os.path.dirname(os.path.abspath(sys.executable)))
-    set_terminal_title(f'title CurseBreaker v{__version__}')
+    set_terminal_title(f'CurseBreaker v{__version__}')
     app = TUI()
     app.start()
