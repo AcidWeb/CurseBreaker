@@ -1,5 +1,10 @@
 environment:
-  PYTHON: "C:\\Python37-x64"
+  matrix:
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      PYTHON: "C:\\Python37-x64"
+    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+      PYTHON: "3.7"
+stack: python %PYTHON%
 
 install:
   - set PATH="%PYTHON%\\Scripts";%PATH%
@@ -7,8 +12,20 @@ install:
   - "%PYTHON%\\python.exe -m pip install -r requirements.txt"
   - "%PYTHON%\\python.exe -m pip install certifi https://github.com/pyinstaller/pyinstaller/archive/develop.zip"
 
+for:
+-
+  matrix:
+    only:
+      - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+
+  install:
+    - "sudo apt-get install -y python3.7-dev"
+    - "python -m pip install --upgrade pip setuptools wheel"
+    - "python -m pip install -r requirements.txt"
+    - "python -m pip install certifi https://github.com/pyinstaller/pyinstaller/archive/develop.zip"
+
 build_script:
     - "pyinstaller --additional-hooks-dir=Hooks/ -y -F -i CurseBreaker.ico -n CurseBreaker -c --noupx CurseBreaker.py"
 
 artifacts:
-  - path: dist\CurseBreaker.exe
+  - path: dist\CurseBreaker*
