@@ -559,7 +559,10 @@ class TUI:
 
 
 if __name__ == '__main__':
-    if getattr(sys, 'frozen', False):
+    clientpath = os.environ.get('CURSEBREAKER_PATH')
+    if clientpath:
+        os.chdir(clientpath)
+    elif getattr(sys, 'frozen', False):
         os.chdir(os.path.dirname(os.path.abspath(sys.executable)))
     set_terminal_title(f'CurseBreaker v{__version__}')
     app = TUI()
