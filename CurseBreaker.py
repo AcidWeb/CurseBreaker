@@ -6,6 +6,7 @@ import gzip
 import glob
 import shutil
 import pickle
+import zipfile
 import requests
 import platform
 import traceback
@@ -172,8 +173,14 @@ class TUI:
                     printft(HTML('<ansigreen>Updating CurseBreaker...</ansigreen>'))
                     shutil.move(sys.executable, sys.executable + '.old')
                     payload = requests.get(url, headers=HEADERS)
-                    with open(sys.executable, 'wb') as f:
-                        f.write(payload.content)
+                    if self.os == 'Darwin':
+                        zipfile.ZipFile(io.BytesIO(payload.content)).extractall()
+                    else:
+                        with open(sys.executable, 'wb') as f:
+                            if self.os == 'Windows':
+                                f.write(payload.content)
+                            elif self.os == 'Linux':
+                                f.write(gzip.decompress(payload.content))
                     printft(HTML(f'<ansibrightgreen>Update complete! Please restart the application.</ansibrightgreen'
                                  f'>\n\n<ansigreen>Changelog:</ansigreen>\n{changelog}\n'))
                     pause()
