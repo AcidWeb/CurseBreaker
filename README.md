@@ -1,25 +1,30 @@
 # CurseBreaker
 
-![GitHub release](https://img.shields.io/github/release/AcidWeb/CurseBreaker) ![AppVeyor](https://img.shields.io/appveyor/ci/AcidWeb/cursebreaker) ![GitHub Releases](https://img.shields.io/github/downloads/AcidWeb/CurseBreaker/latest/total) ![GitHub All Releases](https://img.shields.io/github/downloads/AcidWeb/CurseBreaker/total)
+![GitHub release](https://img.shields.io/github/release/AcidWeb/CurseBreaker) ![AppVeyor](https://img.shields.io/appveyor/ci/AcidWeb/cursebreaker) ![Travis](https://img.shields.io/travis/AcidWeb/cursebreaker/master) ![GitHub Releases](https://img.shields.io/github/downloads/AcidWeb/CurseBreaker/latest/total) ![GitHub All Releases](https://img.shields.io/github/downloads/AcidWeb/CurseBreaker/total)
 
 CLI addon updater for World of Warcraft.
 
 ![Screenshot](https://i.imgur.com/RQBNS4y.png)
 
 ## DOWNLOAD
-The latest release can be found [here](https://github.com/AcidWeb/CurseBreaker/releases/latest).
+The latest release can be found [here](https://github.com/AcidWeb/CurseBreaker/releases/latest).\
+Please be aware that Linux and macOS versions are not thoroughly tested.
 
 ## USAGE
-Place **CurseBreaker** EXE inside directory containing `Wow.exe` and start it up. Read the instructions on the top of the screen.\
+Place **CurseBreaker** binary inside directory containing `Wow.exe` or `World of Warcraft.app` and start it up.\
+Read the instructions on the top of the screen.
+
 Already installed addons will not be recognized by **CurseBreaker** and they need to be reinstalled.\
-This process can be partially automated by using the `import` command.\
+This process can be partially automated by using the `import` command.
+
 Both _Retail_ and _Classic_ clients are supported. The client version is detected automatically.\
 By default **CurseBreaker** will create backups of entire `WTF` directory.
 
 ## TIPS & TRICKS
-- Command `uri_integration` can be used to enable integration with the CurseForge page.
+- On Windows command `uri_integration` can be used to enable integration with the CurseForge page.
 - Most of the commands support the comma-separated list of addons.
-- `install` command have optional `-i` flag that can be used to disable version client check.
+- `install` command have optional `-i` flag that can be used to disable client version check.
+- Environment variable `CURSEBREAKER_PATH` can be used to set the custom location of WoW client.
 
 ## SUPPORTED URL
 - CurseForge: `https://www.curseforge.com/wow/addons/[addon_name]`, `cf:[addon_name]`

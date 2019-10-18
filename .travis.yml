@@ -11,7 +11,7 @@ install:
 - pip3 install -r requirements.txt
 - pip3 install certifi https://github.com/pyinstaller/pyinstaller/archive/develop.zip
 
-script: pyinstaller --additional-hooks-dir=Hooks/ -y -F -n CurseBreaker -c --noupx CurseBreaker.py
+script: pyinstaller --additional-hooks-dir=Hooks/ -y -F -n CurseBreaker -c -s --noupx CurseBreaker.py
 
 deploy:
   provider: gcs

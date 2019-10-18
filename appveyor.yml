@@ -4,6 +4,7 @@ environment:
       PYTHON: "C:\\Python37-x64"
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
       PYTHON: "3.7"
+
 stack: python %PYTHON%
 
 install:
@@ -11,6 +12,9 @@ install:
   - "%PYTHON%\\python.exe -m pip install --upgrade pip setuptools wheel"
   - "%PYTHON%\\python.exe -m pip install -r requirements.txt"
   - "%PYTHON%\\python.exe -m pip install certifi https://github.com/pyinstaller/pyinstaller/archive/develop.zip"
+
+build_script:
+  - "pyinstaller --additional-hooks-dir=Hooks/ -y -F -i CurseBreaker.ico -n CurseBreaker -c --noupx CurseBreaker.py"
 
 for:
 -
@@ -24,8 +28,8 @@ for:
     - "python -m pip install -r requirements.txt"
     - "python -m pip install certifi https://github.com/pyinstaller/pyinstaller/archive/develop.zip"
 
-build_script:
-    - "pyinstaller --additional-hooks-dir=Hooks/ -y -F -i CurseBreaker.ico -n CurseBreaker -c --noupx CurseBreaker.py"
+  build_script:
+    - "pyinstaller --additional-hooks-dir=Hooks/ -y -F -n CurseBreaker -c -s --noupx CurseBreaker.py"
 
 artifacts:
   - path: dist\CurseBreaker*
