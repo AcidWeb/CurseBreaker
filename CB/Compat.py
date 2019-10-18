@@ -57,8 +57,8 @@ def kbhit():
     if system == 'Windows':
         return msvcrt.kbhit()
     else:
-        dr = select([sys.stdin], [], [], 0)
-        return dr != []
+        r = select([sys.stdin], [], [], 0)
+        return r[0] != []
 
 
 class UnicodeSingleTable(AsciiTable):
