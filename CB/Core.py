@@ -42,14 +42,14 @@ class Core:
                 self.config = json.load(f)
         else:
             self.config = {'Addons': [],
-                           'CurseCache': {},
                            'IgnoreClientVersion': {},
                            'Backup': {'Enabled': True, 'Number': 7},
                            'Version': __version__,
                            'WAUsername': '',
                            'WAAccountName': '',
                            'WAAPIKey': '',
-                           'WACompanionVersion': 0}
+                           'WACompanionVersion': 0,
+                           'CFCacheTimestamp': 0}
             self.save_config()
         if not os.path.isdir('WTF-Backup') and self.config['Backup']['Enabled']:
             os.mkdir('WTF-Backup')
@@ -81,24 +81,18 @@ class Core:
                     addon['URL'] = 'Tukui'
                 # 2.7.3
                 addon['Directories'] = list(filter(None, set(addon['Directories'])))
-            # 1.3.0
-            if 'URLCache' in self.config.keys():
-                self.config.pop('URLCache', None)
-            if 'CurseCache' not in self.config.keys():
-                self.config['CurseCache'] = {}
-            # 2.1.0
-            if 'WAUsername' not in self.config.keys():
-                self.config['WAUsername'] = ''
-            # 2.2.0
-            if 'WAAccountName' not in self.config.keys():
-                self.config['WAAccountName'] = ''
-            if 'WAAPIKey' not in self.config.keys():
-                self.config['WAAPIKey'] = ''
-            if 'WACompanionVersion' not in self.config.keys():
-                self.config['WACompanionVersion'] = 0
-            # 2.8.0
-            if 'IgnoreClientVersion' not in self.config.keys():
-                self.config['IgnoreClientVersion'] = {}
+            for add in [['2.1.0', 'WAUsername', ''],
+                        ['2.2.0', 'WAAccountName', ''],
+                        ['2.2.0', 'WAAPIKey', ''],
+                        ['2.2.0', 'WACompanionVersion', 0],
+                        ['2.8.0', 'IgnoreClientVersion', {}],
+                        ['3.0.1', 'CFCacheTimestamp', 0]]:
+                if add[1] not in self.config.keys():
+                    self.config[add[1]] = add[2]
+            for delete in [['1.3.0', 'URLCache'],
+                           ['3.0.1', 'CurseCache']]:
+                if delete[1] in self.config.keys():
+                    self.config.pop(delete[1], None)
             self.config['Version'] = __version__
             self.save_config()
 
