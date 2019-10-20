@@ -5,6 +5,7 @@ import sys
 import json
 import html
 import gzip
+import time
 import pickle
 import shutil
 import zipfile
@@ -26,6 +27,7 @@ class Core:
     def __init__(self):
         self.path = Path('Interface/AddOns')
         self.configPath = Path('WTF/CurseBreaker.json')
+        self.cachePath = Path('WTF/CurseBreaker.cache')
         self.clientType = 'wow_retail'
         self.waCompanionVersion = 20190123023201
         self.config = None
@@ -316,16 +318,19 @@ class Core:
 
     @retry(custom_error='Failed to parse project ID.')
     def parse_cf_id(self, url):
-        if url in self.config['CurseCache']:
-            return self.config['CurseCache'][url]
-        # noinspection PyBroadException
-        try:
-            if not self.cfIDs:
-                self.cfIDs = pickle.load(gzip.open(io.BytesIO(
-                    requests.get(f'https://storage.googleapis.com/cursebreaker/cfid.pickle.gz',
-                                 headers=HEADERS).content)))
-        except Exception:
-            self.cfIDs = []
+        if not self.cfIDs:
+            # noinspection PyBroadException
+            try:
+                if not os.path.isfile(self.cachePath) or time.time() - self.config['CFCacheTimestamp'] > 86400:
+                    with open(self.cachePath, 'wb') as f:
+                        f.write(gzip.decompress(requests.get(
+                            f'https://storage.googleapis.com/cursebreaker/cfid.pickle.gz', headers=HEADERS).content))
+                    self.config['CFCacheTimestamp'] = time.time()
+                    self.save_config()
+                with open(self.cachePath, 'rb') as f:
+                    self.cfIDs = pickle.load(f)
+            except Exception:
+                self.cfIDs = []
         slug = url.split('/')[-1]
         if slug in self.cfIDs:
             project = self.cfIDs[slug]
@@ -333,8 +338,7 @@ class Core:
             scraper = cfscrape.create_scraper()
             xml = parseString(scraper.get(url + '/download-client').text)
             project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
-        self.config['CurseCache'][url] = project
-        self.save_config()
+            self.cfIDs[slug] = project
         return project
 
     @retry(custom_error='Failed to parse the XML file.')
@@ -343,8 +347,6 @@ class Core:
         project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
         payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/{project}', headers=HEADERS).json()
         url = payload['websiteUrl'].strip()
-        self.config['CurseCache'][url] = project
-        self.save_config()
         return url
 
     @retry(custom_error='Failed to execute bulk version check.')
@@ -352,8 +354,8 @@ class Core:
         ids_cf = []
         ids_wowi = []
         for addon in addons:
-            if addon['URL'] in self.config['CurseCache']:
-                ids_cf.append(int(self.config['CurseCache'][addon['URL']]))
+            if addon['URL'].startswith('https://www.curseforge.com/wow/addons/'):
+                ids_cf.append(int(self.parse_cf_id(addon['URL'])))
             elif addon['URL'].startswith('https://www.wowinterface.com/downloads/'):
                 ids_wowi.append(re.findall(r'\d+', addon['URL'])[0].strip())
         if len(ids_cf) > 0:
