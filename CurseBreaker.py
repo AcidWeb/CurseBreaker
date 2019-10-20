@@ -181,6 +181,7 @@ class TUI:
                                 f.write(payload.content)
                             elif self.os == 'Linux':
                                 f.write(gzip.decompress(payload.content))
+                    os.chmod(sys.executable, 0o775)
                     printft(HTML(f'<ansibrightgreen>Update complete! Please restart the application.</ansibrightgreen'
                                  f'>\n\n<ansigreen>Changelog:</ansigreen>\n{changelog}\n'))
                     pause()
