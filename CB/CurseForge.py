@@ -13,7 +13,11 @@ class CurseForgeAddon:
             self.payload = checkcache[project]
         else:
             self.payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/{project}',
-                                        headers=HEADERS).json()
+                                        headers=HEADERS)
+            if self.payload.status_code == 404:
+                raise RuntimeError(f'Project: {project}')
+            else:
+                self.payload = self.payload.json()
         self.name = self.payload['name'].strip().strip('\u200b')
         if not len(self.payload['latestFiles']) > 0:
             raise RuntimeError(f'{self.name}.\nThe project doesn\'t have any releases.')

@@ -11,13 +11,13 @@ def retry(custom_error=False):
     def wraps(func):
         def inner(*args, **kwargs):
             description = None
-            for i in range(3):
+            for i in range(2):
                 try:
                     result = func(*args, **kwargs)
                 except KeyboardInterrupt:
                     raise
                 except Exception as e:
-                    description = e
+                    description = str(e).replace('Failed to parse addon data: ', '')
                     continue
                 else:
                     return result

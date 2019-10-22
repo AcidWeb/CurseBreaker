@@ -316,7 +316,7 @@ class Core:
                           'ell\open]\n[HKEY_CURRENT_USER\Software\Classes\\twitch\shell\open\command]\n@="\\"'
                           + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""')
 
-    @retry(custom_error='Failed to parse project ID.')
+    @retry()
     def parse_cf_id(self, url):
         if not self.cfIDs:
             # noinspection PyBroadException
@@ -336,7 +336,10 @@ class Core:
             project = self.cfIDs[slug]
         else:
             scraper = cfscrape.create_scraper()
-            xml = parseString(scraper.get(url + '/download-client').text)
+            payload = scraper.get(url + '/download-client')
+            if payload.status_code == 404:
+                raise RuntimeError(slug)
+            xml = parseString(payload.text)
             project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
             self.cfIDs[slug] = project
         return project
@@ -349,7 +352,7 @@ class Core:
         url = payload['websiteUrl'].strip()
         return url
 
-    @retry(custom_error='Failed to execute bulk version check.')
+    @retry()
     def bulk_check(self, addons):
         ids_cf = []
         ids_wowi = []

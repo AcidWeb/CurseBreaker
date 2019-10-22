@@ -9,9 +9,11 @@ class GitLabAddon:
     @retry()
     def __init__(self, name, projectid, path, branch):
         self.payload = requests.get(f'https://git.tukui.org/api/v4/projects/{projectid}/repository/branches/{branch}',
-                                    headers=HEADERS).json()
-        if not self.payload['commit']:
-            raise RuntimeError
+                                    headers=HEADERS)
+        if self.payload.status_code == 404:
+            raise RuntimeError(name)
+        else:
+            self.payload = self.payload.json()
         self.name = name
         self.shorthPath = path.split('/')[1]
         self.downloadUrl = f'https://git.tukui.org/{path}/-/archive/{branch}/{self.shorthPath}-{branch}.zip'

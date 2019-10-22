@@ -11,9 +11,11 @@ class TukuiAddon:
     def __init__(self, url, isclassic):
         project = re.findall(r'\d+', url)[0]
         self.payload = requests.get(f'https://www.tukui.org/api.php?{"classic-" if isclassic else ""}addon={project}',
-                                    headers=HEADERS).json()
-        if not self.payload['id'] == project:
-            raise RuntimeError
+                                    headers=HEADERS)
+        if self.payload.text == '':
+            raise RuntimeError(url)
+        else:
+            self.payload = self.payload.json()
         self.name = self.payload['name'].strip().strip('\u200b')
         self.downloadUrl = self.payload['url']
         self.currentVersion = self.payload['version']
