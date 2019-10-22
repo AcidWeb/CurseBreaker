@@ -83,6 +83,9 @@ class Core:
                     addon['URL'] = 'Tukui'
                 # 2.7.3
                 addon['Directories'] = list(filter(None, set(addon['Directories'])))
+                # 3.0.2
+                if addon['URL'].endswith('/'):
+                    addon['URL'] = addon['URL'][:-1]
             for add in [['2.1.0', 'WAUsername', ''],
                         ['2.2.0', 'WAAccountName', ''],
                         ['2.2.0', 'WAAPIKey', ''],
@@ -164,6 +167,8 @@ class Core:
             url = f'https://www.tukui.org/addons.php?id={url[3:]}'
         elif url.startswith('tuc:'):
             url = f'https://www.tukui.org/classic-addons.php?id={url[4:]}'
+        if url.endswith('/'):
+            url = url[:-1]
         addon = self.check_if_installed(url)
         if not addon:
             if ignore:
