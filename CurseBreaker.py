@@ -50,7 +50,7 @@ class TUI:
             pause()
             sys.exit(1)
         # Detect Classic client
-        if os.path.basename(os.path.dirname(sys.executable)) == '_classic_':
+        if os.path.basename(os.getcwd()) == '_classic_':
             self.core.clientType = 'wow_classic'
             set_terminal_title(f'CurseBreaker v{__version__} - Classic')
         # Check if client have write access
