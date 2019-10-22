@@ -389,7 +389,7 @@ class Core:
         partial_hit_raw = []
         miss = []
         for directory in addon_dirs:
-            if not os.path.isdir(self.path / directory / '.git'):
+            if not os.path.isdir(self.path / directory / '.git') and not os.path.islink(self.path / directory):
                 if directory in self.cfDirs:
                     if len(self.cfDirs[directory]) > 1:
                         partial_hit_raw.append(self.cfDirs[directory])
