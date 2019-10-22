@@ -1,6 +1,6 @@
 # CurseBreaker
 
-![GitHub release](https://img.shields.io/github/release/AcidWeb/CurseBreaker) ![AppVeyor](https://img.shields.io/appveyor/ci/AcidWeb/cursebreaker) ![Travis](https://img.shields.io/travis/AcidWeb/cursebreaker/master) ![GitHub Releases](https://img.shields.io/github/downloads/AcidWeb/CurseBreaker/latest/total) ![GitHub All Releases](https://img.shields.io/github/downloads/AcidWeb/CurseBreaker/total)
+![GitHub release](https://img.shields.io/github/release/AcidWeb/CurseBreaker) ![GitHub Releases](https://img.shields.io/github/downloads/AcidWeb/CurseBreaker/latest/total) ![GitHub All Releases](https://img.shields.io/github/downloads/AcidWeb/CurseBreaker/total) ![GitHub Actions](https://github.com/AcidWeb/CurseBreaker/workflows/Binary%20builder/badge.svg)
 
 CLI addon updater for World of Warcraft.
 
