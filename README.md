@@ -25,6 +25,7 @@ By default **CurseBreaker** will create backups of entire `WTF` directory.
 - Most of the commands support the comma-separated list of addons.
 - `install` command have optional `-i` flag that can be used to disable client version check.
 - Environment variable `CURSEBREAKER_PATH` can be used to set the custom location of WoW client.
+- Undocumented `symlink_protection` command will protect your symlinks against endless hunger of Battle.NET client.
 
 ## SUPPORTED URL
 - CurseForge: `https://www.curseforge.com/wow/addons/[addon_name]`, `cf:[addon_name]`
