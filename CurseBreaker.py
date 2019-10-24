@@ -157,7 +157,10 @@ class TUI:
         if getattr(sys, 'frozen', False):
             try:
                 if os.path.isfile(sys.executable + '.old'):
-                    os.remove(sys.executable + '.old')
+                    try:
+                        os.remove(sys.executable + '.old')
+                    except PermissionError:
+                        pass
                 payload = requests.get('https://api.github.com/repos/AcidWeb/CurseBreaker/releases/latest',
                                        headers=HEADERS).json()
                 remoteversion = payload['name']
