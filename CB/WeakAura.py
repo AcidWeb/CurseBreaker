@@ -61,6 +61,8 @@ class WeakAuraUpdater:
                 raise RuntimeError
             for aura in payload:
                 if 'username' in aura and (not self.username or aura['username'] != self.username):
+                    if not aura['slug'] in self.waList:
+                        aura['slug'] = aura['_id']
                     if aura['version'] > self.waList[aura['slug']] and \
                        (not aura['slug'] in self.waIgnored or
                        (aura['slug'] in self.waIgnored and aura['version'] != self.waIgnored[aura['slug']])):
