@@ -224,7 +224,7 @@ class TUI:
             else:
                 windll.kernel32.SetConsoleWindowInfo(self.chandle, True, byref(wintypes.SMALL_RECT(0, 0, 99, 49)))
                 windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 50))
-        else:
+        elif self.os == 'Darwin':
             set_terminal_size(100, 50)
 
     def setup_completer(self):
