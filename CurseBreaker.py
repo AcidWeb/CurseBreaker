@@ -44,10 +44,10 @@ class TUI:
         self.setup_console()
         self.print_header()
         # Check if executable is in good location
-        if not glob.glob('World*.app') and not os.path.isfile('Wow.exe') or \
+        if not glob.glob('World*.app') and not glob.glob('Wow*.exe') or \
                 not os.path.isdir(Path('Interface/AddOns')) or not os.path.isdir('WTF'):
-            printft(HTML('<ansibrightred>This executable should be placed in the same directory where Wow.exe or World '
-                         'of Warcraft.app is located.</ansibrightred>\n'))
+            printft(HTML('<ansibrightred>This executable should be placed in the same directory where Wow.exe, '
+                         'WowClassic.exe or World of Warcraft.app is located.</ansibrightred>\n'))
             pause()
             sys.exit(1)
         # Detect Classic client

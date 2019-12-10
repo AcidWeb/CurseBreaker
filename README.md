@@ -11,7 +11,7 @@ The latest release can be found [here](https://github.com/AcidWeb/CurseBreaker/r
 Please be aware that Linux and macOS versions are not thoroughly tested.
 
 ## USAGE
-Place **CurseBreaker** binary inside directory containing `Wow.exe` or `World of Warcraft.app` and start it up.\
+Place **CurseBreaker** binary inside directory containing `Wow.exe`, `WowClassic.exe` or `World of Warcraft.app` and start it up.\
 Read the instructions on the top of the screen.
 
 Already installed addons will not be recognized by **CurseBreaker** and they need to be reinstalled.\
