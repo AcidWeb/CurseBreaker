@@ -1,9 +1,9 @@
 import string
 import random
 
-__version__ = '3.1.1'
+__version__ = '3.1.2'
 __license__ = 'GPLv3'
-__copyright__ = '2019, Paweł Jastrzębski <pawelj@iosphe.re>'
+__copyright__ = '2019-2020, Paweł Jastrzębski <pawelj@iosphe.re>'
 __docformat__ = 'restructuredtext en'
 
 

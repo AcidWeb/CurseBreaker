@@ -110,7 +110,7 @@ class WeakAuraUpdater:
         if not os.path.isdir(Path('Interface/AddOns/WeakAurasCompanion')) or force:
             Path('Interface/AddOns/WeakAurasCompanion').mkdir(exist_ok=True)
             with open(Path('Interface/AddOns/WeakAurasCompanion/WeakAurasCompanion.toc'), 'w', newline='\n') as out:
-                out.write(f'## Interface: {"11303" if client_type == "wow_classic" else "80205"}\n## Title: WeakAu'
+                out.write(f'## Interface: {"11303" if client_type == "wow_classic" else "80300"}\n## Title: WeakAu'
                           f'ras Companion\n## Author: The WeakAuras Team\n## Version: 1.0.0\n## Notes: Keep your WeakAu'
                           f'ras updated!\n## X-Category: Interface Enhancements\n## DefaultState: Enabled\n## LoadOnDem'
                           f'and: 0\n## Dependencies: WeakAuras\n\ndata.lua\ninit.lua')
