@@ -36,14 +36,14 @@ class WeakAuraUpdater:
 
     def parse_storage(self):
         self.lua = LuaRuntime()
-        self.urlParser = re.compile('(\w+)/(\d+)')
+        self.urlParser = re.compile('([a-zA-Z0-9_-]+)/(\d+)')
         with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua'), 'r', encoding='utf-8') as file:
             data = file.read().replace('WeakAurasSaved = {', '{')
         wadata = self.lua.eval(data)
         for wa in wadata['displays']:
             if wadata['displays'][wa]['url']:
                 search = self.urlParser.search(wadata['displays'][wa]['url'])
-                if search.group(1) and search.group(2):
+                if search is not None and search.group(1) and search.group(2):
                     self.uidCache[wadata['displays'][wa]['uid']] = search.group(1)
                     self.idCache[wadata['displays'][wa]['id']] = search.group(1)
                     if not wadata['displays'][wa]['parent'] and not wadata['displays'][wa]['ignoreWagoUpdate']:
