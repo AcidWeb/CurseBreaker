@@ -11,7 +11,7 @@ import shutil
 import zipfile
 import datetime
 import requests
-import cfscrape
+import cloudscraper
 from tqdm import tqdm
 from pathlib import Path
 from checksumdir import dirhash
@@ -340,7 +340,7 @@ class Core:
         if slug in self.cfIDs:
             project = self.cfIDs[slug]
         else:
-            scraper = cfscrape.create_scraper()
+            scraper = cloudscraper.create_scraper()
             payload = scraper.get(url + '/download-client')
             if payload.status_code == 404:
                 raise RuntimeError(slug)

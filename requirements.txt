@@ -1,7 +1,7 @@
 terminaltables
 prompt_toolkit
+cloudscraper
 checksumdir
-cfscrape
 requests
 tqdm
 lupa
