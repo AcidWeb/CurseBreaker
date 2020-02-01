@@ -10,6 +10,7 @@ import zipfile
 import requests
 import platform
 import traceback
+from csv import reader
 from tqdm import tqdm
 from pathlib import Path
 from terminaltables import SingleTable
@@ -245,8 +246,9 @@ class TUI:
                     'uri_integration', 'help', 'exit']
         addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         for addon in addons:
-            commands.extend([f'uninstall {addon["Name"]}', f'update {addon["Name"]}', f'force_update {addon["Name"]}',
-                             f'toggle_dev {addon["Name"]}', f'status {addon["Name"]}'])
+            name = f'"{addon["Name"]}"' if ',' in addon["Name"] else addon["Name"]
+            commands.extend([f'uninstall {name}', f'update {name}', f'force_update {name}', f'toggle_dev {name}',
+                             f'status {name}'])
         for item in self.cfSlugs:
             commands.append(f'install cf:{item}')
         for item in self.wowiSlugs:
@@ -278,7 +280,7 @@ class TUI:
                 optignore = True
             else:
                 optignore = False
-            addons = [addon.strip() for addon in args.split(',')]
+            addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
             with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
                 for addon in addons:
                     installed, name, version = self.core.add_addon(addon, optignore)
@@ -301,7 +303,7 @@ class TUI:
 
     def c_uninstall(self, args):
         if args:
-            addons = [addon.strip() for addon in args.split(',')]
+            addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
             with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
                 for addon in addons:
                     name, version = self.core.del_addon(addon)
@@ -326,7 +328,7 @@ class TUI:
             self.core.cfCache = {}
             self.core.wowiCache = {}
         if args:
-            addons = [addon.strip() for addon in args.split(',')]
+            addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
         else:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
             self.core.bulk_check(addons)
