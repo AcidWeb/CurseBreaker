@@ -3,13 +3,12 @@ import io
 import re
 import zipfile
 import requests
-import cloudscraper
 from . import retry, HEADERS
 
 
 class WoWInterfaceAddon:
     @retry()
-    def __init__(self, url, checkcache):
+    def __init__(self, url, checkcache, scraper):
         project = re.findall(r'\d+', url)[0]
         if project in checkcache:
             self.payload = checkcache[project]
@@ -25,7 +24,7 @@ class WoWInterfaceAddon:
         self.currentVersion = self.payload['UIVersion']
         self.archive = None
         self.directories = []
-        self.scraper = cloudscraper.create_scraper()
+        self.scraper = scraper
 
     @retry()
     def get_addon(self):

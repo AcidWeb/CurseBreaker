@@ -2,14 +2,13 @@ import os
 import io
 import zipfile
 import requests
-import cloudscraper
 from . import retry, HEADERS
 from operator import itemgetter
 
 
 class CurseForgeAddon:
     @retry()
-    def __init__(self, project, checkcache, clienttype, allowdev):
+    def __init__(self, project, checkcache, clienttype, allowdev, scraper):
         if project in checkcache:
             self.payload = checkcache[project]
         else:
@@ -24,11 +23,11 @@ class CurseForgeAddon:
             raise RuntimeError(f'{self.name}.\nThe project doesn\'t have any releases.')
         self.clientType = clienttype
         self.allowDev = allowdev
+        self.scraper = scraper
         self.downloadUrl = None
         self.currentVersion = None
         self.archive = None
         self.directories = []
-        self.scraper = cloudscraper.create_scraper()
         self.get_current_version()
 
     def get_current_version(self):

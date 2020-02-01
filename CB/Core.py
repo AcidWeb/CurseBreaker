@@ -35,6 +35,7 @@ class Core:
         self.cfDirs = None
         self.cfCache = {}
         self.wowiCache = {}
+        self.scraper = cloudscraper.create_scraper()
 
     def init_config(self):
         if os.path.isfile('CurseBreaker.json'):
@@ -125,9 +126,9 @@ class Core:
         if url.startswith('https://www.curseforge.com/wow/addons/'):
             return CurseForgeAddon(self.parse_cf_id(url), self.cfCache,
                                    'wow' if url in self.config['IgnoreClientVersion'].keys() else self.clientType,
-                                   self.check_if_dev(url))
+                                   self.check_if_dev(url), self.scraper)
         elif url.startswith('https://www.wowinterface.com/downloads/'):
-            return WoWInterfaceAddon(url, self.wowiCache)
+            return WoWInterfaceAddon(url, self.wowiCache, self.scraper)
         elif url.startswith('https://www.tukui.org/addons.php?id='):
             if self.clientType == 'wow_classic':
                 raise RuntimeError('Incorrect client version.')
@@ -340,8 +341,7 @@ class Core:
         if slug in self.cfIDs:
             project = self.cfIDs[slug]
         else:
-            scraper = cloudscraper.create_scraper()
-            payload = scraper.get(url + '/download-client')
+            payload = self.scraper.get(url + '/download-client')
             if payload.status_code == 404:
                 raise RuntimeError(slug)
             xml = parseString(payload.text)
