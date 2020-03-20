@@ -165,32 +165,33 @@ class TUI:
                         pass
                 payload = requests.get('https://api.github.com/repos/AcidWeb/CurseBreaker/releases/latest',
                                        headers=HEADERS).json()
-                remoteversion = payload['name']
-                changelog = payload['body']
-                url = None
-                for binary in payload['assets']:
-                    if (self.os == 'Windows' and '.exe' in binary['name'])\
-                            or (self.os == 'Darwin' and '.zip' in binary['name'])\
-                            or (self.os == 'Linux' and '.gz' in binary['name']):
-                        url = binary['browser_download_url']
-                        break
-                if url and StrictVersion(remoteversion[1:]) > StrictVersion(__version__):
-                    printft(HTML('<ansigreen>Updating CurseBreaker...</ansigreen>'))
-                    shutil.move(sys.executable, sys.executable + '.old')
-                    payload = requests.get(url, headers=HEADERS)
-                    if self.os == 'Darwin':
-                        zipfile.ZipFile(io.BytesIO(payload.content)).extractall()
-                    else:
-                        with open(sys.executable, 'wb') as f:
-                            if self.os == 'Windows':
-                                f.write(payload.content)
-                            elif self.os == 'Linux':
-                                f.write(gzip.decompress(payload.content))
-                    os.chmod(sys.executable, 0o775)
-                    printft(HTML(f'<ansibrightgreen>Update complete! Please restart the application.</ansibrightgreen'
-                                 f'>\n\n<ansigreen>Changelog:</ansigreen>\n{changelog}\n'))
-                    pause()
-                    sys.exit(0)
+                if 'name' in payload and 'body' in payload and 'assets' in payload:
+                    remoteversion = payload['name']
+                    changelog = payload['body']
+                    url = None
+                    for binary in payload['assets']:
+                        if (self.os == 'Windows' and '.exe' in binary['name'])\
+                                or (self.os == 'Darwin' and '.zip' in binary['name'])\
+                                or (self.os == 'Linux' and '.gz' in binary['name']):
+                            url = binary['browser_download_url']
+                            break
+                    if url and StrictVersion(remoteversion[1:]) > StrictVersion(__version__):
+                        printft(HTML('<ansigreen>Updating CurseBreaker...</ansigreen>'))
+                        shutil.move(sys.executable, sys.executable + '.old')
+                        payload = requests.get(url, headers=HEADERS)
+                        if self.os == 'Darwin':
+                            zipfile.ZipFile(io.BytesIO(payload.content)).extractall()
+                        else:
+                            with open(sys.executable, 'wb') as f:
+                                if self.os == 'Windows':
+                                    f.write(payload.content)
+                                elif self.os == 'Linux':
+                                    f.write(gzip.decompress(payload.content))
+                        os.chmod(sys.executable, 0o775)
+                        printft(HTML(f'<ansibrightgreen>Update complete! Please restart the application.</ansibrightgre'
+                                     f'en>\n\n<ansigreen>Changelog:</ansigreen>\n{changelog}\n'))
+                        pause()
+                        sys.exit(0)
             except Exception as e:
                 printft(HTML(f'<ansibrightred>Update failed!\n\nReason: {str(e)}</ansibrightred>\n'))
                 pause()
