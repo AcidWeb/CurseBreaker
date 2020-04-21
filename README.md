@@ -39,6 +39,9 @@ By default **CurseBreaker** will create backups of entire `WTF` directory.
 Command `toggle_wa` can be used to set a single author name that will be ignored during the update.\
 Additionally Wago API key can be set with `set_wa_api` command so non-public auras will also be upgradeable.
 
+## KNOWN ISSUES
+- Using "double" WoWInterface projects ([example](https://www.wowinterface.com/downloads/info5086-BigWigsBossmods)) will always install a retail version of the addon. It can't be fixed as WoWInterface API doesn't support this type of project.
+
 ## COPYRIGHT
 **CurseBreaker** is free software/open source, and is distributed under the GNU General Public License v3.
 
