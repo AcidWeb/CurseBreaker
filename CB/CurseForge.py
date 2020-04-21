@@ -8,7 +8,7 @@ from operator import itemgetter
 
 class CurseForgeAddon:
     @retry()
-    def __init__(self, project, checkcache, clienttype, allowdev, scraper):
+    def __init__(self, project, checkcache, clienttype, allowdev):
         if project in checkcache:
             self.payload = checkcache[project]
         else:
@@ -23,7 +23,6 @@ class CurseForgeAddon:
             raise RuntimeError(f'{self.name}.\nThe project doesn\'t have any releases.')
         self.clientType = clienttype
         self.allowDev = allowdev
-        self.scraper = scraper
         self.downloadUrl = None
         self.currentVersion = None
         self.archive = None
@@ -46,7 +45,7 @@ class CurseForgeAddon:
 
     @retry()
     def get_addon(self):
-        self.archive = zipfile.ZipFile(io.BytesIO(self.scraper.get(self.downloadUrl).content))
+        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS).content))
         for file in self.archive.namelist():
             if '/' not in os.path.dirname(file):
                 self.directories.append(os.path.dirname(file))

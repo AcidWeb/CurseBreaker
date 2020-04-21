@@ -35,7 +35,23 @@ class Core:
         self.cfDirs = None
         self.cfCache = {}
         self.wowiCache = {}
-        self.scraper = cloudscraper.create_scraper()
+        self.scraper = cloudscraper.create_scraper(
+            browser={
+                'custom': 'Mozilla/5.0 (Linux; U; Android 6.0.1; zh-cn; OPPO R9s Plus Build/MMB29M) AppleWebKit/537.36 '
+                          '(KHTML, like Gecko) Version/4.0 Chrome/53.0.2785.134 Mobile Safari/537.36 OppoBrowser/4.4.9'
+            },
+            cipherSuite=[
+                'ECDHE-ECDSA-AES128-GCM-SHA256',
+                'ECDHE-RSA-AES128-GCM-SHA256',
+                'ECDHE-RSA-AES128-SHA',
+                'AES128-GCM-SHA256',
+                'AES128-SHA',
+                'ECDHE-RSA-AES256-SHA384',
+                'AES256-SHA',
+                'DES-CBC3-SHA',
+                'ECDHE-RSA-AES256-GCM-SHA384'
+            ]
+        )
 
     def init_config(self):
         if os.path.isfile('CurseBreaker.json'):
@@ -47,6 +63,7 @@ class Core:
             self.config = {'Addons': [],
                            'IgnoreClientVersion': {},
                            'Backup': {'Enabled': True, 'Number': 7},
+                           'CFCacheCloudFlare': {},
                            'Version': __version__,
                            'WAUsername': '',
                            'WAAccountName': '',
@@ -92,7 +109,8 @@ class Core:
                         ['2.2.0', 'WAAPIKey', ''],
                         ['2.2.0', 'WACompanionVersion', 0],
                         ['2.8.0', 'IgnoreClientVersion', {}],
-                        ['3.0.1', 'CFCacheTimestamp', 0]]:
+                        ['3.0.1', 'CFCacheTimestamp', 0],
+                        ['3.1.10', 'CFCacheCloudFlare', {}]]:
                 if add[1] not in self.config.keys():
                     self.config[add[1]] = add[2]
             for delete in [['1.3.0', 'URLCache'],
@@ -126,7 +144,7 @@ class Core:
         if url.startswith('https://www.curseforge.com/wow/addons/'):
             return CurseForgeAddon(self.parse_cf_id(url), self.cfCache,
                                    'wow' if url in self.config['IgnoreClientVersion'].keys() else self.clientType,
-                                   self.check_if_dev(url), self.scraper)
+                                   self.check_if_dev(url))
         elif url.startswith('https://www.wowinterface.com/downloads/'):
             return WoWInterfaceAddon(url, self.wowiCache, self.scraper)
         elif url.startswith('https://www.tukui.org/addons.php?id='):
@@ -335,8 +353,9 @@ class Core:
                     self.save_config()
                 with open(self.cachePath, 'rb') as f:
                     self.cfIDs = pickle.load(f)
+                self.cfIDs = {**self.config['CFCacheCloudFlare'], **self.cfIDs}
             except Exception:
-                self.cfIDs = []
+                self.cfIDs = {}
         slug = url.split('/')[-1]
         if slug in self.cfIDs:
             project = self.cfIDs[slug]
@@ -346,7 +365,9 @@ class Core:
                 raise RuntimeError(slug)
             xml = parseString(payload.text)
             project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
-            self.cfIDs[slug] = project
+            self.config['CFCacheCloudFlare'][slug] = project
+            self.cfIDs = {**self.config['CFCacheCloudFlare'], **self.cfIDs}
+            self.save_config()
         return project
 
     @retry(custom_error='Failed to parse the XML file.')
