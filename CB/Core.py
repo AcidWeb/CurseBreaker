@@ -175,7 +175,7 @@ class Core:
         else:
             raise NotImplementedError('Provided URL is not supported.')
 
-    def add_addon(self, url, ignore):
+    def add_addon(self, url, ignore, queue):
         if 'twitch://' in url:
             url = url.split('/download-client')[0].replace('twitch://', 'https://').strip()
         elif url.startswith('cf:'):
@@ -204,7 +204,9 @@ class Core:
                                           'Checksums': checksums
                                           })
             self.save_config()
+            queue.put(1)
             return True, new.name, new.currentVersion
+        queue.put(1)
         return False, addon['Name'], addon['Version']
 
     def del_addon(self, url):
@@ -218,7 +220,7 @@ class Core:
             return old['Name'], old['Version']
         return False, False
 
-    def update_addon(self, url, update, force):
+    def update_addon(self, url, update, force, queue):
         old = self.check_if_installed(url)
         if old:
             new = self.parse_url(old['URL'])
@@ -235,7 +237,9 @@ class Core:
                 old['Directories'] = new.directories
                 old['Checksums'] = checksums
                 self.save_config()
+            queue.put(1)
             return new.name, new.currentVersion, oldversion, modified if not force else False
+        queue.put(1)
         return url, False, False, False
 
     def check_checksum(self, url):

@@ -21,6 +21,8 @@ from CB import AC, HEADERS, __version__
 from CB.Core import Core
 from CB.Compat import pause, timeout, clear, set_terminal_title, set_terminal_size, getch, kbhit, UnicodeSingleTable
 from CB.WeakAura import WeakAuraUpdater
+from multiprocessing.pool import ThreadPool
+from multiprocessing import Queue
 
 if platform.system() == 'Windows':
     from ctypes import windll, wintypes, byref
@@ -283,13 +285,22 @@ class TUI:
                 optignore = False
             addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
             with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
+                results = []
+                pool = ThreadPool(len(addons) if len(addons) <= 10 else 10)
+                queue = Queue()
                 for addon in addons:
-                    installed, name, version = self.core.add_addon(addon, optignore)
+                    results.append(pool.apply_async(self.core.add_addon, args=(addon, optignore, queue)))
+                for _ in range(len(addons)):
+                    queue.get()
+                    pbar.update(1)
+                pool.close()
+                pool.join()
+                for result in range(len(results)):
+                    installed, name, version = results[result].get()
                     if installed:
                         self.tableData.append([f'{AC.GREEN}Installed{AC.RESET}', name, version])
                     else:
                         self.tableData.append([f'{AC.LIGHTBLACK_EX}Already installed{AC.RESET}', name, version])
-                    pbar.update(1)
             self.sanitize_table()
             printft(ANSI(self.table.table))
         else:
@@ -335,28 +346,36 @@ class TUI:
             self.core.bulk_check(addons)
         with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
             exceptions = []
+            results = []
+            pool = ThreadPool(len(addons) if len(addons) <= 10 else 10)
+            queue = Queue()
             for addon in addons:
                 try:
-                    name, versionnew, versionold, modified = self.core.\
-                        update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
-                    if versionold:
-                        if versionold == versionnew:
-                            if modified:
-                                self.tableData.append([f'{AC.LIGHTRED_EX}Modified{AC.RESET}', name, versionold])
-                            else:
-                                self.tableData.append([f'{AC.GREEN}Up-to-date{AC.RESET}', name, versionold])
-                        else:
-                            if modified:
-                                self.tableData.append([f'{AC.LIGHTRED_EX}Update suppressed{AC.RESET}',
-                                                       name, versionold])
-                            else:
-                                self.tableData.append([f'{AC.YELLOW}{"Updated " if update else "Update available"}'
-                                                       f'{AC.RESET}', name, f'{AC.YELLOW}{versionnew}{AC.RESET}'])
-                    else:
-                        self.tableData.append([f'{AC.LIGHTBLACK_EX}Not installed{AC.RESET}', addon, ''])
+                    results.append(pool.apply_async(self.core.update_addon, args=(addon if isinstance(addon, str) else addon['URL'], update, force, queue)))
                 except Exception as e:
                     exceptions.append(e)
+            for _ in range(len(addons)):
+                queue.get()
                 pbar.update(1)
+            pool.close()
+            pool.join()
+            for result in range(len(results)):
+                name, versionnew, versionold, modified = results[result].get()
+                if versionold:
+                    if versionold == versionnew:
+                        if modified:
+                            self.tableData.append([f'{AC.LIGHTRED_EX}Modified{AC.RESET}', name, versionold])
+                        else:
+                            self.tableData.append([f'{AC.GREEN}Up-to-date{AC.RESET}', name, versionold])
+                    else:
+                        if modified:
+                            self.tableData.append([f'{AC.LIGHTRED_EX}Update suppressed{AC.RESET}',
+                                                   name, versionold])
+                        else:
+                            self.tableData.append([f'{AC.YELLOW}{"Updated " if update else "Update available"}'
+                                                   f'{AC.RESET}', name, f'{AC.YELLOW}{versionnew}{AC.RESET}'])
+                else:
+                    self.tableData.append([f'{AC.LIGHTBLACK_EX}Not installed{AC.RESET}', name, ''])
         self.sanitize_table()
         printft(ANSI('\n' + self.table.table if addline else self.table.table))
         if len(exceptions) > 0:
