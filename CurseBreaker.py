@@ -288,8 +288,11 @@ class TUI:
                 results = []
                 pool = ThreadPool(len(addons) if len(addons) <= 10 else 10)
                 queue = Queue()
-                for addon in addons:
-                    results.append(pool.apply_async(self.core.add_addon, args=(addon, optignore, queue)))
+                last = False
+                for i, addon in enumerate(addons):
+                    if (i == len(addons) - 1):
+                        last = True
+                    results.append(pool.apply_async(self.core.add_addon, args=(addon, optignore, last, queue)))
                 for _ in range(len(addons)):
                     queue.get()
                     pbar.update(1)
