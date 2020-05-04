@@ -2,7 +2,7 @@
 
 ![GitHub release](https://img.shields.io/github/release/AcidWeb/CurseBreaker) ![GitHub Releases](https://img.shields.io/github/downloads/AcidWeb/CurseBreaker/latest/total) ![GitHub All Releases](https://img.shields.io/github/downloads/AcidWeb/CurseBreaker/total) ![GitHub Actions](https://github.com/AcidWeb/CurseBreaker/workflows/Binary%20builder/badge.svg)
 
-CLI addon updater for World of Warcraft.
+CLI addon updater for World of Warcraft. (Asynchronous Updates)
 
 ![Screenshot](https://i.imgur.com/RQBNS4y.png)
 
