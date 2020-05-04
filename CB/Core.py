@@ -175,7 +175,7 @@ class Core:
         else:
             raise NotImplementedError('Provided URL is not supported.')
 
-    def add_addon(self, url, ignore, last, queue):
+    def add_addon(self, url, ignore, queue):
         if 'twitch://' in url:
             url = url.split('/download-client')[0].replace('twitch://', 'https://').strip()
         elif url.startswith('cf:'):
@@ -203,8 +203,6 @@ class Core:
                                           'Directories': new.directories,
                                           'Checksums': checksums
                                           })
-            if (last):
-                self.save_config()
             queue.put(1)
             return True, new.name, new.currentVersion
         queue.put(1)
@@ -237,7 +235,6 @@ class Core:
                 old['Version'] = new.currentVersion
                 old['Directories'] = new.directories
                 old['Checksums'] = checksums
-                self.save_config()
             queue.put(1)
             return new.name, new.currentVersion, oldversion, modified if not force else False
         queue.put(1)

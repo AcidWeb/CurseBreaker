@@ -289,15 +289,14 @@ class TUI:
                 pool = ThreadPool(len(addons) if len(addons) <= 10 else 10)
                 queue = Queue()
                 last = False
-                for i, addon in enumerate(addons):
-                    if (i == len(addons) - 1):
-                        last = True
-                    results.append(pool.apply_async(self.core.add_addon, args=(addon, optignore, last, queue)))
+                for addon in addons:
+                    results.append(pool.apply_async(self.core.add_addon, args=(addon, optignore, queue)))
                 for _ in range(len(addons)):
                     queue.get()
                     pbar.update(1)
                 pool.close()
                 pool.join()
+                self.core.save_config()
                 for result in range(len(results)):
                     installed, name, version = results[result].get()
                     if installed:
@@ -362,6 +361,7 @@ class TUI:
                 pbar.update(1)
             pool.close()
             pool.join()
+            self.core.save_config
             for result in range(len(results)):
                 name, versionnew, versionold, modified = results[result].get()
                 if versionold:
