@@ -35,23 +35,7 @@ class Core:
         self.cfDirs = None
         self.cfCache = {}
         self.wowiCache = {}
-        self.scraper = cloudscraper.create_scraper(
-            browser={
-                'custom': 'Mozilla/5.0 (Linux; U; Android 6.0.1; zh-cn; OPPO R9s Plus Build/MMB29M) AppleWebKit/537.36 '
-                          '(KHTML, like Gecko) Version/4.0 Chrome/53.0.2785.134 Mobile Safari/537.36 OppoBrowser/4.4.9'
-            },
-            cipherSuite=[
-                'ECDHE-ECDSA-AES128-GCM-SHA256',
-                'ECDHE-RSA-AES128-GCM-SHA256',
-                'ECDHE-RSA-AES128-SHA',
-                'AES128-GCM-SHA256',
-                'AES128-SHA',
-                'ECDHE-RSA-AES256-SHA384',
-                'AES256-SHA',
-                'DES-CBC3-SHA',
-                'ECDHE-RSA-AES256-GCM-SHA384'
-            ]
-        )
+        self.scraper = cloudscraper.create_scraper()
 
     def init_config(self):
         if os.path.isfile('CurseBreaker.json'):
