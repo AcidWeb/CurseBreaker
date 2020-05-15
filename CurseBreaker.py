@@ -24,7 +24,6 @@ from CB.WeakAura import WeakAuraUpdater
 
 if platform.system() == 'Windows':
     from ctypes import windll, wintypes, byref
-    from CB.IconChanger import set_icon
 
 
 class TUI:
@@ -391,18 +390,6 @@ class TUI:
                 printft('Import failed. Please try to import REG file manually.')
             else:
                 os.remove('CurseBreaker.reg')
-        else:
-            printft('This feature is available only on Windows.')
-
-    def c_symlink_protection(self, _):
-        if self.os == 'Windows':
-            printft(HTML('<ansigreen>Directories tweaked:</ansigreen>'))
-            for root, dirs, _ in os.walk(self.core.path / '..' / '..'):
-                for d in dirs:
-                    path = Path(root) / d
-                    if os.path.islink(path):
-                        set_icon(path, Path("C:/Windows/System32/SHELL32.dll"), 4)
-                        print(path.resolve())
         else:
             printft('This feature is available only on Windows.')
 
