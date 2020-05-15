@@ -255,10 +255,11 @@ class TUI:
         for item in self.wowiSlugs:
             commands.append(f'install wowi:{item}')
         commands.extend(['install ElvUI', 'install ElvUI:Dev', 'install Tukui'])
-        wa = WeakAuraUpdater('', '', '')
-        accounts = wa.get_accounts()
-        for account in accounts:
-            commands.append(f'set_wa_wow_account {account}')
+        if os.path.isdir(Path('WTF/Account')):
+            wa = WeakAuraUpdater('', '', '')
+            accounts = wa.get_accounts()
+            for account in accounts:
+                commands.append(f'set_wa_wow_account {account}')
         self.completer = WordCompleter(commands, ignore_case=True, sentence=True)
 
     def setup_table(self):
@@ -566,8 +567,8 @@ class TUI:
                      '.\n\tIt can be procured here: https://wago.io/account\n'
                      '<ansigreen>set_wa_wow_account [Account name]</ansigreen>\n\tSets WoW account used by WeakAuras up'
                      'dater.\n\tNeeded only if WeakAuras are used on more than one WoW account.\n'
-                     '<ansigreen>uri_integration</ansigreen>\n\tEnables integration with CurseForge page. "Install" but'
-                     'ton will now start this application.\n'
+                     '<ansigreen>uri_integration</ansigreen>\n\tEnables integration with CurseForge page.\n\t"Install" '
+                     'button will now start this application.\n'
                      '\n<ansibrightgreen>Supported URL:</ansibrightgreen>\n\thttps://www.curseforge.com/wow/addons/[add'
                      'on_name] <ansiwhite>|</ansiwhite> cf:[addon_name]\n\thttps://www.wowinterface.com/downloads/[addo'
                      'n_name] <ansiwhite>|</ansiwhite> wowi:[addon_id]\n\thttps://www.tukui.org/addons.php?id=[addon_id'
