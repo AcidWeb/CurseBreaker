@@ -14,6 +14,7 @@ from csv import reader
 from tqdm import tqdm
 from pathlib import Path
 from terminaltables import SingleTable
+from multiprocessing import freeze_support
 from prompt_toolkit import PromptSession, HTML, ANSI, print_formatted_text as printft
 from prompt_toolkit.completion import WordCompleter
 from distutils.version import StrictVersion
@@ -328,11 +329,13 @@ class TUI:
         if len(self.core.cfCache) > 0 or len(self.core.wowiCache) > 0:
             self.core.cfCache = {}
             self.core.wowiCache = {}
+            self.core.checksumCache = {}
         if args:
             addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
         else:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
             self.core.bulk_check(addons)
+            self.core.bulk_check_checksum(addons)
         with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
             exceptions = []
             for addon in addons:
@@ -567,6 +570,7 @@ class TUI:
 
 
 if __name__ == '__main__':
+    freeze_support()
     clientpath = os.environ.get('CURSEBREAKER_PATH')
     if clientpath:
         os.chdir(clientpath)

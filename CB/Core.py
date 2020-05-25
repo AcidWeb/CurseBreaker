@@ -15,6 +15,7 @@ import cloudscraper
 from tqdm import tqdm
 from pathlib import Path
 from checksumdir import dirhash
+from multiprocessing import Pool
 from xml.dom.minidom import parse, parseString
 from . import retry, HEADERS, __version__
 from .Tukui import TukuiAddon
@@ -35,6 +36,7 @@ class Core:
         self.cfDirs = None
         self.cfCache = {}
         self.wowiCache = {}
+        self.checksumCache = {}
         self.scraper = cloudscraper.create_scraper()
 
     def init_config(self):
@@ -207,7 +209,10 @@ class Core:
         if old:
             new = self.parse_url(old['URL'])
             oldversion = old['Version']
-            modified = self.check_checksum(url)
+            if old['URL'] in self.checksumCache:
+                modified = self.checksumCache[old['URL']]
+            else:
+                modified = self.check_checksum(old, False)
             if force or (new.currentVersion != old['Version'] and update and not modified):
                 self.cleanup(old['Directories'])
                 new.install(self.path)
@@ -222,15 +227,21 @@ class Core:
             return new.name, new.currentVersion, oldversion, modified if not force else False
         return url, False, False, False
 
-    def check_checksum(self, url):
-        old = self.check_if_installed(url)
-        if old:
-            checksums = {}
-            for directory in old['Directories']:
-                if os.path.isdir(self.path / directory):
-                    checksums[directory] = dirhash(self.path / directory)
-            return len(checksums.items() & old['Checksums'].items()) != len(old['Checksums'])
-        return False
+    def check_checksum(self, addon, bulk=True):
+        checksums = {}
+        for directory in addon['Directories']:
+            if os.path.isdir(self.path / directory):
+                checksums[directory] = dirhash(self.path / directory)
+        if bulk:
+            return [addon['URL'], len(checksums.items() & addon['Checksums'].items()) != len(addon['Checksums'])]
+        else:
+            return len(checksums.items() & addon['Checksums'].items()) != len(addon['Checksums'])
+
+    def bulk_check_checksum(self, addons):
+        pool = Pool()
+        results = pool.map(self.check_checksum, [*addons])
+        for result in results:
+            self.checksumCache[result[0]] = result[1]
 
     def dev_toggle(self, url):
         addon = self.check_if_installed(url)
