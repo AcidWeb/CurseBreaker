@@ -6,37 +6,24 @@ from pathlib import Path
 from . import retry, HEADERS
 
 
-class WeakAuraUpdater:
+class WagoUpdater:
     def __init__(self, username, accountname, apikey):
         self.username = username
         self.accountName = accountname
         self.apiKey = apikey
-        self.lua = None
-        self.urlParser = None
+        self.lua = LuaRuntime()
+        self.urlParser = re.compile('([a-zA-Z0-9_-]+)/(\d+)')
         self.waList = {}
         self.waIgnored = {}
         self.uidCache = {}
         self.idCache = {}
         self.dataCache = {'slugs': [], 'uids': [], 'ids': []}
-
-    def get_accounts(self):
-        if self.accountName:
-            if os.path.isfile(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua')):
-                return [self.accountName]
-            else:
-                raise RuntimeError('Incorrect WoW account name!')
-        accounts = os.listdir(Path('WTF/Account'))
-        accountswa = []
-        for account in accounts:
-            if os.path.isfile(Path(f'WTF/Account/{account}/SavedVariables/WeakAuras.lua')):
-                accountswa.append(account)
-        if len(accountswa) > 0:
-            self.accountName = accountswa[0]
-        return accountswa
+        if self.username == 'DISABLED':
+            self.username = ''
+        if not os.path.isfile(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua')):
+            raise RuntimeError('Incorrect WoW account name!')
 
     def parse_storage(self):
-        self.lua = LuaRuntime()
-        self.urlParser = re.compile('([a-zA-Z0-9_-]+)/(\d+)')
         with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua'), 'r', encoding='utf-8') as file:
             data = file.read().replace('WeakAurasSaved = {', '{')
         wadata = self.lua.eval(data)
@@ -111,18 +98,27 @@ class WeakAuraUpdater:
             Path('Interface/AddOns/WeakAurasCompanion').mkdir(exist_ok=True)
             with open(Path('Interface/AddOns/WeakAurasCompanion/WeakAurasCompanion.toc'), 'w', newline='\n') as out:
                 out.write(f'## Interface: {"11304" if client_type == "wow_classic" else "80300"}\n## Title: WeakAu'
-                          f'ras Companion\n## Author: The WeakAuras Team\n## Version: 1.0.0\n## Notes: Keep your WeakAu'
+                          f'ras Companion\n## Author: The WeakAuras Team\n## Version: 1.1.0\n## Notes: Keep your WeakAu'
                           f'ras updated!\n## X-Category: Interface Enhancements\n## DefaultState: Enabled\n## LoadOnDem'
-                          f'and: 0\n## Dependencies: WeakAuras\n\ndata.lua\ninit.lua')
+                          f'and: 0\n## OptionalDeps: WeakAuras, Plater\n\ndata.lua\ninit.lua')
             with open(Path('Interface/AddOns/WeakAurasCompanion/init.lua'), 'w', newline='\n') as out:
                 out.write('-- file generated automatically\nlocal buildTimeTarget = 20190123023201\nlocal waBuildTime ='
-                          ' tonumber(WeakAuras.buildTime)\n\nif waBuildTime and waBuildTime < buildTimeTarget then\n  W'
-                          'eakAurasCompanion = nil\nelse\n  local loadedFrame = CreateFrame("FRAME")\n  loadedFrame:Reg'
-                          'isterEvent("ADDON_LOADED")\n  loadedFrame:SetScript("OnEvent", function(_, _, addonName)\n  '
-                          '  if addonName == "WeakAurasCompanion" then\n      local count = WeakAuras.CountWagoUpdates('
-                          ')\n      if count and count > 0 then\n        WeakAuras.prettyPrint(WeakAuras.L["There are %'
-                          'i updates to your auras ready to be installed!"]:format(count))\n      end\n    end\n  end)'
-                          '\nend')
+                          ' tonumber(WeakAuras and WeakAuras.buildTime or 0)\nif waBuildTime and waBuildTime > buildTim'
+                          'eTarget then\n  local loadedFrame = CreateFrame("FRAME")\n  loadedFrame:RegisterEvent("ADDON'
+                          '_LOADED")\n  loadedFrame:SetScript("OnEvent", function(_, _, addonName)\n    if addonName =='
+                          ' "WeakAurasCompanion" then\n      local count = WeakAuras.CountWagoUpdates()\n      if count'
+                          ' and count > 0 then\n        WeakAuras.prettyPrint(WeakAuras.L["There are %i updates to your'
+                          ' auras ready to be installed!"]:format(count))\n      end\n      if WeakAuras.ImportHistory '
+                          'then\n        for id, data in pairs(WeakAurasSaved.displays) do\n          if data.uid and n'
+                          'ot WeakAurasSaved.history[data.uid] then\n            local slug = WeakAurasCompanion.uids[d'
+                          'ata.uid]\n            if slug then\n              local wagoData = WeakAurasCompanion.slugs['
+                          'slug]\n              if wagoData and wagoData.encoded then\n                WeakAuras.Import'
+                          'History(wagoData.encoded)\n              end\n            end\n          end\n        end\n '
+                          '     end\n      local emptyStash = true\n      for _ in pairs(WeakAurasCompanion.stash) do\n'
+                          '        emptyStash = false\n      end\n      if not emptyStash and WeakAuras.StashShow then'
+                          '\n        C_Timer.After(5, function() WeakAuras.StashShow() end)\n      end\n    end\n  end)'
+                          '\nend\n\nif Plater and Plater.CheckWagoUpdates then\n    Plater.CheckWagoUpdates()\nend')
             with open(Path('Interface/AddOns/WeakAurasCompanion/data.lua'), 'w', newline='\n') as out:
                 out.write('-- file generated automatically\nWeakAurasCompanion = {\n  slugs = {\n  },\n  uids = {\n  },'
-                          '\n  ids = {\n  },\n  stash = {\n  }\n}')
+                          '\n  ids = {\n  },\n  stash = {\n  },\n  Plater = {\n    slugs = {\n    },\n    uids = {\n   '
+                          ' },\n    ids = {\n    },\n    stash = {\n    },\n  },\n}')

@@ -30,7 +30,7 @@ class Core:
         self.configPath = Path('WTF/CurseBreaker.json')
         self.cachePath = Path('WTF/CurseBreaker.cache')
         self.clientType = 'wow_retail'
-        self.waCompanionVersion = 20190123023201
+        self.waCompanionVersion = 110
         self.config = None
         self.cfIDs = None
         self.cfDirs = None
@@ -391,6 +391,17 @@ class Core:
                                    headers=HEADERS).json()
             for addon in payload:
                 self.wowiCache[str(addon['id'])] = addon
+
+    def detect_accounts(self):
+        if os.path.isdir(Path('WTF/Account')):
+            accounts = os.listdir(Path('WTF/Account'))
+            accounts_processed = []
+            for account in accounts:
+                if os.path.isfile(Path(f'WTF/Account/{account}/SavedVariables/WeakAuras.lua')):
+                    accounts_processed.append(account)
+            return accounts_processed
+        else:
+            return []
 
     def detect_addons(self):
         if not self.cfDirs:
