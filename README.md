@@ -4,7 +4,7 @@
 
 CLI addon updater for World of Warcraft.
 
-![Screenshot](https://i.imgur.com/RQBNS4y.png)
+![Screenshot](https://i.imgur.com/pdHkEf1.png)
 
 ## DOWNLOAD
 The latest release can be found [here](https://github.com/AcidWeb/CurseBreaker/releases/latest).\
@@ -25,6 +25,7 @@ By default **CurseBreaker** will create backups of entire `WTF` directory.
 - Most of the commands support the comma-separated list of addons.
 - `install` command have optional `-i` flag that can be used to disable client version check.
 - Environment variable `CURSEBREAKER_PATH` can be used to set the custom location of WoW client.
+- TUI will look a little better if the application is started by something else than the default Windows command prompt. [Windows Terminal](https://github.com/microsoft/terminal) is recommended.
 
 ## SUPPORTED URL
 - CurseForge: `https://www.curseforge.com/wow/addons/[addon_name]`, `cf:[addon_name]`

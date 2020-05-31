@@ -12,10 +12,10 @@ import zipfile
 import datetime
 import requests
 import cloudscraper
-from tqdm import tqdm
 from pathlib import Path
 from checksumdir import dirhash
 from multiprocessing import Pool
+from rich.progress import Progress, BarColumn
 from xml.dom.minidom import parse, parseString
 from . import retry, HEADERS, __version__
 from .Tukui import TukuiAddon
@@ -77,7 +77,7 @@ class Core:
                     addon['Checksums'] = checksums
                 # 1.1.1
                 if addon['Version'] is None:
-                    addon['Version'] = "1"
+                    addon['Version'] = '1'
                 # 2.2.0
                 if addon['URL'].lower() in urlupdate:
                     addon['URL'] = urlupdate[addon['URL'].lower()]
@@ -248,11 +248,19 @@ class Core:
         else:
             return len(checksums.items() & addon['Checksums'].items()) != len(addon['Checksums'])
 
-    def bulk_check_checksum(self, addons):
+    def bulk_check_checksum_callback(self, result):
+        self.checksumCache[result[0]] = result[1]
+
+    def bulk_check_checksum(self, addons, pbar):
         pool = Pool()
-        results = pool.map(self.check_checksum, [*addons])
-        for result in results:
-            self.checksumCache[result[0]] = result[1]
+        workers = []
+        for addon in addons:
+            w = pool.apply_async(self.check_checksum, (addon, ), callback=self.bulk_check_checksum_callback)
+            workers.append(w)
+        for w in workers:
+            w.wait()
+            # TODO Handle progress monitoring better
+            pbar.update(0, advance=0.5, refresh=True)
 
     def dev_toggle(self, url):
         addon = self.check_if_installed(url)
@@ -287,7 +295,7 @@ class Core:
         else:
             return False
 
-    def backup_wtf(self):
+    def backup_wtf(self, console):
         zipf = zipfile.ZipFile(Path('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip'), 'w',
                                zipfile.ZIP_DEFLATED)
         filecount = 0
@@ -295,13 +303,16 @@ class Core:
             files = [f for f in files if not f[0] == '.']
             dirs[:] = [d for d in dirs if not d[0] == '.']
             filecount += len(files)
-        with tqdm(total=filecount, bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
-            for root, dirs, files in os.walk('WTF/', topdown=True):
-                files = [f for f in files if not f[0] == '.']
-                dirs[:] = [d for d in dirs if not d[0] == '.']
-                for f in files:
-                    zipf.write(Path(root, f))
-                    pbar.update(1)
+        with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=console.width), '|', auto_refresh=False,
+                      console=console) as progress:
+            task = progress.add_task('', total=filecount)
+            while not progress.finished:
+                for root, dirs, files in os.walk('WTF/', topdown=True):
+                    files = [f for f in files if not f[0] == '.']
+                    dirs[:] = [d for d in dirs if not d[0] == '.']
+                    for f in files:
+                        zipf.write(Path(root, f))
+                        progress.update(task, advance=1, refresh=True)
         zipf.close()
 
     def find_orphans(self):

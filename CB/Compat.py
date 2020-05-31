@@ -1,7 +1,6 @@
 import os
 import sys
 import platform
-from terminaltables.ascii_table import AsciiTable
 
 system = platform.system()
 
@@ -59,41 +58,3 @@ def kbhit():
     else:
         r = select([sys.stdin], [], [], 0)
         return r[0] != []
-
-
-class UnicodeSingleTable(AsciiTable):
-    CHAR_F_INNER_HORIZONTAL = '─'
-    CHAR_F_INNER_INTERSECT = '┼'
-    CHAR_F_INNER_VERTICAL = '│'
-    CHAR_F_OUTER_LEFT_INTERSECT = '├'
-    CHAR_F_OUTER_LEFT_VERTICAL = '┌'
-    CHAR_F_OUTER_RIGHT_INTERSECT = '┤'
-    CHAR_F_OUTER_RIGHT_VERTICAL = '┐'
-    CHAR_H_INNER_HORIZONTAL = '─'
-    CHAR_H_INNER_INTERSECT = '┼'
-    CHAR_H_INNER_VERTICAL = '│'
-    CHAR_H_OUTER_LEFT_INTERSECT = '├'
-    CHAR_H_OUTER_LEFT_VERTICAL = '│'
-    CHAR_H_OUTER_RIGHT_INTERSECT = '┤'
-    CHAR_H_OUTER_RIGHT_VERTICAL = '│'
-    CHAR_INNER_HORIZONTAL = '─'
-    CHAR_INNER_INTERSECT = '┼'
-    CHAR_INNER_VERTICAL = '│'
-    CHAR_OUTER_BOTTOM_HORIZONTAL = '─'
-    CHAR_OUTER_BOTTOM_INTERSECT = '┴'
-    CHAR_OUTER_BOTTOM_LEFT = '└'
-    CHAR_OUTER_BOTTOM_RIGHT = '┘'
-    CHAR_OUTER_LEFT_INTERSECT = '├'
-    CHAR_OUTER_LEFT_VERTICAL = '│'
-    CHAR_OUTER_RIGHT_INTERSECT = '┤'
-    CHAR_OUTER_RIGHT_VERTICAL = '│'
-    CHAR_OUTER_TOP_HORIZONTAL = '─'
-    CHAR_OUTER_TOP_INTERSECT = '┬'
-    CHAR_OUTER_TOP_LEFT = '┌'
-    CHAR_OUTER_TOP_RIGHT = '┐'
-
-    @property
-    def table(self):
-        ascii_table = super(UnicodeSingleTable, self).table
-        optimized = ascii_table.replace('\033(B\033(0', '')
-        return optimized

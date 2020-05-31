@@ -9,37 +9,38 @@ import pickle
 import zipfile
 import requests
 import platform
-import traceback
 from csv import reader
-from tqdm import tqdm
 from pathlib import Path
-from terminaltables import SingleTable
+from rich import box
+from rich.rule import Rule
+from rich.table import Table
+from rich.console import Console
+from rich.progress import Progress, BarColumn
+from rich.traceback import Traceback, install
 from multiprocessing import freeze_support
-from prompt_toolkit import PromptSession, HTML, ANSI, print_formatted_text as printft
+from prompt_toolkit import PromptSession, HTML
 from prompt_toolkit.completion import WordCompleter
 from distutils.version import StrictVersion
-from CB import AC, HEADERS, __version__
+from CB import HEADERS, __version__
 from CB.Core import Core
-from CB.Compat import pause, timeout, clear, set_terminal_title, set_terminal_size, getch, kbhit, UnicodeSingleTable
+from CB.Compat import pause, timeout, clear, set_terminal_title, set_terminal_size, getch, kbhit
 from CB.Wago import WagoUpdater
 
 if platform.system() == 'Windows':
-    from ctypes import windll, wintypes, byref
+    from ctypes import windll, wintypes
 
 
 class TUI:
     def __init__(self):
         self.core = Core()
-        self.session = PromptSession(reserve_space_for_menu=7)
-        self.tableData = None
+        self.session = PromptSession(reserve_space_for_menu=6)
+        self.console = None
         self.table = None
         self.cfSlugs = None
         self.wowiSlugs = None
         self.completer = None
         self.os = platform.system()
-        if self.os == 'Windows':
-            self.chandle = windll.kernel32.GetStdHandle(-11)
-        sys.tracebacklimit = 0
+        install()
 
     def start(self):
         self.setup_console()
@@ -47,8 +48,8 @@ class TUI:
         # Check if executable is in good location
         if not glob.glob('World*.app') and not glob.glob('Wow*.exe') or \
                 not os.path.isdir(Path('Interface/AddOns')) or not os.path.isdir('WTF'):
-            printft(HTML('<ansibrightred>This executable should be placed in the same directory where Wow.exe, '
-                         'WowClassic.exe or World of Warcraft.app is located.</ansibrightred>\n'))
+            self.console.print('[bold red]This executable should be placed in the same directory where Wow.exe, '
+                               'WowClassic.exe or World of Warcraft.app is located.[/bold red]\n\n')
             pause()
             sys.exit(1)
         # Detect Classic client
@@ -61,8 +62,8 @@ class TUI:
                 pass
             os.remove('PermissionTest')
         except IOError:
-            printft(HTML('<ansibrightred>CurseBreaker doesn\'t have write rights for the current directory.\n'
-                         'Try starting it with administrative privileges.</ansibrightred>\n'))
+            self.console.print('[bold red]CurseBreaker doesn\'t have write rights for the current directory.\n'
+                               'Try starting it with administrative privileges.[/bold red]\n\n')
             pause()
             sys.exit(1)
         self.auto_update()
@@ -95,12 +96,12 @@ class TUI:
                 except Exception as e:
                     self.handle_exception(e)
             else:
-                printft('Command not found.')
+                self.console.print('Command not found.')
             sys.exit(0)
         # Addons auto update
         if len(self.core.config['Addons']) > 0:
-            printft('Automatic update of all addons will start in 5 seconds.\n'
-                    'Press any button to enter interactive mode.')
+            self.console.print('Automatic update of all addons will start in 5 seconds.\n'
+                               'Press any button to enter interactive mode.', highlight=False)
             starttime = time.time()
             keypress = None
             while True:
@@ -110,31 +111,28 @@ class TUI:
                 elif time.time() - starttime > 5:
                     break
             if not keypress:
-                if len(self.core.config['Addons']) > 35:
-                    self.setup_console(len(self.core.config['Addons']))
                 self.print_header()
                 try:
                     self.c_update(None, True)
                     if self.core.backup_check():
                         self.setup_table()
-                        printft(HTML('\n<ansigreen>Backing up WTF directory:</ansigreen>'))
-                        self.core.backup_wtf()
+                        self.console.print('\n[green]Backing up WTF directory:[/green]')
+                        self.core.backup_wtf(self.console)
                     if self.core.config['WAUsername'] != 'DISABLED':
                         self.setup_table()
                         self.c_wa_update(None, False)
                 except Exception as e:
                     self.handle_exception(e)
-                printft('')
+                self.console.print('')
                 pause()
                 sys.exit(0)
         self.setup_completer()
-        self.setup_console(len(self.core.config['Addons']))
         self.print_header()
-        printft(HTML('Use command <ansigreen>help</ansigreen> or press <ansigreen>TAB</ansigreen> to see a list of avai'
-                     'lable commands.\nCommand <ansigreen>exit</ansigreen> or pressing <ansigreen>CTRL+D</ansigreen> wi'
-                     'll close the application.\n'))
+        self.console.print('Use command [green]help[/green] or press [green]TAB[/green] to see a list of available comm'
+                           'ands.\nCommand [green]exit[/green] or pressing [green]CTRL+D[/green] will close the applica'
+                           'tion.\n\n')
         if len(self.core.config['Addons']) == 0:
-            printft(HTML('Command <ansigreen>import</ansigreen> might be used to detect already installed addons.\n'))
+            self.console.print('Command [green]import[/green] might be used to detect already installed addons.\n\n')
         # Prompt session
         while True:
             try:
@@ -153,7 +151,7 @@ class TUI:
                     except Exception as e:
                         self.handle_exception(e)
                 else:
-                    printft('Command not found.')
+                    self.console.print('Command not found.')
 
     def auto_update(self):
         if getattr(sys, 'frozen', False):
@@ -176,7 +174,7 @@ class TUI:
                             url = binary['browser_download_url']
                             break
                     if url and StrictVersion(remoteversion[1:]) > StrictVersion(__version__):
-                        printft(HTML('<ansigreen>Updating CurseBreaker...</ansigreen>'))
+                        self.console.print('[green]Updating CurseBreaker...[/green]')
                         shutil.move(sys.executable, sys.executable + '.old')
                         payload = requests.get(url, headers=HEADERS)
                         if self.os == 'Darwin':
@@ -188,46 +186,42 @@ class TUI:
                                 elif self.os == 'Linux':
                                     f.write(gzip.decompress(payload.content))
                         os.chmod(sys.executable, 0o775)
-                        printft(HTML(f'<ansibrightgreen>Update complete! Please restart the application.</ansibrightgre'
-                                     f'en>\n\n<ansigreen>Changelog:</ansigreen>\n{changelog}\n'))
+                        self.console.print(f'[bold green]Update complete! Please restart the application.[/bold green]'
+                                           f'\n\n[green]Changelog:[/green]\n{changelog}\n\n')
                         pause()
                         sys.exit(0)
             except Exception as e:
-                printft(HTML(f'<ansibrightred>Update failed!\n\nReason: {str(e)}</ansibrightred>\n'))
+                self.console.print(f'[bold red]Update failed!\n\nReason: {str(e)}[/bold red]\n\n')
                 pause()
                 sys.exit(1)
 
     def handle_exception(self, e, table=True):
-        if len(self.tableData) > 1 and table:
-            self.sanitize_table()
-            printft(ANSI(self.table.table))
+        if self.table.row_count > 1 and table:
+            self.console.print(self.table)
         if getattr(sys, 'frozen', False):
-            if isinstance(e, list):
-                for es in e:
-                    printft(HTML(f'\n<ansibrightred>{str(es)}</ansibrightred>'))
-            else:
-                printft(HTML(f'\n<ansibrightred>{str(e)}</ansibrightred>'))
+            sys.tracebacklimit = 0
+        if isinstance(e, list):
+            for es in e:
+                self.console.print(Traceback.from_exception(exc_type=es.__class__, exc_value=es,
+                                                            traceback=es.__traceback__))
         else:
-            if isinstance(e, list):
-                for es in e:
-                    traceback.print_exception(es, es, es.__traceback__, limit=1000)
-            else:
-                traceback.print_exc(limit=1000)
+            self.console.print(Traceback.from_exception(exc_type=e.__class__, exc_value=e, traceback=e.__traceback__))
 
     def print_header(self):
         clear()
-        printft(HTML(f'<ansibrightblack>~~~ <ansibrightgreen>CurseBreaker</ansibrightgreen> <ansibrightred>v'
-                     f'{__version__}</ansibrightred> ~~~</ansibrightblack>\n'))
+        self.console.print(Rule(f'[bold green]CurseBreaker[/bold green] [bold red]v{__version__}[/bold red]'))
+        self.console.print('\n')
 
-    def setup_console(self, buffer=0):
-        if getattr(sys, 'frozen', False) and self.os == 'Windows':
-            if buffer > 0:
-                windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 100 + round(buffer, -2)))
-            else:
-                windll.kernel32.SetConsoleWindowInfo(self.chandle, True, byref(wintypes.SMALL_RECT(0, 0, 99, 49)))
-                windll.kernel32.SetConsoleScreenBufferSize(self.chandle, wintypes._COORD(100, 50))
+    def setup_console(self):
+        if 'WINDIR' in os.environ and 'WT_SESSION' not in os.environ:
+            set_terminal_size(100, 50)
+            windll.kernel32.SetConsoleScreenBufferSize(windll.kernel32.GetStdHandle(-11), wintypes._COORD(100, 200))
+            self.console = Console(width=97)
         elif self.os == 'Darwin':
             set_terminal_size(100, 50)
+            self.console = Console()
+        else:
+            self.console = Console()
 
     def setup_completer(self):
         if not self.cfSlugs or not self.wowiSlugs:
@@ -261,17 +255,10 @@ class TUI:
         self.completer = WordCompleter(commands, ignore_case=True, sentence=True)
 
     def setup_table(self):
-        self.tableData = [[f'{AC.LIGHTWHITE_EX}Status{AC.RESET}', f'{AC.LIGHTWHITE_EX}Name{AC.RESET}',
-                           f'{AC.LIGHTWHITE_EX}Version{AC.RESET}']]
-        self.table = SingleTable(self.tableData) if self.os == 'Windows' else UnicodeSingleTable(self.tableData)
-        self.table.justify_columns[0] = 'center'
-
-    def sanitize_table(self):
-        if not self.table.ok:
-            mwidth = self.table.column_max_width(1)
-            for row in self.table.table_data[1:]:
-                if len(row[1]) > mwidth:
-                    row[1] = row[1][:mwidth - 3] + '...'
+        self.table = Table(box=box.SQUARE)
+        self.table.add_column('Status', header_style='bold white', justify='center')
+        self.table.add_column('Name', header_style='bold white')
+        self.table.add_column('Version', header_style='bold white')
 
     def c_install(self, args):
         if args:
@@ -281,47 +268,52 @@ class TUI:
             else:
                 optignore = False
             addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
-            with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
-                for addon in addons:
-                    installed, name, version = self.core.add_addon(addon, optignore)
-                    if installed:
-                        self.tableData.append([f'{AC.GREEN}Installed{AC.RESET}', name, version])
-                    else:
-                        self.tableData.append([f'{AC.LIGHTBLACK_EX}Already installed{AC.RESET}', name, version])
-                    pbar.update(1)
-            self.sanitize_table()
-            printft(ANSI(self.table.table))
+            with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=self.console.width), '|',
+                          auto_refresh=False, console=self.console) as progress:
+                task = progress.add_task('', total=len(addons))
+                while not progress.finished:
+                    for addon in addons:
+                        installed, name, version = self.core.add_addon(addon, optignore)
+                        if installed:
+                            self.table.add_row('[green]Installed[/green]', name, version)
+                        else:
+                            self.table.add_row('[bold black]Already installed[/bold black]', name, version)
+                        progress.update(task, advance=1, refresh=True)
+            self.console.print(self.table)
         else:
-            printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a comma-separated list of links as an a'
-                         'rgument.\n\tOption <ansiwhite>-i</ansiwhite> will disable the client version check.\n<ansigre'
-                         'en>Supported URLs:</ansigreen>\n\thttps://www.curseforge.com/wow/addons/[addon_name] <ansiwhi'
-                         'te>|</ansiwhite> cf:[addon_name]\n\thttps://www.wowinterface.com/downloads/[addon_name] <ansi'
-                         'white>|</ansiwhite> wowi:[addon_id]\n\thttps://www.tukui.org/addons.php?id=[addon_id] <ansiwh'
-                         'ite>|</ansiwhite> tu:[addon_id]\n\thttps://www.tukui.org/classic-addons.php?id=[addon_id] <an'
-                         'siwhite>|</ansiwhite> tuc:[addon_id]\n\tElvUI <ansiwhite>|</ansiwhite> ElvU'
-                         'I:Dev\n\tTukui'))
+            self.console.print('[green]Usage:[/green]\n\tThis command accepts a comma-separated list of links as an arg'
+                               'ument.\n\tOption [white]-i[/white] will disable the client version check.\n[bold green]'
+                               'Supported URL:[/bold green]\n\thttps://www.curseforge.com/wow/addons/[[addon_name]] [bo'
+                               'ld white]|[/bold white] cf:[[addon_name]]\n\thttps://www.wowinterface.com/downloads/[[a'
+                               'ddon_name]] [bold white]|[/bold white] wowi:[[addon_id]]\n\thttps://www.tukui.org/addon'
+                               's.php?id=[[addon_id]] [bold white]|[/bold white] tu:[[addon_id]]\n\thttps://www.tukui.o'
+                               'rg/classic-addons.php?id=[[addon_id]] [bold white]|[/bold white] tuc:[[addon_id]]\n\tEl'
+                               'vUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui\n\tSLE:Dev', highlight=False)
 
     def c_uninstall(self, args):
         if args:
             addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
-            with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
-                for addon in addons:
-                    name, version = self.core.del_addon(addon)
-                    if name:
-                        self.tableData.append([f'{AC.LIGHTRED_EX}Uninstalled{AC.RESET}', name, version])
-                    else:
-                        self.tableData.append([f'{AC.LIGHTBLACK_EX}Not installed{AC.RESET}', addon, ''])
-                    pbar.update(1)
-            self.sanitize_table()
-            printft(ANSI(self.table.table))
+            with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=self.console.width), '|',
+                          auto_refresh=False, console=self.console) as progress:
+                task = progress.add_task('', total=len(addons))
+                while not progress.finished:
+                    for addon in addons:
+                        name, version = self.core.del_addon(addon)
+                        if name:
+                            self.table.add_row(f'[bold red]Uninstalled[/bold red]', name, version)
+                        else:
+                            self.table.add_row(f'[bold black]Not installed[/bold black]', addon, '')
+                        progress.update(task, advance=1, refresh=True)
+            self.console.print(self.table)
         else:
-            printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a comma-separated list of links as an a'
-                         'rgument.\n<ansigreen>Supported URLs:</ansigreen>\n\thttps://www.curseforge.com/wow/addons/[ad'
-                         'don_name] <ansiwhite>|</ansiwhite> cf:[addon_name]\n\thttps://www.wowinterface.com/downloads/'
-                         '[addon_name] <ansiwhite>|</ansiwhite> wowi:[addon_id]\n\thttps://www.tukui.org/addons.php?id='
-                         '[addon_id] <ansiwhite>|</ansiwhite> tu:[addon_id]\n\thttps://www.tukui.org/classic-addons.php'
-                         '?id=[addon_id] <ansiwhite>|</ansiwhite> tuc:[addon_id]\n\tElvUI <ansiwhite>|</ansiwhite> ElvU'
-                         'I:Dev\n\tTukui'))
+            self.console.print('[green]Usage:[/green]\n\tThis command accepts a comma-separated list of links as an arg'
+                               'ument.\n[bold green]Supported URL:[/bold green]\n\thttps://www.curseforge.com/wow/addon'
+                               's/[[addon_name]] [bold white]|[/bold white] cf:[[addon_name]]\n\thttps://www.wowinterfa'
+                               'ce.com/downloads/[[addon_name]] [bold white]|[/bold white] wowi:[[addon_id]]\n\thttps:/'
+                               '/www.tukui.org/addons.php?id=[[addon_id]] [bold white]|[/bold white] tu:[[addon_id]]'
+                               '\n\thttps://www.tukui.org/classic-addons.php?id=[[addon_id]] [bold white]|[/bold white]'
+                               ' tuc:[[addon_id]]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui\n\tSLE:Dev',
+                               highlight=False)
 
     def c_update(self, args, addline=False, update=True, force=False):
         if len(self.core.cfCache) > 0 or len(self.core.wowiCache) > 0:
@@ -332,34 +324,38 @@ class TUI:
             addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
         else:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
-            self.core.bulk_check(addons)
-            self.core.bulk_check_checksum(addons)
-        with tqdm(total=len(addons), bar_format='{n_fmt}/{total_fmt} |{bar}|') as pbar:
-            exceptions = []
-            for addon in addons:
-                try:
-                    name, versionnew, versionold, modified = self.core.\
-                        update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
-                    if versionold:
-                        if versionold == versionnew:
-                            if modified:
-                                self.tableData.append([f'{AC.LIGHTRED_EX}Modified{AC.RESET}', name, versionold])
+        with Progress('{task.completed:.0f}/{task.total}', '|', BarColumn(bar_width=self.console.width+1), '|',
+                      auto_refresh=False, console=self.console) as progress:
+            task = progress.add_task('', total=len(addons))
+            if not args:
+                self.core.bulk_check(addons)
+                self.core.bulk_check_checksum(addons, progress)
+            while not progress.finished:
+                exceptions = []
+                for addon in addons:
+                    try:
+                        name, versionnew, versionold, modified = self.core.\
+                            update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
+                        if versionold:
+                            if versionold == versionnew:
+                                if modified:
+                                    self.table.add_row('[bold red]Modified[/bold red]', name, versionold)
+                                else:
+                                    self.table.add_row('[green]Up-to-date[/green]', name, versionold)
                             else:
-                                self.tableData.append([f'{AC.GREEN}Up-to-date{AC.RESET}', name, versionold])
+                                if modified:
+                                    self.table.add_row('[bold red]Update suppressed[/bold red]', name, versionold)
+                                else:
+                                    self.table.add_row(f'[yellow]{"Updated " if update else "Update available"}'
+                                                       f'[/yellow]', name, f'[yellow]{versionnew}[/yellow]')
                         else:
-                            if modified:
-                                self.tableData.append([f'{AC.LIGHTRED_EX}Update suppressed{AC.RESET}',
-                                                       name, versionold])
-                            else:
-                                self.tableData.append([f'{AC.YELLOW}{"Updated " if update else "Update available"}'
-                                                       f'{AC.RESET}', name, f'{AC.YELLOW}{versionnew}{AC.RESET}'])
-                    else:
-                        self.tableData.append([f'{AC.LIGHTBLACK_EX}Not installed{AC.RESET}', addon, ''])
-                except Exception as e:
-                    exceptions.append(e)
-                pbar.update(1)
-        self.sanitize_table()
-        printft(ANSI('\n' + self.table.table if addline else self.table.table))
+                            self.table.add_row(f'[bold black]Not installed[/bold black]', addon, '')
+                    except Exception as e:
+                        exceptions.append(e)
+                    progress.update(task, advance=1 if args else 0.5, refresh=True)
+        if addline:
+            self.console.print('\n')
+        self.console.print(self.table)
         if len(exceptions) > 0:
             self.handle_exception(exceptions, False)
 
@@ -367,32 +363,32 @@ class TUI:
         if args:
             self.c_update(args, False, True, True)
         else:
-            printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a comma-separated list of links or addo'
-                         'n names as an argument.'))
+            self.console.print('[green]Usage:[/green]\n\tThis command accepts a comma-separated list of links or addon '
+                               'names as an argument.')
 
     def c_status(self, args):
         self.c_update(args, False, False)
 
     def c_orphans(self, _):
         orphansd, orphansf = self.core.find_orphans()
-        printft(HTML('<ansigreen>Directories that are not part of any installed addon:</ansigreen>'))
+        self.console.print('[green]Directories that are not part of any installed addon:[/green]')
         for orphan in sorted(orphansd):
-            printft(HTML(orphan.replace('[GIT]', '<ansiyellow>[GIT]</ansiyellow>')))
-        printft(HTML('\n<ansigreen>Files that are leftovers after no longer installed addons:</ansigreen>'))
+            self.console.print(orphan.replace('[GIT]', '[yellow][[GIT]][/yellow]'))
+        self.console.print('\n[green]Files that are leftovers after no longer installed addons:[/green]')
         for orphan in sorted(orphansf):
-            printft(orphan)
+            self.console.print(orphan)
 
     def c_uri_integration(self, _):
         if self.os == 'Windows':
             self.core.create_reg()
-            printft('CurseBreaker.reg file was created. Attempting to import...')
+            self.console.print('CurseBreaker.reg file was created. Attempting to import...')
             out = os.system('"' + str(Path(os.path.dirname(sys.executable), 'CurseBreaker.reg')) + '"')
             if out != 0:
-                printft('Import failed. Please try to import REG file manually.')
+                self.console.print('Import failed. Please try to import REG file manually.')
             else:
                 os.remove('CurseBreaker.reg')
         else:
-            printft('This feature is available only on Windows.')
+            self.console.print('This feature is available only on Windows.')
 
     def c_toggle_dev(self, args):
         if args:
@@ -410,54 +406,52 @@ class TUI:
 
     def c_toggle_backup(self, _):
         status = self.core.backup_toggle()
-        printft('Backup of WTF directory is now:',
-                HTML('<ansigreen>ENABLED</ansigreen>') if status else HTML('<ansired>DISABLED</ansired>'))
+        self.console.print('Backup of WTF directory is now:',
+                           '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
 
     def c_toggle_wa(self, args):
         if args:
             if args == self.core.config['WAUsername']:
-                printft(HTML(f'WeakAuras version check is now: <ansigreen>ENABLED</ansigreen>\n'
-                             f'Auras created by <ansiwhite>{self.core.config["WAUsername"]}</ansiwhite>'
-                             f' are now included.'))
+                self.console.print(f'WeakAuras version check is now: [green]ENABLED[/green]\nAuras created by '
+                                   f'[white]{self.core.config["WAUsername"]}[/white] are now included.')
                 self.core.config['WAUsername'] = ''
             else:
                 self.core.config['WAUsername'] = args.strip()
-                printft(HTML(f'WeakAuras version check is now: <ansigreen>ENABLED</ansigreen>\n'
-                             f'Auras created by <ansiwhite>{self.core.config["WAUsername"]}</ansiwhite>'
-                             f' are now ignored.'))
+                self.console.print(f'WeakAuras version check is now: [green]ENABLED[/green]\nAuras created by '
+                                   f'[white]{self.core.config["WAUsername"]}[/white] are now ignored.')
         else:
             if self.core.config['WAUsername'] == 'DISABLED':
                 self.core.config['WAUsername'] = ''
-                printft(HTML('WeakAuras version check is now: <ansigreen>ENABLED</ansigreen>'))
+                self.console.print('WeakAuras version check is now: [green]ENABLED[/green]')
             else:
                 self.core.config['WAUsername'] = 'DISABLED'
                 shutil.rmtree(Path('Interface/AddOns/WeakAurasCompanion'), ignore_errors=True)
-                printft(HTML('WeakAuras version check is now: <ansired>DISABLED</ansired>'))
+                self.console.print('WeakAuras version check is now: [red]DISABLED[/red]')
         self.core.save_config()
 
     def c_set_wa_api(self, args):
         if args:
-            printft('Wago API key is now set.')
+            self.console.print('Wago API key is now set.')
             self.core.config['WAAPIKey'] = args.strip()
             self.core.save_config()
         elif self.core.config['WAAPIKey'] != '':
-            printft('Wago API key is now removed.')
+            self.console.print('Wago API key is now removed.')
             self.core.config['WAAPIKey'] = ''
             self.core.save_config()
         else:
-            printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts API key as an argument.'))
+            self.console.print('[green]Usage:[/green]\n\tThis command accepts API key as an argument.')
 
     def c_set_wa_wow_account(self, args):
         if args:
             args = args.strip()
             if os.path.isfile(Path(f'WTF/Account/{args}/SavedVariables/WeakAuras.lua')):
-                printft(HTML(f'WoW account name set to: <ansiwhite>{args}</ansiwhite>'))
+                self.console.print(f'WoW account name set to: [white]{args}[/white]')
                 self.core.config['WAAccountName'] = args
                 self.core.save_config()
             else:
-                printft('Incorrect WoW account name.')
+                self.console.print('Incorrect WoW account name.')
         else:
-            printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts the WoW account name as an argument.'))
+            self.console.print('[green]Usage:[/green]\n\tThis command accepts the WoW account name as an argument.')
 
     def c_wa_update(self, _, verbose=True):
         if os.path.isdir(Path('Interface/AddOns/WeakAuras')):
@@ -466,11 +460,11 @@ class TUI:
                 return
             elif len(accounts) > 1 and self.core.config['WAUsername'] == '':
                 if verbose:
-                    printft(HTML('More than one WoW account detected.\nPlease use <ansiwhite>set_wa_wow_account</ansiwh'
-                                 'ite> command to set the correct account name.'))
+                    self.console.print('More than one WoW account detected.\nPlease use [white]set_wa_wow_account[/whit'
+                                       'e] command to set the correct account name.')
                 else:
-                    printft(HTML('\n<ansigreen>More than one WoW account detected.</ansigreen>\nPlease use <ansiwhite>s'
-                                 'et_wa_wow_account</ansiwhite> command to set the correct account name.'))
+                    self.console.print('\n[green]More than one WoW account detected.[/green]\nPlease use [white]set_wa_'
+                                       'wow_account[/white] command to set the correct account name.')
                 return
             elif len(accounts) == 1 and self.core.config['WAUsername'] == '':
                 self.core.config['WAAccountName'] = accounts[0]
@@ -488,83 +482,84 @@ class TUI:
             wa.install_companion(self.core.clientType, force)
             wa.install_data()
             if verbose:
-                printft(HTML('<ansigreen>Outdated WeakAuras:</ansigreen>'))
+                self.console.print('[green]Outdated WeakAuras:[/green]')
                 for aura in status[0]:
-                    printft(aura)
-                printft(HTML('\n<ansigreen>Detected WeakAuras:</ansigreen>'))
+                    self.console.print(aura, highlight=False)
+                self.console.print('\n[green]Detected WeakAuras:[/green]')
                 for aura in status[1]:
-                    printft(aura)
+                    self.console.print(aura, highlight=False)
             else:
-                printft(HTML(f'\n<ansigreen>The number of outdated WeakAuras:</ansigreen> {len(status[0])}'))
+                self.console.print(f'\n[green]The number of outdated WeakAuras:[/green] {len(status[0])}',
+                                   highlight=False)
         elif verbose:
-            printft('WeakAuras addon is not installed.')
+            self.console.print('WeakAuras addon is not installed.')
 
     def c_search(self, args):
         if args:
             results = self.core.search(args)
-            printft(HTML('<ansigreen>Top results of your search:</ansigreen>'))
+            self.console.print('[green]Top results of your search:[/green]')
             for url in results:
                 if self.core.check_if_installed(url):
-                    printft(HTML(f'{url} <ansiyellow>[Installed]</ansiyellow>'))
+                    self.console.print(f'{url} [yellow][[Installed]][/yellow]', highlight=False)
                 else:
-                    printft(url)
+                    self.console.print(url, highlight=False)
         else:
-            printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts a search query as an argument.'))
+            self.console.print('[green]Usage:[/green]\n\tThis command accepts a search query as an argument.')
 
     def c_import(self, args):
         hit, partial_hit, miss = self.core.detect_addons()
         if args == 'install' and len(hit) > 0:
             self.c_install(','.join(hit))
         else:
-            printft(HTML(f'<ansigreen>Addons found:</ansigreen>'))
+            self.console.print(f'[green]Addons found:[/green]')
             for addon in hit:
-                printft(addon)
-            printft(HTML(f'\n<ansiyellow>Possible matches:</ansiyellow>'))
+                self.console.print(addon)
+            self.console.print(f'\n[yellow]Possible matches:[/yellow]')
             for addon in partial_hit:
-                printft(HTML(' <ansiwhite>or</ansiwhite> '.join(addon)))
-            printft(HTML(f'\n<ansired>Unknown directories:</ansired>'))
+                self.console.print(' [white]or[/white] '.join(addon))
+            self.console.print(f'\n[red]Unknown directories:[/red]')
             for addon in miss:
-                printft(f'{addon}')
-            printft(HTML(f'\nExecute <ansiwhite>import install</ansiwhite> command to install all detected addons.\n'
-                         f'Possible matches need to be installed manually with the <ansiwhite>install</ansiwhite>'
-                         f' command.'))
+                self.console.print(f'{addon}')
+            self.console.print(f'\nExecute [white]import install[/white] command to install all detected addons.\nPossi'
+                               f'ble matches need to be installed manually with the [white]install[/white] command.')
 
     def c_export(self, _):
-        printft(self.core.export_addons())
+        self.console.print(self.core.export_addons(), highlight=False)
 
     def c_help(self, _):
-        printft(HTML('<ansigreen>install [URL]</ansigreen>\n\tCommand accepts a comma-separated list of links.\n'
-                     '<ansigreen>uninstall [URL/Name]</ansigreen>\n\tCommand accepts a comma-separated list of links or'
-                     ' addon names.\n'
-                     '<ansigreen>update [URL/Name]</ansigreen>\n\tCommand accepts a comma-separated list of links or ad'
-                     'don names.\n\tIf no argument is provided all non-modified addons will be updated.\n'
-                     '<ansigreen>force_update [URL/Name]</ansigreen>\n\tCommand accepts a comma-separated list of links'
-                     ' or addon names.\n\tSelected addons will be reinstalled or updated regardless of their current st'
-                     'ate.\n'
-                     '<ansigreen>wa_update</ansigreen>\n\tCommand detects all installed WeakAuras and generate WeakAura'
-                     's Companion payload.\n'
-                     '<ansigreen>status</ansigreen>\n\tPrints the current state of all installed addons.\n'
-                     '<ansigreen>orphans</ansigreen>\n\tPrints list of orphaned directories and files.\n'
-                     '<ansigreen>search [Keyword]</ansigreen>\n\tExecutes addon search on CurseForge.\n'
-                     '<ansigreen>import</ansigreen>\n\tCommand attempts to import already installed addons.\n'
-                     '<ansigreen>export</ansigreen>\n\tCommand prints list of all installed addons in a form suitable f'
-                     'or sharing.\n'
-                     '<ansigreen>toggle_backup</ansigreen>\n\tEnables/disables automatic daily backup of WTF directory.'
-                     '\n<ansigreen>toggle_dev [Name]</ansigreen>\n\tCommand accepts an addon name as argument.\n\tPrior'
-                     'itizes alpha/beta versions for the provided addon.\n'
-                     '<ansigreen>toggle_wa [Username]</ansigreen>\n\tEnables/disables automatic WeakAuras updates.\n\tI'
-                     'f a username is provided check will start to ignore the specified author.\n'
-                     '<ansigreen>set_wa_api [API key]</ansigreen>\n\tSets Wago API key required to access private auras'
-                     '.\n\tIt can be procured here: https://wago.io/account\n'
-                     '<ansigreen>set_wa_wow_account [Account name]</ansigreen>\n\tSets WoW account used by WeakAuras up'
-                     'dater.\n\tNeeded only if WeakAuras are used on more than one WoW account.\n'
-                     '<ansigreen>uri_integration</ansigreen>\n\tEnables integration with CurseForge page.\n\t"Install" '
-                     'button will now start this application.\n'
-                     '\n<ansibrightgreen>Supported URL:</ansibrightgreen>\n\thttps://www.curseforge.com/wow/addons/[add'
-                     'on_name] <ansiwhite>|</ansiwhite> cf:[addon_name]\n\thttps://www.wowinterface.com/downloads/[addo'
-                     'n_name] <ansiwhite>|</ansiwhite> wowi:[addon_id]\n\thttps://www.tukui.org/addons.php?id=[addon_id'
-                     '] <ansiwhite>|</ansiwhite> tu:[addon_id]\n\thttps://www.tukui.org/classic-addons.php?id=[addon_id'
-                     '] <ansiwhite>|</ansiwhite> tuc:[addon_id]\n\tElvUI <ansiwhite>|</ansiwhite> ElvUI:Dev\n\tTukui'))
+        self.console.print('[green]install [URL][/green]\n\tCommand accepts a comma-separated list of links.\n'
+                           '[green]uninstall [URL/Name][/green]\n\tCommand accepts a comma-separated list of links or'
+                           ' addon names.\n'
+                           '[green]update [URL/Name][/green]\n\tCommand accepts a comma-separated list of links or ad'
+                           'don names.\n\tIf no argument is provided all non-modified addons will be updated.\n'
+                           '[green]force_update [URL/Name][/green]\n\tCommand accepts a comma-separated list of links'
+                           ' or addon names.\n\tSelected addons will be reinstalled or updated regardless of their cu'
+                           'rrent state.\n'
+                           '[green]wa_update[/green]\n\tCommand detects all installed WeakAuras and generate WeakAura'
+                           's Companion payload.\n'
+                           '[green]status[/green]\n\tPrints the current state of all installed addons.\n'
+                           '[green]orphans[/green]\n\tPrints list of orphaned directories and files.\n'
+                           '[green]search [Keyword][/green]\n\tExecutes addon search on CurseForge.\n'
+                           '[green]import[/green]\n\tCommand attempts to import already installed addons.\n'
+                           '[green]export[/green]\n\tCommand prints list of all installed addons in a form suitable f'
+                           'or sharing.\n'
+                           '[green]toggle_backup[/green]\n\tEnables/disables automatic daily backup of WTF directory.'
+                           '\n[green]toggle_dev [Name][/green]\n\tCommand accepts an addon name as argument.\n\tPrior'
+                           'itizes alpha/beta versions for the provided addon.\n'
+                           '[green]toggle_wa [Username][/green]\n\tEnables/disables automatic WeakAuras updates.\n\tI'
+                           'f a username is provided check will start to ignore the specified author.\n'
+                           '[green]set_wa_api [API key][/green]\n\tSets Wago API key required to access private auras'
+                           '.\n\tIt can be procured here: [link=https://wago.io/account]https://wago.io/account[/link]'
+                           '\n[green]set_wa_wow_account [Account name][/green]\n\tSets WoW account used by WeakAuras up'
+                           'dater.\n\tNeeded only if WeakAuras are used on more than one WoW account.\n'
+                           '[green]uri_integration[/green]\n\tEnables integration with CurseForge page.\n\t[i]"Install"'
+                           '[/i] button will now start this application.\n'
+                           '\n[bold green]Supported URL:[/bold green]\n\thttps://www.curseforge.com/wow/addons/[[addon_'
+                           'name]] [bold white]|[/bold white] cf:[[addon_name]]\n\thttps://www.wowinterface.com/downloa'
+                           'ds/[[addon_name]] [bold white]|[/bold white] wowi:[[addon_id]]\n\thttps://www.tukui.org/add'
+                           'ons.php?id=[[addon_id]] [bold white]|[/bold white] tu:[[addon_id]]\n\thttps://www.tukui.org'
+                           '/classic-addons.php?id=[[addon_id]] [bold white]|[/bold white] tuc:[[addon_id]]\n\tElvUI [b'
+                           'old white]|[/bold white] ElvUI:Dev\n\tTukui\n\tSLE:Dev', highlight=False)
 
     def c_exit(self, _):
         sys.exit(0)

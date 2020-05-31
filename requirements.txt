@@ -1,7 +1,6 @@
-terminaltables
 prompt_toolkit
 cloudscraper
 checksumdir
 requests
-tqdm
+rich
 lupa
