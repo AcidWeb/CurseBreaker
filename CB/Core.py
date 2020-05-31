@@ -179,6 +179,8 @@ class Core:
             if ignore:
                 self.config['IgnoreClientVersion'][url] = True
             new = self.parse_url(url)
+            new.get_addon()
+            self.cleanup(new.directories)
             new.install(self.path)
             checksums = {}
             for directory in new.directories:
@@ -214,6 +216,7 @@ class Core:
             else:
                 modified = self.check_checksum(old, False)
             if force or (new.currentVersion != old['Version'] and update and not modified):
+                new.get_addon()
                 self.cleanup(old['Directories'])
                 new.install(self.path)
                 checksums = {}

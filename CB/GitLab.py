@@ -34,7 +34,6 @@ class GitLabAddon:
             raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
 
     def install(self, path):
-        self.get_addon()
         self.archive.extractall(path)
         for directory in self.directories:
             shutil.rmtree(path / directory, ignore_errors=True)

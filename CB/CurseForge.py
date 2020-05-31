@@ -54,5 +54,4 @@ class CurseForgeAddon:
             raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
 
     def install(self, path):
-        self.get_addon()
         self.archive.extractall(path)
