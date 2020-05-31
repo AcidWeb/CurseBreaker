@@ -1,5 +1,6 @@
 import string
 import random
+from rich.terminal_theme import TerminalTheme
 
 __version__ = '3.3.0'
 __license__ = 'GPLv3'
@@ -35,3 +36,27 @@ def retry(custom_error=False):
 
 
 HEADERS = {'User-Agent': f'CB-{"".join(random.choices(string.ascii_uppercase + string.digits, k=10))}/{__version__}'}
+HEADLESS_TERMINAL_THEME = TerminalTheme(
+    (0, 0, 0),
+    (255, 255, 255),
+    [
+        (0, 0, 0),
+        (128, 0, 0),
+        (0, 128, 0),
+        (128, 128, 0),
+        (0, 0, 128),
+        (128, 0, 128),
+        (0, 128, 128),
+        (192, 192, 192),
+    ],
+    [
+        (128, 128, 128),
+        (255, 0, 0),
+        (0, 255, 0),
+        (255, 255, 0),
+        (0, 0, 255),
+        (255, 0, 255),
+        (0, 255, 255),
+        (255, 255, 255),
+    ],
+)

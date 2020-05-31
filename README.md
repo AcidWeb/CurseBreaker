@@ -26,6 +26,7 @@ By default **CurseBreaker** will create backups of entire `WTF` directory.
 - `install` command have optional `-i` flag that can be used to disable client version check.
 - Environment variable `CURSEBREAKER_PATH` can be used to set the custom location of WoW client.
 - TUI will look a little better if the application is started by something else than the default Windows command prompt. [Windows Terminal](https://github.com/microsoft/terminal) is recommended.
+- When the application is started with a `headless` parameter entire addon and WA upgrade process plus WTF backup should be executed in the background. Log file _CurseBreaker.html_ will be created in the same directory as the application.
 
 ## SUPPORTED URL
 - CurseForge: `https://www.curseforge.com/wow/addons/[addon_name]`, `cf:[addon_name]`

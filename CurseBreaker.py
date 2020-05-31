@@ -11,6 +11,7 @@ import requests
 import platform
 from csv import reader
 from pathlib import Path
+from datetime import datetime
 from rich import box
 from rich.rule import Rule
 from rich.table import Table
@@ -21,7 +22,7 @@ from multiprocessing import freeze_support
 from prompt_toolkit import PromptSession, HTML
 from prompt_toolkit.completion import WordCompleter
 from distutils.version import StrictVersion
-from CB import HEADERS, __version__
+from CB import HEADERS, HEADLESS_TERMINAL_THEME, __version__
 from CB.Core import Core
 from CB.Compat import pause, timeout, clear, set_terminal_title, set_terminal_size, getch, kbhit
 from CB.Wago import WagoUpdater
@@ -34,6 +35,7 @@ class TUI:
     def __init__(self):
         self.core = Core()
         self.session = PromptSession(reserve_space_for_menu=6)
+        self.headless = False
         self.console = None
         self.table = None
         self.cfSlugs = None
@@ -43,6 +45,9 @@ class TUI:
         install()
 
     def start(self):
+        # Check if headless mode was requested
+        if len(sys.argv) == 2 and sys.argv[1].lower() == 'headless':
+            self.headless = True
         self.setup_console()
         self.print_header()
         # Check if executable is in good location
@@ -50,7 +55,7 @@ class TUI:
                 not os.path.isdir(Path('Interface/AddOns')) or not os.path.isdir('WTF'):
             self.console.print('[bold red]This executable should be placed in the same directory where Wow.exe, '
                                'WowClassic.exe or World of Warcraft.app is located.[/bold red]\n\n')
-            pause()
+            pause(self.headless)
             sys.exit(1)
         # Detect Classic client
         if os.path.basename(os.getcwd()) == '_classic_':
@@ -64,7 +69,7 @@ class TUI:
         except IOError:
             self.console.print('[bold red]CurseBreaker doesn\'t have write rights for the current directory.\n'
                                'Try starting it with administrative privileges.[/bold red]\n\n')
-            pause()
+            pause(self.headless)
             sys.exit(1)
         self.auto_update()
         self.core.init_config()
@@ -75,7 +80,7 @@ class TUI:
                 self.c_install(sys.argv[1].strip())
             except Exception as e:
                 self.handle_exception(e)
-            timeout()
+            timeout(self.headless)
             sys.exit(0)
         if len(sys.argv) == 2 and '.ccip' in sys.argv[1]:
             try:
@@ -85,47 +90,57 @@ class TUI:
                     os.remove(path)
             except Exception as e:
                 self.handle_exception(e)
-            timeout()
+            timeout(self.headless)
             sys.exit(0)
         # CLI command
         if len(sys.argv) >= 2:
             command = ' '.join(sys.argv[1:]).split(' ', 1)
-            if getattr(self, f'c_{command[0].lower()}', False):
+            if command[0].lower() == 'headless':
+                pass
+            elif getattr(self, f'c_{command[0].lower()}', False):
                 try:
                     getattr(self, f'c_{command[0].lower()}')(command[1].strip() if len(command) > 1 else False)
                 except Exception as e:
                     self.handle_exception(e)
+                sys.exit(0)
             else:
                 self.console.print('Command not found.')
-            sys.exit(0)
+                sys.exit(0)
         # Addons auto update
         if len(self.core.config['Addons']) > 0:
-            self.console.print('Automatic update of all addons will start in 5 seconds.\n'
-                               'Press any button to enter interactive mode.', highlight=False)
+            if not self.headless:
+                self.console.print('Automatic update of all addons will start in 5 seconds.\n'
+                                   'Press any button to enter interactive mode.', highlight=False)
             starttime = time.time()
             keypress = None
             while True:
-                if kbhit():
+                if self.headless:
+                    break
+                elif kbhit():
                     keypress = getch()
                     break
                 elif time.time() - starttime > 5:
                     break
             if not keypress:
-                self.print_header()
+                if not self.headless:
+                    self.print_header()
                 try:
                     self.c_update(None, True)
                     if self.core.backup_check():
                         self.setup_table()
-                        self.console.print('\n[green]Backing up WTF directory:[/green]')
-                        self.core.backup_wtf(self.console)
+                        self.console.print(f'\n[green]Backing up WTF directory{"!" if self.headless else ":"}[/green]')
+                        self.core.backup_wtf(None if self.headless else self.console)
                     if self.core.config['WAUsername'] != 'DISABLED':
                         self.setup_table()
                         self.c_wa_update(None, False)
                 except Exception as e:
                     self.handle_exception(e)
                 self.console.print('')
-                pause()
+                self.print_log()
+                pause(self.headless)
                 sys.exit(0)
+        if self.headless:
+            sys.exit(1)
         self.setup_completer()
         self.print_header()
         self.console.print('Use command [green]help[/green] or press [green]TAB[/green] to see a list of available comm'
@@ -188,11 +203,13 @@ class TUI:
                         os.chmod(sys.executable, 0o775)
                         self.console.print(f'[bold green]Update complete! Please restart the application.[/bold green]'
                                            f'\n\n[green]Changelog:[/green]\n{changelog}\n\n')
-                        pause()
+                        self.print_log()
+                        pause(self.headless)
                         sys.exit(0)
             except Exception as e:
                 self.console.print(f'[bold red]Update failed!\n\nReason: {str(e)}[/bold red]\n\n')
-                pause()
+                self.print_log()
+                pause(self.headless)
                 sys.exit(1)
 
     def handle_exception(self, e, table=True):
@@ -209,11 +226,27 @@ class TUI:
 
     def print_header(self):
         clear()
-        self.console.print(Rule(f'[bold green]CurseBreaker[/bold green] [bold red]v{__version__}[/bold red]'))
-        self.console.print('\n')
+        if self.headless:
+            self.console.print(f'[bold green]CurseBreaker[/bold green] [bold red]v{__version__}[/bold red] | '
+                               f'[yellow]{datetime.now()}[/yellow]', highlight=False)
+        else:
+            self.console.print(Rule(f'[bold green]CurseBreaker[/bold green] [bold red]v{__version__}[/bold red]'))
+            self.console.print('\n')
+
+    def print_log(self):
+        if self.headless:
+            html = self.console.export_html(inline_styles=True, theme=HEADLESS_TERMINAL_THEME)
+            with open('CurseBreaker.html', 'a+', encoding='utf-8') as log:
+                log.write(html)
 
     def setup_console(self):
-        if 'WINDIR' in os.environ and 'WT_SESSION' not in os.environ:
+        if self.headless:
+            self.console = Console(record=True)
+            if self.os == 'Windows':
+                window = windll.kernel32.GetConsoleWindow()
+                if window:
+                    windll.user32.ShowWindow(window, 0)
+        elif 'WINDIR' in os.environ and 'WT_SESSION' not in os.environ:
             set_terminal_size(100, 50)
             windll.kernel32.SetConsoleScreenBufferSize(windll.kernel32.GetStdHandle(-11), wintypes._COORD(100, 200))
             self.console = Console(width=97)
@@ -325,7 +358,7 @@ class TUI:
         else:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         with Progress('{task.completed:.0f}/{task.total}', '|', BarColumn(bar_width=self.console.width+1), '|',
-                      auto_refresh=False, console=self.console) as progress:
+                      auto_refresh=False, console=None if self.headless else self.console) as progress:
             task = progress.add_task('', total=len(addons))
             if not args:
                 self.core.bulk_check(addons)

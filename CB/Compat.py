@@ -10,15 +10,19 @@ else:
     from select import select
 
 
-def pause():
-    if system == 'Windows':
+def pause(headless):
+    if headless:
+        return
+    elif system == 'Windows':
         os.system('pause')
     else:
         os.system('/bin/bash -c "read -rsp $\'Press any key to continue . . .\n\' -n 1"')
 
 
-def timeout():
-    if system == 'Windows':
+def timeout(headless):
+    if headless:
+        return
+    elif system == 'Windows':
         os.system('timeout /t 5')
     else:
         os.system('/bin/bash -c "read -rsp $\'Waiting for 5 seconds, press a key to continue ...\n\' -n 1 -t 5"')
