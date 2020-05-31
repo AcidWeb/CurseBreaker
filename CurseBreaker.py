@@ -254,7 +254,7 @@ class TUI:
             commands.append(f'install cf:{item}')
         for item in self.wowiSlugs:
             commands.append(f'install wowi:{item}')
-        commands.extend(['install ElvUI', 'install ElvUI:Dev', 'install Tukui'])
+        commands.extend(['install ElvUI', 'install ElvUI:Dev', 'install Tukui', 'install SLE:Dev'])
         accounts = self.core.detect_accounts()
         for account in accounts:
             commands.append(f'set_wa_wow_account {account}')

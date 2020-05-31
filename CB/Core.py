@@ -158,6 +158,11 @@ class Core:
                 return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'master')
             else:
                 return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'Classic')
+        elif url.lower() == 'sle:dev':
+            if self.clientType == 'wow_retail':
+                return GitLabAddon('ElvUI Shadow & Light', '45', 'shadow-and-light/shadow-and-light', 'dev')
+            else:
+                raise RuntimeError('Incorrect client version.')
         else:
             raise NotImplementedError('Provided URL is not supported.')
 
