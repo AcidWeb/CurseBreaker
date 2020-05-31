@@ -90,6 +90,9 @@ class Core:
                 # 3.0.2
                 if addon['URL'].endswith('/'):
                     addon['URL'] = addon['URL'][:-1]
+                # 3.3.0
+                if 'Development' in addon.keys():
+                    addon['Development'] = 1
             for add in [['2.1.0', 'WAUsername', ''],
                         ['2.2.0', 'WAAccountName', ''],
                         ['2.2.0', 'WAAPIKey', ''],
@@ -115,11 +118,11 @@ class Core:
         addon = self.check_if_installed(url)
         if addon:
             if 'Development' in addon.keys():
-                return True
+                return addon['Development']
             else:
-                return False
+                return 0
         else:
-            return False
+            return 0
 
     def cleanup(self, directories):
         if len(directories) > 0:
@@ -255,12 +258,14 @@ class Core:
         addon = self.check_if_installed(url)
         if addon:
             state = self.check_if_dev(url)
-            if state:
+            if state == 0:
+                addon['Development'] = 1
+            elif state == 1:
+                addon['Development'] = 2
+            elif state == 2:
                 addon.pop('Development', None)
-            else:
-                addon['Development'] = True
             self.save_config()
-            return not state
+            return state
         return None
 
     def backup_toggle(self):

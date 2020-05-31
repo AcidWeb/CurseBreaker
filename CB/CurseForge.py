@@ -31,7 +31,12 @@ class CurseForgeAddon:
 
     def get_current_version(self):
         files = sorted(self.payload['latestFiles'], key=itemgetter('id'), reverse=True)
-        for status in [[3, 2, 1]] if self.allowDev else [[1], [2], [3]]:
+        release = [[1], [2], [3]]
+        if self.allowDev == 1:
+            release = [[2, 1]]
+        elif self.allowDev == 2:
+            release = [[3, 2, 1]]
+        for status in release:
             for f in files:
                 if (self.clientType == 'wow' or f['gameVersionFlavor'] == self.clientType) and \
                         f['releaseType'] in status and '-nolib' not in f['displayName'] and not f['isAlternate']:

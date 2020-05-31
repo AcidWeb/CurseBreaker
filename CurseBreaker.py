@@ -398,13 +398,15 @@ class TUI:
         if args:
             status = self.core.dev_toggle(args)
             if status is None:
-                printft(HTML('<ansibrightred>This addon does not exist or it is not installed yet.</ansibrightred>'))
-            elif status:
-                printft('This addon will now prioritize alpha/beta versions.')
-            else:
-                printft('This addon will not longer prioritize alpha/beta versions.')
+                self.console.print('[bold red]This addon doesn\'t exist or it is not installed yet.[/bold red]')
+            elif status == 0:
+                self.console.print('Addon switched to the [yellow]beta[/yellow] channel.')
+            elif status == 1:
+                self.console.print('Addon switched to the [red]alpha[/red] channel.')
+            elif status == 2:
+                self.console.print('Addon switched to the [green]stable[/green] channel.')
         else:
-            printft(HTML('<ansigreen>Usage:</ansigreen>\n\tThis command accepts an addon name as an argument.'))
+            self.console.print('[green]Usage:[/green]\n\tThis command accepts an addon name as an argument.')
 
     def c_toggle_backup(self, _):
         status = self.core.backup_toggle()
