@@ -4,7 +4,7 @@
 
 CLI addon updater for World of Warcraft.
 
-![Screenshot](https://i.imgur.com/pdHkEf1.png)
+![Screenshot](https://i.imgur.com/wAea6r8.png)
 
 ## DOWNLOAD
 The latest release can be found [here](https://github.com/AcidWeb/CurseBreaker/releases/latest).\
