@@ -381,7 +381,8 @@ class Core:
         else:
             payload = self.scraper.get(url + '/download-client')
             if payload.status_code == 404:
-                raise RuntimeError(slug)
+                raise RuntimeError(slug + '\nThe project could be removed from CurseForge or renamed. Uninstall it (and'
+                                          ' reinstall if it still exists) to fix this issue.')
             xml = parseString(payload.text)
             project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
             self.config['CFCacheCloudFlare'][slug] = project
