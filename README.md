@@ -8,7 +8,7 @@ CLI addon updater for World of Warcraft.
 
 ## DOWNLOAD
 The latest release can be found [here](https://github.com/AcidWeb/CurseBreaker/releases/latest).\
-Please be aware that Linux and macOS versions are not thoroughly tested.
+Please be aware that Linux (.gz) and macOS (.zip) versions are not thoroughly tested.
 
 ## USAGE
 Place **CurseBreaker** binary inside directory containing `Wow.exe`, `WowClassic.exe` or `World of Warcraft.app` and start it up.\
