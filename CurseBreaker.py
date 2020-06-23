@@ -315,13 +315,14 @@ class TUI:
             self.console.print(self.table)
         else:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts a comma-separated list of links as an arg'
-                               'ument.\n\tOption [white]-i[/white] will disable the client version check.\n[bold green]'
-                               'Supported URL:[/bold green]\n\thttps://www.curseforge.com/wow/addons/[[addon_name]] [bo'
-                               'ld white]|[/bold white] cf:[[addon_name]]\n\thttps://www.wowinterface.com/downloads/[[a'
-                               'ddon_name]] [bold white]|[/bold white] wowi:[[addon_id]]\n\thttps://www.tukui.org/addon'
-                               's.php?id=[[addon_id]] [bold white]|[/bold white] tu:[[addon_id]]\n\thttps://www.tukui.o'
-                               'rg/classic-addons.php?id=[[addon_id]] [bold white]|[/bold white] tuc:[[addon_id]]\n\tEl'
-                               'vUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui\n\tSLE:Dev', highlight=False)
+                               'ument.\n\tOption [bold white]-i[/bold white] will disable the client version check.\n[b'
+                               'old green]Supported URL:[/bold green]\n\thttps://www.curseforge.com/wow/addons/[[addon_'
+                               'name]] [bold white]|[/bold white] cf:[[addon_name]]\n\thttps://www.wowinterface.com/dow'
+                               'nloads/[[addon_name]] [bold white]|[/bold white] wowi:[[addon_id]]\n\thttps://www.tukui'
+                               '.org/addons.php?id=[[addon_id]] [bold white]|[/bold white] tu:[[addon_id]]\n\thttps://w'
+                               'ww.tukui.org/classic-addons.php?id=[[addon_id]] [bold white]|[/bold white] tuc:[[addon_'
+                               'id]]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui\n\tSLE:Dev',
+                               highlight=False)
 
     def c_uninstall(self, args):
         if args:
@@ -449,12 +450,12 @@ class TUI:
         if args:
             if args == self.core.config['WAUsername']:
                 self.console.print(f'WeakAuras version check is now: [green]ENABLED[/green]\nAuras created by '
-                                   f'[white]{self.core.config["WAUsername"]}[/white] are now included.')
+                                   f'[bold white]{self.core.config["WAUsername"]}[/bold white] are now included.')
                 self.core.config['WAUsername'] = ''
             else:
                 self.core.config['WAUsername'] = args.strip()
                 self.console.print(f'WeakAuras version check is now: [green]ENABLED[/green]\nAuras created by '
-                                   f'[white]{self.core.config["WAUsername"]}[/white] are now ignored.')
+                                   f'[bold white]{self.core.config["WAUsername"]}[/bold white] are now ignored.')
         else:
             if self.core.config['WAUsername'] == 'DISABLED':
                 self.core.config['WAUsername'] = ''
@@ -481,7 +482,7 @@ class TUI:
         if args:
             args = args.strip()
             if os.path.isfile(Path(f'WTF/Account/{args}/SavedVariables/WeakAuras.lua')):
-                self.console.print(f'WoW account name set to: [white]{args}[/white]')
+                self.console.print(f'WoW account name set to: [bold white]{args}[/bold white]')
                 self.core.config['WAAccountName'] = args
                 self.core.save_config()
             else:
@@ -496,11 +497,11 @@ class TUI:
                 return
             elif len(accounts) > 1 and self.core.config['WAAccountName'] == '':
                 if verbose:
-                    self.console.print('More than one WoW account detected.\nPlease use [white]set_wa_wow_account[/whit'
-                                       'e] command to set the correct account name.')
+                    self.console.print('More than one WoW account detected.\nPlease use [bold white]set_wa_wow_account['
+                                       '/white] command to set the correct account name.')
                 else:
-                    self.console.print('\n[green]More than one WoW account detected.[/green]\nPlease use [white]set_wa_'
-                                       'wow_account[/white] command to set the correct account name.')
+                    self.console.print('\n[green]More than one WoW account detected.[/green]\nPlease use [bold white]se'
+                                       't_wa_wow_account[/bold white] command to set the correct account name.')
                 return
             elif len(accounts) == 1 and self.core.config['WAAccountName'] == '':
                 self.core.config['WAAccountName'] = accounts[0]
@@ -552,12 +553,13 @@ class TUI:
                 self.console.print(addon)
             self.console.print(f'\n[yellow]Possible matches:[/yellow]')
             for addon in partial_hit:
-                self.console.print(' [white]or[/white] '.join(addon))
+                self.console.print(' [bold white]or[/bold white] '.join(addon))
             self.console.print(f'\n[red]Unknown directories:[/red]')
             for addon in miss:
                 self.console.print(f'{addon}')
-            self.console.print(f'\nExecute [white]import install[/white] command to install all detected addons.\nPossi'
-                               f'ble matches need to be installed manually with the [white]install[/white] command.')
+            self.console.print(f'\nExecute [bold white]import install[/bold white] command to install all detected addo'
+                               f'ns.\nPossible matches need to be installed manually with the [bold white]install[/bold'
+                               f' white] command.')
 
     def c_export(self, _):
         self.console.print(self.core.export_addons(), highlight=False)
