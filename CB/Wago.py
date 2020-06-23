@@ -12,7 +12,7 @@ class WagoUpdater:
         self.accountName = accountname
         self.apiKey = apikey
         self.lua = LuaRuntime()
-        self.urlParser = re.compile('([a-zA-Z0-9_-]+)/(\d+)')
+        self.urlParser = re.compile('/([a-zA-Z0-9_-]+)/(\d+)')
         self.waList = {}
         self.waIgnored = {}
         self.uidCache = {}
