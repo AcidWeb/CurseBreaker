@@ -81,7 +81,7 @@ class WagoUpdater:
         self.dataCache['ids'].append(ids)
 
     def install_data(self):
-        with open(Path('Interface/AddOns/WeakAurasCompanion/data.lua'), 'w', newline='\n') as out:
+        with open(Path('Interface/AddOns/WeakAurasCompanion/data.lua'), 'w', newline='\n', encoding='utf-8') as out:
             out.write('-- file generated automatically\nWeakAurasCompanion = {\n  slugs = {\n')
             for slug in self.dataCache['slugs']:
                 out.write(slug)
