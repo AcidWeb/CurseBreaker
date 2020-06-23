@@ -357,6 +357,7 @@ class TUI:
             addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
         else:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
+        exceptions = []
         with Progress('{task.completed:.0f}/{task.total}', '|', BarColumn(bar_width=self.console.width+1), '|',
                       auto_refresh=False, console=None if self.headless else self.console) as progress:
             task = progress.add_task('', total=len(addons))
@@ -364,7 +365,6 @@ class TUI:
                 self.core.bulk_check(addons)
                 self.core.bulk_check_checksum(addons, progress)
             while not progress.finished:
-                exceptions = []
                 for addon in addons:
                     try:
                         name, versionnew, versionold, modified = self.core.\
@@ -389,6 +389,9 @@ class TUI:
         if addline:
             self.console.print('\n')
         self.console.print(self.table)
+        if len(addons) == 0:
+            self.console.print('Apparently there are no addons installed by CurseBreaker.\n'
+                               'Command [green]import[/green] might be used to detect already installed addons.')
         if len(exceptions) > 0:
             self.handle_exception(exceptions, False)
 
