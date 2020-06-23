@@ -494,7 +494,7 @@ class TUI:
             accounts = self.core.detect_accounts()
             if len(accounts) == 0:
                 return
-            elif len(accounts) > 1 and self.core.config['WAUsername'] == '':
+            elif len(accounts) > 1 and self.core.config['WAAccountName'] == '':
                 if verbose:
                     self.console.print('More than one WoW account detected.\nPlease use [white]set_wa_wow_account[/whit'
                                        'e] command to set the correct account name.')
@@ -502,7 +502,7 @@ class TUI:
                     self.console.print('\n[green]More than one WoW account detected.[/green]\nPlease use [white]set_wa_'
                                        'wow_account[/white] command to set the correct account name.')
                 return
-            elif len(accounts) == 1 and self.core.config['WAUsername'] == '':
+            elif len(accounts) == 1 and self.core.config['WAAccountName'] == '':
                 self.core.config['WAAccountName'] = accounts[0]
                 self.core.save_config()
             wa = WagoUpdater(self.core.config['WAUsername'], self.core.config['WAAccountName'],
