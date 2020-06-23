@@ -301,7 +301,7 @@ class TUI:
             else:
                 optignore = False
             addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
-            with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=self.console.width), '|',
+            with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|',
                           auto_refresh=False, console=self.console) as progress:
                 task = progress.add_task('', total=len(addons))
                 while not progress.finished:
@@ -327,7 +327,7 @@ class TUI:
     def c_uninstall(self, args):
         if args:
             addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
-            with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=self.console.width), '|',
+            with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|',
                           auto_refresh=False, console=self.console) as progress:
                 task = progress.add_task('', total=len(addons))
                 while not progress.finished:
@@ -359,7 +359,7 @@ class TUI:
         else:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         exceptions = []
-        with Progress('{task.completed:.0f}/{task.total}', '|', BarColumn(bar_width=self.console.width+1), '|',
+        with Progress('{task.completed:.0f}/{task.total}', '|', BarColumn(bar_width=None), '|',
                       auto_refresh=False, console=None if self.headless else self.console) as progress:
             task = progress.add_task('', total=len(addons))
             if not args:
