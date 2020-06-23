@@ -91,7 +91,7 @@ class Core:
                 if addon['URL'].endswith('/'):
                     addon['URL'] = addon['URL'][:-1]
                 # 3.3.0
-                if 'Development' in addon.keys():
+                if 'Development' in addon.keys() and isinstance(addon['Development'], bool):
                     addon['Development'] = 1
             for add in [['2.1.0', 'WAUsername', ''],
                         ['2.2.0', 'WAAccountName', ''],
