@@ -495,7 +495,7 @@ class TUI:
             elif len(accounts) > 1 and self.core.config['WAAccountName'] == '':
                 if verbose:
                     self.console.print('More than one WoW account detected.\nPlease use [bold white]set_wa_wow_account['
-                                       '/white] command to set the correct account name.')
+                                       '/bold white] command to set the correct account name.')
                 else:
                     self.console.print('\n[green]More than one WoW account detected.[/green]\nPlease use [bold white]se'
                                        't_wa_wow_account[/bold white] command to set the correct account name.')
