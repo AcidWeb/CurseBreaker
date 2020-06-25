@@ -289,9 +289,9 @@ class TUI:
 
     def setup_table(self):
         self.table = Table(box=box.SQUARE)
-        self.table.add_column('Status', header_style='bold white', justify='center')
-        self.table.add_column('Name', header_style='bold white')
-        self.table.add_column('Version', header_style='bold white')
+        self.table.add_column('Status', header_style='bold white', no_wrap=True, justify='center')
+        self.table.add_column('Name', header_style='bold white', no_wrap=True)
+        self.table.add_column('Version', header_style='bold white', no_wrap=True)
 
     def c_install(self, args):
         if args:
@@ -377,7 +377,7 @@ class TUI:
                                 if modified:
                                     self.table.add_row('[bold red]Update suppressed[/bold red]', name, versionold)
                                 else:
-                                    self.table.add_row(f'[yellow]{"Updated " if update else "Update available"}'
+                                    self.table.add_row(f'[yellow]{"Updated" if update else "Update available"}'
                                                        f'[/yellow]', name, f'[yellow]{versionnew}[/yellow]')
                         else:
                             self.table.add_row(f'[bold black]Not installed[/bold black]', addon, '')
