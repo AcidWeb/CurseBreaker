@@ -13,6 +13,7 @@ import datetime
 import requests
 import cloudscraper
 from pathlib import Path
+from collections import Counter
 from checksumdir import dirhash
 from multiprocessing import Pool
 from rich.progress import Progress, BarColumn
@@ -114,6 +115,11 @@ class Core:
             if addon['URL'] == url or addon['Name'] == url:
                 return addon
 
+    def check_if_installed_dirs(self, directories):
+        for addon in self.config['Addons']:
+            if Counter(directories) == Counter(addon['Directories']):
+                return addon
+
     def check_if_dev(self, url):
         addon = self.check_if_installed(url)
         if addon:
@@ -188,6 +194,9 @@ class Core:
                 self.config['IgnoreClientVersion'][url] = True
             new = self.parse_url(url)
             new.get_addon()
+            addon = self.check_if_installed_dirs(new.directories)
+            if addon:
+                return False, addon['Name'], addon['Version']
             self.cleanup(new.directories)
             new.install(self.path)
             checksums = {}
