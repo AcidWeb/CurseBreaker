@@ -547,16 +547,17 @@ class TUI:
         else:
             self.console.print(f'[green]Addons found:[/green]')
             for addon in hit:
-                self.console.print(addon)
+                self.console.print(addon, highlight=False)
             self.console.print(f'\n[yellow]Possible matches:[/yellow]')
             for addon in partial_hit:
-                self.console.print(' [bold white]or[/bold white] '.join(addon))
+                self.console.print(' [bold white]or[/bold white] '.join(addon), highlight=False)
             self.console.print(f'\n[red]Unknown directories:[/red]')
             for addon in miss:
-                self.console.print(f'{addon}')
+                self.console.print(f'{addon}', highlight=False)
             self.console.print(f'\nExecute [bold white]import install[/bold white] command to install all detected addo'
                                f'ns.\nPossible matches need to be installed manually with the [bold white]install[/bold'
-                               f' white] command.')
+                               f' white] command.\nAddons that are available only on WoWInterface and/or Tukui are not '
+                               f'detected by this process.')
 
     def c_export(self, _):
         self.console.print(self.core.export_addons(), highlight=False)
