@@ -130,6 +130,13 @@ class Core:
         else:
             return 0
 
+    def check_if_dev_global(self):
+        for addon in self.config['Addons']:
+            if addon['URL'].startswith('https://www.curseforge.com/wow/addons/') and 'Development' in addon.keys():
+                return addon['Development']
+        else:
+            return 0
+
     def cleanup(self, directories):
         if len(directories) > 0:
             for directory in directories:
@@ -272,18 +279,31 @@ class Core:
             pbar.update(0, advance=0.5, refresh=True)
 
     def dev_toggle(self, url):
-        addon = self.check_if_installed(url)
-        if addon:
-            state = self.check_if_dev(url)
-            if state == 0:
-                addon['Development'] = 1
-            elif state == 1:
-                addon['Development'] = 2
-            elif state == 2:
-                addon.pop('Development', None)
+        if url == 'global':
+            state = self.check_if_dev_global()
+            for addon in self.config['Addons']:
+                if addon['URL'].startswith('https://www.curseforge.com/wow/addons/'):
+                    if state == 0:
+                        addon['Development'] = 1
+                    elif state == 1:
+                        addon['Development'] = 2
+                    elif state == 2:
+                        addon.pop('Development', None)
             self.save_config()
             return state
-        return None
+        else:
+            addon = self.check_if_installed(url)
+            if addon:
+                state = self.check_if_dev(url)
+                if state == 0:
+                    addon['Development'] = 1
+                elif state == 1:
+                    addon['Development'] = 2
+                elif state == 2:
+                    addon.pop('Development', None)
+                self.save_config()
+                return state
+            return None
 
     def backup_toggle(self):
         self.config['Backup']['Enabled'] = not self.config['Backup']['Enabled']

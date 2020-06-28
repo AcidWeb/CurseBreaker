@@ -281,7 +281,7 @@ class TUI:
             commands.append(f'install cf:{item}')
         for item in self.wowiSlugs:
             commands.append(f'install wowi:{item}')
-        commands.extend(['install ElvUI', 'install ElvUI:Dev', 'install Tukui', 'install SLE:Dev'])
+        commands.extend(['install ElvUI', 'install ElvUI:Dev', 'install Tukui', 'install SLE:Dev', 'toggle_dev global'])
         accounts = self.core.detect_accounts()
         for account in accounts:
             commands.append(f'set_wa_wow_account {account}')
@@ -430,13 +430,17 @@ class TUI:
             if status is None:
                 self.console.print('[bold red]This addon doesn\'t exist or it is not installed yet.[/bold red]')
             elif status == 0:
-                self.console.print('Addon switched to the [yellow]beta[/yellow] channel.')
+                self.console.print('All CurseForge addons are now switched' if args == 'global' else 'Addon switched',
+                                   'to the [yellow]beta[/yellow] channel.')
             elif status == 1:
-                self.console.print('Addon switched to the [red]alpha[/red] channel.')
+                self.console.print('All CurseForge addons are now switched' if args == 'global' else 'Addon switched',
+                                   'to the [red]alpha[/red] channel.')
             elif status == 2:
-                self.console.print('Addon switched to the [green]stable[/green] channel.')
+                self.console.print('All CurseForge addons are now switched' if args == 'global' else 'Addon switched',
+                                   'to the [green]stable[/green] channel.')
         else:
-            self.console.print('[green]Usage:[/green]\n\tThis command accepts an addon name as an argument.')
+            self.console.print('[green]Usage:[/green]\n\tThis command accepts an addon name (or "global") as an'
+                               ' argument.', highlight=False)
 
     def c_toggle_backup(self, _):
         status = self.core.backup_toggle()
@@ -580,8 +584,8 @@ class TUI:
                            '[green]export[/green]\n\tCommand prints list of all installed addons in a form suitable f'
                            'or sharing.\n'
                            '[green]toggle_backup[/green]\n\tEnables/disables automatic daily backup of WTF directory.'
-                           '\n[green]toggle_dev [Name][/green]\n\tCommand accepts an addon name as argument.\n\tPrior'
-                           'itizes alpha/beta versions for the provided addon.\n'
+                           '\n[green]toggle_dev [Name][/green]\n\tCommand accepts an addon name (or "global") as'
+                           ' argument.\n\tPrioritizes alpha/beta versions for the provided addon.\n'
                            '[green]toggle_wa [Username][/green]\n\tEnables/disables automatic WeakAuras updates.\n\tI'
                            'f a username is provided check will start to ignore the specified author.\n'
                            '[green]set_wa_api [API key][/green]\n\tSets Wago API key required to access private auras'
