@@ -299,15 +299,18 @@ class Core:
         else:
             addon = self.check_if_installed(url)
             if addon:
-                state = self.check_if_dev(url)
-                if state == 0:
-                    addon['Development'] = 1
-                elif state == 1:
-                    addon['Development'] = 2
-                elif state == 2:
-                    addon.pop('Development', None)
-                self.save_config()
-                return state
+                if addon['URL'].startswith('https://www.curseforge.com/wow/addons/'):
+                    state = self.check_if_dev(url)
+                    if state == 0:
+                        addon['Development'] = 1
+                    elif state == 1:
+                        addon['Development'] = 2
+                    elif state == 2:
+                        addon.pop('Development', None)
+                    self.save_config()
+                    return state
+                else:
+                    return -1
             return None
 
     def backup_toggle(self):

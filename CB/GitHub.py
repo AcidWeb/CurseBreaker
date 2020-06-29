@@ -16,7 +16,7 @@ class GitHubAddon:
             self.payload = self.payload.json()
         if 'assets' not in self.payload or len(self.payload['assets']) == 0 \
                 or self.payload['assets'][0]['content_type'] not in ['application/x-zip-compressed', 'application/zip']:
-            raise RuntimeError(url)
+            raise RuntimeError(url + '\nThis integration supports only the projects that provide packaged releases.')
         self.name = project.split('/')[1]
         self.downloadUrl = self.payload['assets'][0]['browser_download_url']
         self.currentVersion = self.payload['name']
@@ -27,6 +27,8 @@ class GitHubAddon:
     def get_addon(self):
         self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl).content))
         for file in self.archive.namelist():
+            if file.lower().endswith('.toc') and '/' not in file:
+                raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
             if '/' not in os.path.dirname(file):
                 self.directories.append(os.path.dirname(file))
         self.directories = list(filter(None, set(self.directories)))

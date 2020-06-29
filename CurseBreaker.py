@@ -431,6 +431,8 @@ class TUI:
             status = self.core.dev_toggle(args)
             if status is None:
                 self.console.print('[bold red]This addon doesn\'t exist or it is not installed yet.[/bold red]')
+            elif status == -1:
+                self.console.print('[bold red]This feature can be only used with CurseForge addons.[/bold red]')
             elif status == 0:
                 self.console.print('All CurseForge addons are now switched' if args == 'global' else 'Addon switched',
                                    'to the [yellow]beta[/yellow] channel.')
