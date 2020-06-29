@@ -4,7 +4,7 @@
 
 CLI addon updater for World of Warcraft.
 
-![Screenshot](https://i.imgur.com/wAea6r8.png)
+![Screenshot](https://i.imgur.com/s9kOx2R.png)
 
 ## DOWNLOAD
 The latest release can be found [here](https://github.com/AcidWeb/CurseBreaker/releases/latest).\
@@ -25,7 +25,6 @@ By default **CurseBreaker** will create backups of entire `WTF` directory.
 - Most of the commands support the comma-separated list of addons.
 - `install` command have optional `-i` flag that can be used to disable client version check.
 - Environment variable `CURSEBREAKER_PATH` can be used to set the custom location of WoW client.
-- TUI will look a little better if the application is started by something else than the default Windows command prompt. [Windows Terminal](https://github.com/microsoft/terminal) is recommended.
 - When the application is started with a `headless` parameter entire addon and WA upgrade process plus WTF backup should be executed in the background. Log file _CurseBreaker.html_ will be created in the same directory as the application.
 
 ## SUPPORTED URL
@@ -33,15 +32,18 @@ By default **CurseBreaker** will create backups of entire `WTF` directory.
 - WoWInterface: `https://www.wowinterface.com/downloads/[addon_name]`, `wowi:[addon_id]`
 - Tukui: `https://www.tukui.org/addons.php?id=[addon_id]`, `https://www.tukui.org/classic-addons.php?id=[addon_id]`, `tu:[addon_id]`, `tuc:[addon_id]`
 - Tukui GitLab: `ElvUI`, `ElvUI:Dev`, `Tukui`, `SLE:Dev`
+- GitHub Releases: `https://github.com/[username]/[repository_name]`, `gh:[username]/[repository_name]`
 - Wago: **CurseBreaker** can update auras like WeakAuras Companion.
 
 ## WEAKAURAS SUPPORT
 **CurseBreaker** by default will try to update all detected WeakAuras. Process work the same as WeakAuras Companion.\
+Aura updates will still need to be applied in-game in the WeakAuras option menu.\
 Command `toggle_wa` can be used to set a single author name that will be ignored during the update.\
 Additionally Wago API key can be set with `set_wa_api` command so non-public auras will also be upgradeable.
 
 ## KNOWN ISSUES
 - Using "double" WoWInterface projects ([example](https://www.wowinterface.com/downloads/info5086-BigWigsBossmods)) will always install a retail version of the addon. It can't be fixed as WoWInterface API doesn't support this type of project.
+- WoWInterface projects that need to install files outside the `Interface\AddOns` directory are not supported.
 
 ## COPYRIGHT
 **CurseBreaker** is free software/open source, and is distributed under the GNU General Public License v3.
