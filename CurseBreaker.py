@@ -321,8 +321,9 @@ class TUI:
                                'nloads/[[addon_name]] [bold white]|[/bold white] wowi:[[addon_id]]\n\thttps://www.tukui'
                                '.org/addons.php?id=[[addon_id]] [bold white]|[/bold white] tu:[[addon_id]]\n\thttps://w'
                                'ww.tukui.org/classic-addons.php?id=[[addon_id]] [bold white]|[/bold white] tuc:[[addon_'
-                               'id]]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui\n\tSLE:Dev',
-                               highlight=False)
+                               'id]]\n\thttps://github.com/[[username]]/[[repository_name]] [bold white]|[/bold white] '
+                               'gh:[[username]]/[[repository_name]]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTu'
+                               'kui\n\tSLE:Dev', highlight=False)
 
     def c_uninstall(self, args):
         if args:
@@ -344,7 +345,8 @@ class TUI:
                                'full links as an argument.\n[bold green]Supported URL:[/bold green]\n\thttps://www.curs'
                                'eforge.com/wow/addons/[[addon_name]]\n\thttps://www.wowinterface.com/downloads/[[addon_'
                                'name]]\n\thttps://www.tukui.org/addons.php?id=[[addon_id]]\n\thttps://www.tukui.org/cla'
-                               'ssic-addons.php?id=[[addon_id]]', highlight=False)
+                               'ssic-addons.php?id=[[addon_id]]\n\thttps://github.com/[[username]]/[[repository_name]]',
+                               highlight=False)
 
     def c_update(self, args, addline=False, update=True, force=False):
         if len(self.core.cfCache) > 0 or len(self.core.wowiCache) > 0:
@@ -598,8 +600,10 @@ class TUI:
                            'name]] [bold white]|[/bold white] cf:[[addon_name]]\n\thttps://www.wowinterface.com/downloa'
                            'ds/[[addon_name]] [bold white]|[/bold white] wowi:[[addon_id]]\n\thttps://www.tukui.org/add'
                            'ons.php?id=[[addon_id]] [bold white]|[/bold white] tu:[[addon_id]]\n\thttps://www.tukui.org'
-                           '/classic-addons.php?id=[[addon_id]] [bold white]|[/bold white] tuc:[[addon_id]]\n\tElvUI [b'
-                           'old white]|[/bold white] ElvUI:Dev\n\tTukui\n\tSLE:Dev', highlight=False)
+                           '/classic-addons.php?id=[[addon_id]] [bold white]|[/bold white] tuc:[[addon_id]]\n\thttps://'
+                           'github.com/[[username]]/[[repository_name]] [bold white]|[/bold white] gh:[[username]]/[[re'
+                           'pository_name]]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui\n\tSLE:Dev',
+                           highlight=False)
 
     def c_exit(self, _):
         sys.exit(0)

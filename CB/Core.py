@@ -20,6 +20,7 @@ from rich.progress import Progress, BarColumn
 from xml.dom.minidom import parse, parseString
 from . import retry, HEADERS, __version__
 from .Tukui import TukuiAddon
+from .GitHub import GitHubAddon
 from .GitLab import GitLabAddon
 from .CurseForge import CurseForgeAddon
 from .WoWInterface import WoWInterfaceAddon
@@ -159,6 +160,8 @@ class Core:
             elif url.endswith('1') or url.endswith('2'):
                 raise RuntimeError('ElvUI and Tukui cannot be installed this way.')
             return TukuiAddon(url, True)
+        elif url.startswith('https://github.com/'):
+            return GitHubAddon(url)
         elif url.lower() == 'elvui':
             if self.clientType == 'wow_retail':
                 return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'master')
@@ -193,6 +196,8 @@ class Core:
             url = f'https://www.tukui.org/addons.php?id={url[3:]}'
         elif url.startswith('tuc:'):
             url = f'https://www.tukui.org/classic-addons.php?id={url[4:]}'
+        elif url.startswith('gh:'):
+            url = f'https://github.com/{url[3:]}'
         if url.endswith('/'):
             url = url[:-1]
         addon = self.check_if_installed(url)
@@ -506,6 +511,8 @@ class Core:
                 url = f'tu:{addon["URL"].split("?id=")[-1]}'
             elif addon['URL'].startswith('https://www.tukui.org/classic-addons.php?id='):
                 url = f'tuc:{addon["URL"].split("?id=")[-1]}'
+            elif addon['URL'].startswith('https://github.com/'):
+                url = f'gh:{addon["URL"].replace("https://github.com/", "")}'
             else:
                 url = addon['URL'].lower()
             addons.append(url)
