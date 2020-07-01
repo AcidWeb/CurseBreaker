@@ -2,18 +2,19 @@ import os
 import io
 import re
 import zipfile
-from . import retry
+import requests
+from . import retry, HEADERS
 
 
 class WoWInterfaceAddon:
     @retry()
-    def __init__(self, url, checkcache, scraper):
+    def __init__(self, url, checkcache):
         project = re.findall(r'\d+', url)[0]
-        self.scraper = scraper
         if project in checkcache:
             self.payload = checkcache[project]
         else:
-            self.payload = self.scraper.get(f'https://api.mmoui.com/v4/game/WOW/filedetails/{project}.json').json()
+            self.payload = requests.get(f'https://api.mmoui.com/v4/game/WOW/filedetails/{project}.json',
+                                        headers=HEADERS).json()
             if 'ERROR' in self.payload:
                 raise RuntimeError(url)
             else:
@@ -26,7 +27,7 @@ class WoWInterfaceAddon:
 
     @retry()
     def get_addon(self):
-        self.archive = zipfile.ZipFile(io.BytesIO(self.scraper.get(self.downloadUrl).content))
+        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS).content))
         for file in self.archive.namelist():
             if '/' not in os.path.dirname(file):
                 self.directories.append(os.path.dirname(file))

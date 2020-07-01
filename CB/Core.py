@@ -149,7 +149,7 @@ class Core:
                                    'wow' if url in self.config['IgnoreClientVersion'].keys() else self.clientType,
                                    self.check_if_dev(url))
         elif url.startswith('https://www.wowinterface.com/downloads/'):
-            return WoWInterfaceAddon(url, self.wowiCache, self.scraper)
+            return WoWInterfaceAddon(url, self.wowiCache)
         elif url.startswith('https://www.tukui.org/addons.php?id='):
             if self.clientType == 'wow_classic':
                 raise RuntimeError('Incorrect client version.')
