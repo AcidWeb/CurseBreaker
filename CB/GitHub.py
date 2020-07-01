@@ -19,13 +19,13 @@ class GitHubAddon:
             raise RuntimeError(url + '\nThis integration supports only the projects that provide packaged releases.')
         self.name = project.split('/')[1]
         self.downloadUrl = self.payload['assets'][0]['browser_download_url']
-        self.currentVersion = self.payload['name']
+        self.currentVersion = self.payload['tag_name'] or self.payload['name']
         self.archive = None
         self.directories = []
 
     @retry()
     def get_addon(self):
-        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl).content))
+        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS).content))
         for file in self.archive.namelist():
             if file.lower().endswith('.toc') and '/' not in file:
                 raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
