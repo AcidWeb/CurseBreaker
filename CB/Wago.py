@@ -24,7 +24,8 @@ class WagoUpdater:
             raise RuntimeError('Incorrect WoW account name!')
 
     def parse_storage(self):
-        with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua'), 'r', encoding='utf-8') as file:
+        with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua'), 'r', encoding='utf-8',
+                  errors='ignore') as file:
             data = file.read().replace('WeakAurasSaved = {', '{')
         wadata = self.lua.eval(data)
         for wa in wadata['displays']:
@@ -55,7 +56,7 @@ class WagoUpdater:
                        (aura['slug'] in self.waIgnored and aura['version'] != self.waIgnored[aura['slug']])):
                         wa[0].append(aura['name'])
                         self.update_aura(aura)
-                    else:
+                    elif 'name' in aura:
                         wa[1].append(aura['name'])
             wa[0].sort()
             wa[1].sort()
