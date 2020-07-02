@@ -24,7 +24,7 @@ class WagoUpdater:
             raise RuntimeError('Incorrect WoW account name!')
 
     def parse_storage(self):
-        with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua'), 'r', encoding='utf-8') as file:
+        with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua'), 'r', encoding='ISO-8859-1') as file:
             data = file.read().replace('WeakAurasSaved = {', '{')
         wadata = self.lua.eval(data)
         for wa in wadata['displays']:
@@ -81,7 +81,7 @@ class WagoUpdater:
         self.dataCache['ids'].append(ids)
 
     def install_data(self):
-        with open(Path('Interface/AddOns/WeakAurasCompanion/data.lua'), 'w', newline='\n', encoding='utf-8') as out:
+        with open(Path('Interface/AddOns/WeakAurasCompanion/data.lua'), 'w', newline='\n', encoding='ISO-8859-1') as out:
             out.write('-- file generated automatically\nWeakAurasCompanion = {\n  slugs = {\n')
             for slug in self.dataCache['slugs']:
                 out.write(slug)
