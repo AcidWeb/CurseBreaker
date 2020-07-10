@@ -270,13 +270,13 @@ class TUI:
                 self.cfSlugs = []
                 self.wowiSlugs = []
         commands = ['install', 'uninstall', 'update', 'force_update', 'wa_update', 'status', 'orphans', 'search',
-                    'import', 'export', 'toggle_backup', 'toggle_dev', 'toggle_wa', 'set_wa_api', 'set_wa_wow_account',
-                    'uri_integration', 'help', 'exit']
+                    'import', 'export', 'toggle_backup', 'toggle_dev', 'toggle_block', 'toggle_wa', 'set_wa_api',
+                    'set_wa_wow_account', 'uri_integration', 'help', 'exit']
         addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         for addon in addons:
             name = f'"{addon["Name"]}"' if ',' in addon["Name"] else addon["Name"]
             commands.extend([f'uninstall {name}', f'update {name}', f'force_update {name}', f'toggle_dev {name}',
-                             f'status {name}'])
+                             f'toggle_block {name}', f'status {name}'])
         for item in self.cfSlugs:
             commands.append(f'install cf:{item}')
         for item in self.wowiSlugs:
@@ -367,7 +367,7 @@ class TUI:
             while not progress.finished:
                 for addon in addons:
                     try:
-                        name, versionnew, versionold, modified = self.core.\
+                        name, versionnew, versionold, modified, blocked = self.core.\
                             update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
                         if versionold:
                             if versionold == versionnew:
@@ -376,7 +376,7 @@ class TUI:
                                 else:
                                     self.table.add_row('[green]Up-to-date[/green]', name, versionold)
                             else:
-                                if modified:
+                                if modified or blocked:
                                     self.table.add_row('[bold red]Update suppressed[/bold red]', name, versionold)
                                 else:
                                     self.table.add_row(f'[yellow]{"Updated" if update else "Update available"}'
@@ -445,6 +445,18 @@ class TUI:
         else:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts an addon name (or "global") as an'
                                ' argument.', highlight=False)
+
+    def c_toggle_block(self, args):
+        if args:
+            status = self.core.block_toggle(args)
+            if status is None:
+                self.console.print('[bold red]This addon does not exist or it is not installed yet.[/bold red]')
+            elif status:
+                self.console.print('Updates for this addon are now [red]suppressed[/red].')
+            else:
+                self.console.print('Updates for this addon are [green]no longer suppressed[/green].')
+        else:
+            self.console.print('[green]Usage:[/green]\n\tThis command accepts an addon name as an argument.')
 
     def c_toggle_backup(self, _):
         status = self.core.backup_toggle()
@@ -590,6 +602,8 @@ class TUI:
                            '[green]toggle_backup[/green]\n\tEnables/disables automatic daily backup of WTF directory.'
                            '\n[green]toggle_dev [Name][/green]\n\tCommand accepts an addon name (or "global") as'
                            ' argument.\n\tPrioritizes alpha/beta versions for the provided addon.\n'
+                           '\n[green]toggle_block [Name][/green]\n\tCommand accepts an addon name as'
+                           ' argument.\n\tBlocks/unblocks updating of the provided addon.\n'
                            '[green]toggle_wa [Username][/green]\n\tEnables/disables automatic WeakAuras updates.\n\tI'
                            'f a username is provided check will start to ignore the specified author.\n'
                            '[green]set_wa_api [API key][/green]\n\tSets Wago API key required to access private auras'

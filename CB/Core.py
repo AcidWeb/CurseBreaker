@@ -131,6 +131,15 @@ class Core:
         else:
             return 0
 
+    def check_if_blocked(self, addon):
+        if addon:
+            if 'Block' in addon.keys():
+                return True
+            else:
+                return False
+        else:
+            return False
+
     def check_if_dev_global(self):
         for addon in self.config['Addons']:
             if addon['URL'].startswith('https://www.curseforge.com/wow/addons/') and 'Development' in addon.keys():
@@ -244,7 +253,8 @@ class Core:
                 modified = self.checksumCache[old['URL']]
             else:
                 modified = self.check_checksum(old, False)
-            if force or (new.currentVersion != old['Version'] and update and not modified):
+            blocked = self.check_if_blocked(old)
+            if force or (new.currentVersion != old['Version'] and update and not modified and not blocked):
                 new.get_addon()
                 self.cleanup(old['Directories'])
                 new.install(self.path)
@@ -256,8 +266,11 @@ class Core:
                 old['Directories'] = new.directories
                 old['Checksums'] = checksums
                 self.save_config()
-            return new.name, new.currentVersion, oldversion, modified if not force else False
-        return url, False, False, False
+            if force:
+                modified = False
+                blocked = False
+            return new.name, new.currentVersion, oldversion, modified, blocked
+        return url, False, False, False, False
 
     def check_checksum(self, addon, bulk=True):
         checksums = {}
@@ -312,6 +325,18 @@ class Core:
                 else:
                     return -1
             return None
+
+    def block_toggle(self, url):
+        addon = self.check_if_installed(url)
+        if addon:
+            state = self.check_if_blocked(addon)
+            if state:
+                addon.pop('Block', None)
+            else:
+                addon['Block'] = True
+            self.save_config()
+            return not state
+        return None
 
     def backup_toggle(self):
         self.config['Backup']['Enabled'] = not self.config['Backup']['Enabled']
