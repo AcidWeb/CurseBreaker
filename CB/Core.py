@@ -46,7 +46,10 @@ class Core:
             shutil.move('CurseBreaker.json', 'WTF')
         if os.path.isfile(self.configPath):
             with open(self.configPath, 'r') as f:
-                self.config = json.load(f)
+                try:
+                    self.config = json.load(f)
+                except (StopIteration, json.JSONDecodeError):
+                    raise RuntimeError('Config file is corrupted.')
         else:
             self.config = {'Addons': [],
                            'IgnoreClientVersion': {},
