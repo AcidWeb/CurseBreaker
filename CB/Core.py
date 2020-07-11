@@ -32,7 +32,7 @@ class Core:
         self.configPath = Path('WTF/CurseBreaker.json')
         self.cachePath = Path('WTF/CurseBreaker.cache')
         self.clientType = 'wow_retail'
-        self.waCompanionVersion = 110
+        self.waCompanionVersion = 111
         self.config = None
         self.cfIDs = None
         self.cfDirs = None
