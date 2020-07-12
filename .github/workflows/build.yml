@@ -8,7 +8,7 @@ on:
 jobs:
   windows:
     name: Windows
-    runs-on: windows-2016
+    runs-on: windows-2019
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
@@ -18,9 +18,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools wheel
         pip install -r requirements.txt
-        pip install certifi https://github.com/pyinstaller/pyinstaller/archive/develop.zip   
+        pip install certifi https://github.com/pyinstaller/pyinstaller/archive/develop.zip
     - name: Build binary
-      run: pyinstaller --additional-hooks-dir=Hooks/ -y -F -i CurseBreaker.ico -n CurseBreaker -c --noupx CurseBreaker.py
+      run: pyinstaller --additional-hooks-dir=Hooks/ -y -F -i CurseBreaker.ico -n CurseBreaker -c --noupx --exclude-module FixTk --exclude-module tcl --exclude-module tk --exclude-module _tkinter --exclude-module tkinter --exclude-module Tkinter CurseBreaker.py
     - name: Upload binary
       uses: actions/upload-artifact@v1
       with:
@@ -29,7 +29,7 @@ jobs:
 
   linux:
     name: Linux
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
@@ -39,9 +39,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools wheel
         pip install -r requirements.txt
-        pip install certifi https://github.com/pyinstaller/pyinstaller/archive/develop.zip   
+        pip install certifi https://github.com/pyinstaller/pyinstaller/archive/develop.zip
     - name: Build binary
-      run: pyinstaller --additional-hooks-dir=Hooks/ -y -F -n CurseBreaker -c -s --noupx CurseBreaker.py
+      run: pyinstaller --additional-hooks-dir=Hooks/ -y -F -n CurseBreaker -c -s --noupx --exclude-module FixTk --exclude-module tcl --exclude-module tk --exclude-module _tkinter --exclude-module tkinter --exclude-module Tkinter CurseBreaker.py
     - name: Upload binary
       uses: actions/upload-artifact@v1
       with:
@@ -50,7 +50,7 @@ jobs:
 
   macos:
     name: macOS
-    runs-on: macos-latest
+    runs-on: macos-10.15
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
@@ -60,9 +60,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools wheel
         pip install -r requirements.txt
-        pip install certifi https://github.com/pyinstaller/pyinstaller/archive/develop.zip   
+        pip install certifi https://github.com/pyinstaller/pyinstaller/archive/develop.zip
     - name: Build binary
-      run: pyinstaller --additional-hooks-dir=Hooks/ -y -F -n CurseBreaker -c -s --noupx CurseBreaker.py
+      run: pyinstaller --additional-hooks-dir=Hooks/ -y -F -n CurseBreaker -c -s --noupx --exclude-module FixTk --exclude-module tcl --exclude-module tk --exclude-module _tkinter --exclude-module tkinter --exclude-module Tkinter CurseBreaker.py
     - name: Upload binary
       uses: actions/upload-artifact@v1
       with:
