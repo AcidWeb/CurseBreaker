@@ -13,6 +13,7 @@ from csv import reader
 from pathlib import Path
 from datetime import datetime
 from rich import box
+from rich.text import Text
 from rich.rule import Rule
 from rich.table import Table
 from rich.console import Console
@@ -290,8 +291,8 @@ class TUI:
     def setup_table(self):
         self.table = Table(box=box.SQUARE)
         self.table.add_column('Status', header_style='bold white', no_wrap=True, justify='center')
-        self.table.add_column('Name', header_style='bold white', no_wrap=True)
-        self.table.add_column('Version', header_style='bold white', no_wrap=True)
+        self.table.add_column('Name', header_style='bold white')
+        self.table.add_column('Version', header_style='bold white')
 
     def c_install(self, args):
         if args:
@@ -308,9 +309,11 @@ class TUI:
                     for addon in addons:
                         installed, name, version = self.core.add_addon(addon, optignore)
                         if installed:
-                            self.table.add_row('[green]Installed[/green]', name, version)
+                            self.table.add_row('[green]Installed[/green]', Text(name, no_wrap=True),
+                                               Text(version, no_wrap=True))
                         else:
-                            self.table.add_row('[bold black]Already installed[/bold black]', name, version)
+                            self.table.add_row('[bold black]Already installed[/bold black]',
+                                               Text(name, no_wrap=True), Text(version, no_wrap=True))
                         progress.update(task, advance=1, refresh=True)
             self.console.print(self.table)
         else:
@@ -335,9 +338,11 @@ class TUI:
                     for addon in addons:
                         name, version = self.core.del_addon(addon)
                         if name:
-                            self.table.add_row(f'[bold red]Uninstalled[/bold red]', name, version)
+                            self.table.add_row(f'[bold red]Uninstalled[/bold red]',
+                                               Text(name, no_wrap=True), Text(version, no_wrap=True))
                         else:
-                            self.table.add_row(f'[bold black]Not installed[/bold black]', addon, '')
+                            self.table.add_row(f'[bold black]Not installed[/bold black]',
+                                               Text(addon, no_wrap=True), Text('', no_wrap=True))
                         progress.update(task, advance=1, refresh=True)
             self.console.print(self.table)
         else:
@@ -372,17 +377,22 @@ class TUI:
                         if versionold:
                             if versionold == versionnew:
                                 if modified:
-                                    self.table.add_row('[bold red]Modified[/bold red]', name, versionold)
+                                    self.table.add_row('[bold red]Modified[/bold red]',
+                                                       Text(name, no_wrap=True), Text(versionold, no_wrap=True))
                                 else:
-                                    self.table.add_row('[green]Up-to-date[/green]', name, versionold)
+                                    self.table.add_row('[green]Up-to-date[/green]',
+                                                       Text(name, no_wrap=True), Text(versionold, no_wrap=True))
                             else:
                                 if modified or blocked:
-                                    self.table.add_row('[bold red]Update suppressed[/bold red]', name, versionold)
+                                    self.table.add_row('[bold red]Update suppressed[/bold red]',
+                                                       Text(name, no_wrap=True), Text(versionold, no_wrap=True))
                                 else:
                                     self.table.add_row(f'[yellow]{"Updated" if update else "Update available"}'
-                                                       f'[/yellow]', name, f'[yellow]{versionnew}[/yellow]')
+                                                       f'[/yellow]', Text(name, no_wrap=True),
+                                                       Text(versionnew, style='yellow', no_wrap=True))
                         else:
-                            self.table.add_row(f'[bold black]Not installed[/bold black]', addon, '')
+                            self.table.add_row(f'[bold black]Not installed[/bold black]',
+                                               Text(addon, no_wrap=True), Text('', no_wrap=True))
                     except Exception as e:
                         exceptions.append(e)
                     progress.update(task, advance=1 if args else 0.5, refresh=True)
