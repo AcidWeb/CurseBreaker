@@ -6,6 +6,7 @@ import json
 import html
 import gzip
 import time
+import glob
 import pickle
 import shutil
 import zipfile
@@ -349,8 +350,8 @@ class Core:
     def backup_check(self):
         if self.config['Backup']['Enabled']:
             if not os.path.isfile(Path('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip')):
-                listofbackups = os.listdir('WTF-Backup')
-                fullpath = [Path('WTF-Backup', x) for x in listofbackups]
+                listofbackups = glob.glob('WTF-Backup/*.zip')
+                fullpath = [Path(x) for x in listofbackups]
                 if len([name for name in listofbackups]) == self.config['Backup']['Number']:
                     oldest_file = min(fullpath, key=os.path.getctime)
                     os.remove(oldest_file)
