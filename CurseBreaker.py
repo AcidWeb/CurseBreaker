@@ -73,7 +73,13 @@ class TUI:
             pause(self.headless)
             sys.exit(1)
         self.auto_update()
-        self.core.init_config()
+        try:
+            self.core.init_config()
+        except RuntimeError:
+            self.console.print('[bold red]The config file is corrupted. Restore the earlier version from backup.'
+                               '[/bold red]\n\n')
+            pause(self.headless)
+            sys.exit(1)
         self.setup_table()
         # Curse URI Support
         if len(sys.argv) == 2 and 'twitch://' in sys.argv[1]:

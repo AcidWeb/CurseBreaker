@@ -50,7 +50,7 @@ class Core:
                 try:
                     self.config = json.load(f)
                 except (StopIteration, json.JSONDecodeError):
-                    raise RuntimeError('Config file is corrupted.')
+                    raise RuntimeError
         else:
             self.config = {'Addons': [],
                            'IgnoreClientVersion': {},
