@@ -9,13 +9,18 @@ class GitHubAddon:
     @retry()
     def __init__(self, url, clienttype):
         project = url.replace('https://github.com/', '')
-        self.payload = requests.get(f'https://api.github.com/repos/{project}/releases/latest', headers=HEADERS)
+        self.payload = requests.get(f'https://api.github.com/repos/{project}/releases', headers=HEADERS)
         if self.payload.status_code == 404:
             raise RuntimeError(url)
         else:
             self.payload = self.payload.json()
-        if 'assets' not in self.payload or len(self.payload['assets']) == 0:
-            raise RuntimeError(f'{url}\nThis integration supports only the projects that provide packaged releases.')
+            for release in self.payload:
+                if release['assets'] and len(release['assets']) > 0 and not release['draft']:
+                    self.payload = release
+                    break
+            else:
+                raise RuntimeError(f'{url}\nThis integration supports only the projects that provide packaged '
+                                   f'releases.')
         self.name = project.split('/')[1]
         self.clientType = clienttype
         self.currentVersion = self.payload['tag_name'] or self.payload['name']
