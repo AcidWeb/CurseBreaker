@@ -174,7 +174,7 @@ class Core:
                 raise RuntimeError('ElvUI and Tukui cannot be installed this way.')
             return TukuiAddon(url, True)
         elif url.startswith('https://github.com/'):
-            return GitHubAddon(url)
+            return GitHubAddon(url, self.clientType)
         elif url.lower() == 'elvui':
             if self.clientType == 'wow_retail':
                 return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'master')

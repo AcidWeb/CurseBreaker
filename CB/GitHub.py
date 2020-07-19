@@ -7,21 +7,38 @@ from . import retry, HEADERS
 
 class GitHubAddon:
     @retry()
-    def __init__(self, url):
+    def __init__(self, url, clienttype):
         project = url.replace('https://github.com/', '')
         self.payload = requests.get(f'https://api.github.com/repos/{project}/releases/latest', headers=HEADERS)
         if self.payload.status_code == 404:
             raise RuntimeError(url)
         else:
             self.payload = self.payload.json()
-        if 'assets' not in self.payload or len(self.payload['assets']) == 0 \
-                or self.payload['assets'][0]['content_type'] not in ['application/x-zip-compressed', 'application/zip']:
-            raise RuntimeError(url + '\nThis integration supports only the projects that provide packaged releases.')
+        if 'assets' not in self.payload or len(self.payload['assets']) == 0:
+            raise RuntimeError(f'{url}\nThis integration supports only the projects that provide packaged releases.')
         self.name = project.split('/')[1]
-        self.downloadUrl = self.payload['assets'][0]['browser_download_url']
+        self.clientType = clienttype
         self.currentVersion = self.payload['tag_name'] or self.payload['name']
+        self.downloadUrl = None
         self.archive = None
         self.directories = []
+        self.get_latest_package()
+
+    def get_latest_package(self):
+        latest = None
+        latestclassic = None
+        for release in self.payload['assets']:
+            if release['name'] and release['content_type'] in ['application/x-zip-compressed', 'application/zip']:
+                if self.clientType == 'wow_retail' and not release['name'].endswith('-classic.zip'):
+                    latest = release['browser_download_url']
+                elif self.clientType == 'wow_classic' and release['name'].endswith('-classic.zip'):
+                    latestclassic = release['browser_download_url']
+        if (self.clientType == 'wow_retail' and latest) or (self.clientType == 'wow_classic' and not latestclassic):
+            self.downloadUrl = latest
+        elif self.clientType == 'wow_classic' and latestclassic:
+            self.downloadUrl = latestclassic
+        else:
+            raise RuntimeError(f'{self.name}.\nFailed to find release for your client version.')
 
     @retry()
     def get_addon(self):
