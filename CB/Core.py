@@ -350,10 +350,9 @@ class Core:
     def backup_check(self):
         if self.config['Backup']['Enabled']:
             if not os.path.isfile(Path('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip')):
-                listofbackups = glob.glob('WTF-Backup/*.zip')
-                fullpath = [Path(x) for x in listofbackups]
-                if len([name for name in listofbackups]) == self.config['Backup']['Number']:
-                    oldest_file = min(fullpath, key=os.path.getctime)
+                listofbackups = [Path(x) for x in glob.glob('WTF-Backup/*.zip')]
+                if len(listofbackups) == self.config['Backup']['Number']:
+                    oldest_file = min(listofbackups, key=os.path.getctime)
                     os.remove(oldest_file)
                 return True
             else:
@@ -365,17 +364,15 @@ class Core:
         zipf = zipfile.ZipFile(Path('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip'), 'w',
                                zipfile.ZIP_DEFLATED)
         filecount = 0
-        for root, dirs, files in os.walk('WTF/', topdown=True):
+        for _, _, files in os.walk('WTF/', topdown=True):
             files = [f for f in files if not f[0] == '.']
-            dirs[:] = [d for d in dirs if not d[0] == '.']
             filecount += len(files)
         with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|', auto_refresh=False,
                       console=console) as progress:
             task = progress.add_task('', total=filecount)
             while not progress.finished:
-                for root, dirs, files in os.walk('WTF/', topdown=True):
+                for root, _, files in os.walk('WTF/', topdown=True):
                     files = [f for f in files if not f[0] == '.']
-                    dirs[:] = [d for d in dirs if not d[0] == '.']
                     for f in files:
                         zipf.write(Path(root, f))
                         progress.update(task, advance=1, refresh=True)
