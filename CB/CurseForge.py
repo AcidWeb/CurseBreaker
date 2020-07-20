@@ -17,6 +17,9 @@ class CurseForgeAddon:
             if self.payload.status_code == 404:
                 raise RuntimeError(f'{project}\nThe project could be removed from CurseForge or renamed. Uninstall it '
                                    f'(and reinstall if it still exists) to fix this issue.')
+            elif self.payload.status_code == 403:
+                raise RuntimeError(f'{project}\nAccess to CurseForge API was blocked. It is most likely caused by your'
+                                   f' ISP or internet filter implemented by your government.')
             else:
                 self.payload = self.payload.json()
         self.name = self.payload['name'].strip().strip('\u200b')
