@@ -33,7 +33,8 @@ class GitHubAddon:
         latest = None
         latestclassic = None
         for release in self.payload['assets']:
-            if release['name'] and release['content_type'] in ['application/x-zip-compressed', 'application/zip']:
+            if release['name'] and '-nolib' not in release['name'] \
+                    and release['content_type'] in ['application/x-zip-compressed', 'application/zip']:
                 if self.clientType == 'wow_retail' and not release['name'].endswith('-classic.zip'):
                     latest = release['browser_download_url']
                 elif self.clientType == 'wow_classic' and release['name'].endswith('-classic.zip'):
