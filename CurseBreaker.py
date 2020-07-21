@@ -290,7 +290,7 @@ class TUI:
         for account in self.core.detect_accounts():
             accounts.append(account)
         self.completer = NestedCompleter.from_nested_dict({
-            'install': WordCompleter(slugs, ignore_case=True, match_middle=True),
+            'install': WordCompleter(slugs, ignore_case=True, match_middle=True, WORD=True),
             'uninstall': WordCompleter(addons, ignore_case=True),
             'update': WordCompleter(addons, ignore_case=True),
             'force_update': WordCompleter(addons, ignore_case=True),
