@@ -1,5 +1,6 @@
 import os
 import io
+import re
 import sys
 import time
 import gzip
@@ -21,7 +22,7 @@ from rich.progress import Progress, BarColumn
 from rich.traceback import Traceback, install
 from multiprocessing import freeze_support
 from prompt_toolkit import PromptSession, HTML
-from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.completion import WordCompleter, NestedCompleter
 from distutils.version import StrictVersion
 from CB import HEADERS, HEADLESS_TERMINAL_THEME, __version__
 from CB.Core import Core
@@ -35,7 +36,7 @@ if platform.system() == 'Windows':
 class TUI:
     def __init__(self):
         self.core = Core()
-        self.session = PromptSession(reserve_space_for_menu=6)
+        self.session = PromptSession(reserve_space_for_menu=6, complete_in_thread=True)
         self.headless = False
         self.console = None
         self.table = None
@@ -276,29 +277,52 @@ class TUI:
             except Exception:
                 self.cfSlugs = []
                 self.wowiSlugs = []
-        commands = ['install', 'uninstall', 'update', 'force_update', 'wa_update', 'status', 'orphans', 'search',
-                    'import', 'export', 'toggle_backup', 'toggle_dev', 'toggle_block', 'toggle_wa', 'set_wa_api',
-                    'set_wa_wow_account', 'uri_integration', 'help', 'exit']
-        addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
-        for addon in addons:
-            name = f'"{addon["Name"]}"' if ',' in addon["Name"] else addon["Name"]
-            commands.extend([f'uninstall {name}', f'update {name}', f'force_update {name}', f'toggle_dev {name}',
-                             f'toggle_block {name}', f'status {name}'])
+        addons = []
+        for addon in sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower()):
+            addons.append(f'"{addon["Name"]}"' if ',' in addon["Name"] else addon["Name"])
+        slugs = ['ElvUI', 'Tukui']
         for item in self.cfSlugs:
-            commands.append(f'install cf:{item}')
+            slugs.append(f'cf:{item}')
         for item in self.wowiSlugs:
-            commands.append(f'install wowi:{item}')
-        commands.extend(['install ElvUI', 'install ElvUI:Dev', 'install Tukui', 'install SLE:Dev', 'toggle_dev global'])
-        accounts = self.core.detect_accounts()
-        for account in accounts:
-            commands.append(f'set_wa_wow_account {account}')
-        self.completer = WordCompleter(commands, ignore_case=True, sentence=True)
+            slugs.append(f'wowi:{item}')
+        slugs.extend(['ElvUI:Dev', 'SLE:Dev'])
+        accounts = []
+        for account in self.core.detect_accounts():
+            accounts.append(account)
+        self.completer = NestedCompleter.from_nested_dict({
+            'install': WordCompleter(slugs, ignore_case=True, match_middle=True),
+            'uninstall': WordCompleter(addons, ignore_case=True),
+            'update': WordCompleter(addons, ignore_case=True),
+            'force_update': WordCompleter(addons, ignore_case=True),
+            'wa_update': None,
+            'status': WordCompleter(addons, ignore_case=True),
+            'orphans': None,
+            'search': None,
+            'import': {'install': None},
+            'export': None,
+            'toggle_backup': None,
+            'toggle_dev': WordCompleter(addons + ['global'], ignore_case=True, sentence=True),
+            'toggle_block': WordCompleter(addons, ignore_case=True, sentence=True),
+            'toggle_wa': None,
+            'set_wa_api': None,
+            'set_wa_wow_account': WordCompleter(accounts, ignore_case=True, sentence=True),
+            'uri_integration': None,
+            'help': None,
+            'exit': None
+        })
 
     def setup_table(self):
         self.table = Table(box=box.SQUARE)
         self.table.add_column('Status', header_style='bold white', no_wrap=True, justify='center')
         self.table.add_column('Name', header_style='bold white')
         self.table.add_column('Version', header_style='bold white')
+
+    def parse_args(self, args):
+        for addon in sorted(self.core.config['Addons'], key=lambda k: len(k['Name']), reverse=True):
+            name = f'"{addon["Name"]}"' if ',' in addon['Name'] else addon['Name']
+            if name in args:
+                args = args.replace(name, f'{name},')
+        return args.replace(',,', ',').rstrip(',')
 
     def c_install(self, args):
         if args:
@@ -307,6 +331,7 @@ class TUI:
                 optignore = True
             else:
                 optignore = False
+            args = re.sub(r'(\w)([ ]+)(\w)', r'\1,\3', args)
             addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
             with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|',
                           auto_refresh=False, console=self.console) as progress:
@@ -336,7 +361,7 @@ class TUI:
 
     def c_uninstall(self, args):
         if args:
-            addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
+            addons = [addon.strip() for addon in list(reader([self.parse_args(args)], skipinitialspace=True))[0]]
             with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|',
                           auto_refresh=False, console=self.console) as progress:
                 task = progress.add_task('', total=len(addons))
@@ -365,7 +390,7 @@ class TUI:
             self.core.wowiCache = {}
             self.core.checksumCache = {}
         if args:
-            addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
+            addons = [addon.strip() for addon in list(reader([self.parse_args(args)], skipinitialspace=True))[0]]
         else:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
         exceptions = []
