@@ -356,7 +356,7 @@ class TUI:
                                '.org/addons.php?id=[[addon_id]] [bold white]|[/bold white] tu:[[addon_id]]\n\thttps://w'
                                'ww.tukui.org/classic-addons.php?id=[[addon_id]] [bold white]|[/bold white] tuc:[[addon_'
                                'id]]\n\thttps://github.com/[[username]]/[[repository_name]] [bold white]|[/bold white] '
-                               'gh:[[username]]/[[repository_name]]\n\tElvUI [bold white]|[/bold white] ElvUI:Beta [bold white]|[/bold white]ElvUI:Dev\n\tTu'
+                               'gh:[[username]]/[[repository_name]]\n\tElvUI [bold white]|[/bold white] ElvUI:Beta [bold white]|[/bold white] ElvUI:Dev\n\tTu'
                                'kui\n\tSLE:Dev', highlight=False)
 
     def c_uninstall(self, args):
