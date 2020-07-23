@@ -185,11 +185,9 @@ class Core:
                 return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'development')
             else:
                 return GitLabAddon('ElvUI', '492', 'elvui/elvui-classic', 'development')
+        # TODO Remove after 9.0 release
         elif url.lower() == 'elvui:beta':
-            if self.clientType == 'wow_retail':
-                return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'beta')
-            else:
-                raise RuntimeError('ElvUI Beta is for retail only.')
+            return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'beta')
         elif url.lower() == 'tukui':
             if self.clientType == 'wow_retail':
                 return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'master')
