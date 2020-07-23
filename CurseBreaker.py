@@ -319,11 +319,13 @@ class TUI:
         self.table.add_column('Version', header_style='bold white')
 
     def parse_args(self, args):
+        parsed = []
         for addon in sorted(self.core.config['Addons'], key=lambda k: len(k['Name']), reverse=True):
             name = f'"{addon["Name"]}"' if ',' in addon['Name'] else addon['Name']
-            if name in args:
-                args = args.replace(name, f'{name},')
-        return args.replace(',,', ',').rstrip(',')
+            if name in args or addon['URL'] in args:
+                parsed.append(name)
+                args = args.replace(name, '', 1)
+        return sorted(parsed)
 
     def c_install(self, args):
         if args:
@@ -362,7 +364,7 @@ class TUI:
 
     def c_uninstall(self, args):
         if args:
-            addons = [addon.strip() for addon in list(reader([self.parse_args(args)], skipinitialspace=True))[0]]
+            addons = self.parse_args(args)
             with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|',
                           auto_refresh=False, console=self.console) as progress:
                 task = progress.add_task('', total=len(addons))
@@ -391,7 +393,7 @@ class TUI:
             self.core.wowiCache = {}
             self.core.checksumCache = {}
         if args:
-            addons = [addon.strip() for addon in list(reader([self.parse_args(args)], skipinitialspace=True))[0]]
+            addons = self.parse_args(args)
             compacted = -1
         else:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
@@ -406,6 +408,7 @@ class TUI:
             while not progress.finished:
                 for addon in addons:
                     try:
+                        # noinspection PyTypeChecker
                         name, versionnew, versionold, modified, blocked = self.core.\
                             update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
                         if versionold:
