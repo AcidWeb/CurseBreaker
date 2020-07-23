@@ -348,7 +348,7 @@ class TUI:
                         progress.update(task, advance=1, refresh=True)
             self.console.print(self.table)
         else:
-            self.console.print('[green]Usage:[/green]\n\tThis command accepts a comma-separated list of links as an arg'
+            self.console.print('[green]Usage:[/green]\n\tThis command accepts a space-separated list of links as an arg'
                                'ument.\n\tOption [bold white]-i[/bold white] will disable the client version check.\n[b'
                                'old green]Supported URL:[/bold green]\n\thttps://www.curseforge.com/wow/addons/[[addon_'
                                'name]] [bold white]|[/bold white] cf:[[addon_name]]\n\thttps://www.wowinterface.com/dow'
@@ -377,7 +377,7 @@ class TUI:
                         progress.update(task, advance=1, refresh=True)
             self.console.print(self.table)
         else:
-            self.console.print('[green]Usage:[/green]\n\tThis command accepts a comma-separated list of addon names or '
+            self.console.print('[green]Usage:[/green]\n\tThis command accepts a space-separated list of addon names or '
                                'full links as an argument.\n[bold green]Supported URL:[/bold green]\n\thttps://www.curs'
                                'eforge.com/wow/addons/[[addon_name]]\n\thttps://www.wowinterface.com/downloads/[[addon_'
                                'name]]\n\thttps://www.tukui.org/addons.php?id=[[addon_id]]\n\thttps://www.tukui.org/cla'
@@ -440,7 +440,7 @@ class TUI:
         if args:
             self.c_update(args, False, True, True)
         else:
-            self.console.print('[green]Usage:[/green]\n\tThis command accepts a comma-separated list of addon names or '
+            self.console.print('[green]Usage:[/green]\n\tThis command accepts a space-separated list of addon names or '
                                'full links as an argument.')
 
     def c_status(self, args):
@@ -624,12 +624,12 @@ class TUI:
         self.console.print(self.core.export_addons(), highlight=False)
 
     def c_help(self, _):
-        self.console.print('[green]install [URL][/green]\n\tCommand accepts a comma-separated list of links.\n'
-                           '[green]uninstall [URL/Name][/green]\n\tCommand accepts a comma-separated list of addon name'
+        self.console.print('[green]install [URL][/green]\n\tCommand accepts a space-separated list of links.\n'
+                           '[green]uninstall [URL/Name][/green]\n\tCommand accepts a space-separated list of addon name'
                            's or full links.\n'
-                           '[green]update [URL/Name][/green]\n\tCommand accepts a comma-separated list of addon names o'
+                           '[green]update [URL/Name][/green]\n\tCommand accepts a space-separated list of addon names o'
                            'r full links.\n\tIf no argument is provided all non-modified addons will be updated.\n'
-                           '[green]force_update [URL/Name][/green]\n\tCommand accepts a comma-separated list of addon n'
+                           '[green]force_update [URL/Name][/green]\n\tCommand accepts a space-separated list of addon n'
                            'ames or full links.\n\tSelected addons will be reinstalled or updated regardless of their c'
                            'urrent state.\n'
                            '[green]wa_update[/green]\n\tCommand detects all installed WeakAuras and generate WeakAura'

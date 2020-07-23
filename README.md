@@ -11,7 +11,7 @@ The latest release can be found [here](https://github.com/AcidWeb/CurseBreaker/r
 Please be aware that Linux (.gz) and macOS (.zip) versions are not thoroughly tested.
 
 ## USAGE
-Place **CurseBreaker** binary inside directory containing `Wow.exe`, `WowClassic.exe` or `World of Warcraft.app` and start it up.\
+Place **CurseBreaker** binary inside directory containing `Wow.exe`, `WowClassic.exe` or `World of Warcraft.app`.\
 Read the instructions on the top of the screen.
 
 Already installed addons will not be recognized by **CurseBreaker** and they need to be reinstalled.\
@@ -22,8 +22,9 @@ By default **CurseBreaker** will create backups of entire `WTF` directory.
 
 ## TIPS & TRICKS
 - On Windows command `uri_integration` can be used to enable integration with the CurseForge page.
-- Most of the commands support the comma-separated list of addons.
+- Most of the commands support the space-separated list of addons.
 - `install` command have optional `-i` flag that can be used to disable client version check.
+- TUI will look a little better if the application is started by something else than the default Windows command prompt. [Windows Terminal](https://github.com/microsoft/terminal) is recommended.
 - Environment variable `CURSEBREAKER_PATH` can be used to set the custom location of WoW client.
 - When the application is started with a `headless` parameter entire addon and WA upgrade process plus WTF backup should be executed in the background. Log file _CurseBreaker.html_ will be created in the same directory as the application.
 
