@@ -61,7 +61,8 @@ class Core:
                            'WAAccountName': '',
                            'WAAPIKey': '',
                            'WACompanionVersion': 0,
-                           'CFCacheTimestamp': 0}
+                           'CFCacheTimestamp': 0,
+                           'CompactMode': False}
             self.save_config()
         if not os.path.isdir('WTF-Backup') and self.config['Backup']['Enabled']:
             os.mkdir('WTF-Backup')
@@ -105,7 +106,8 @@ class Core:
                         ['2.2.0', 'WACompanionVersion', 0],
                         ['2.8.0', 'IgnoreClientVersion', {}],
                         ['3.0.1', 'CFCacheTimestamp', 0],
-                        ['3.1.10', 'CFCacheCloudFlare', {}]]:
+                        ['3.1.10', 'CFCacheCloudFlare', {}],
+                        ['3.7.0', 'CompactMode', False]]:
                 if add[1] not in self.config.keys():
                     self.config[add[1]] = add[2]
             for delete in [['1.3.0', 'URLCache'],
@@ -344,6 +346,11 @@ class Core:
             self.save_config()
             return not state
         return None
+
+    def compact_mode_toggle(self):
+        self.config['CompactMode'] = not self.config['CompactMode']
+        self.save_config()
+        return self.config['CompactMode']
 
     def backup_toggle(self):
         self.config['Backup']['Enabled'] = not self.config['Backup']['Enabled']

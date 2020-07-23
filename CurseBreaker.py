@@ -303,6 +303,7 @@ class TUI:
             'toggle_backup': None,
             'toggle_dev': WordCompleter(addons + ['global'], ignore_case=True, sentence=True),
             'toggle_block': WordCompleter(addons, ignore_case=True, sentence=True),
+            'toggle_compact_mode': None,
             'toggle_wa': None,
             'set_wa_api': None,
             'set_wa_wow_account': WordCompleter(accounts, ignore_case=True, sentence=True),
@@ -391,8 +392,10 @@ class TUI:
             self.core.checksumCache = {}
         if args:
             addons = [addon.strip() for addon in list(reader([self.parse_args(args)], skipinitialspace=True))[0]]
+            compacted = -1
         else:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
+            compacted = 0
         exceptions = []
         with Progress('{task.completed:.0f}/{task.total}', '|', BarColumn(bar_width=None), '|',
                       auto_refresh=False, console=None if self.headless else self.console) as progress:
@@ -411,8 +414,11 @@ class TUI:
                                     self.table.add_row('[bold red]Modified[/bold red]',
                                                        Text(name, no_wrap=True), Text(versionold, no_wrap=True))
                                 else:
-                                    self.table.add_row('[green]Up-to-date[/green]',
-                                                       Text(name, no_wrap=True), Text(versionold, no_wrap=True))
+                                    if self.core.config['CompactMode'] and compacted > -1:
+                                        compacted += 1
+                                    else:
+                                        self.table.add_row('[green]Up-to-date[/green]', Text(name, no_wrap=True),
+                                                           Text(versionold, no_wrap=True))
                             else:
                                 if modified or blocked:
                                     self.table.add_row('[bold red]Update suppressed[/bold red]',
@@ -430,6 +436,8 @@ class TUI:
         if addline:
             self.console.print('\n')
         self.console.print(self.table)
+        if compacted > 0:
+            self.console.print(f'Additionally [green]{compacted}[/green] addons are up-to-date.')
         if len(addons) == 0:
             self.console.print('Apparently there are no addons installed by CurseBreaker.\n'
                                'Command [green]import[/green] might be used to detect already installed addons.')
@@ -502,6 +510,11 @@ class TUI:
     def c_toggle_backup(self, _):
         status = self.core.backup_toggle()
         self.console.print('Backup of WTF directory is now:',
+                           '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
+
+    def c_toggle_compact_mode(self, _):
+        status = self.core.compact_mode_toggle()
+        self.console.print('Table compact mode is now:',
                            '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
 
     def c_toggle_wa(self, args):
@@ -642,9 +655,11 @@ class TUI:
                            'or sharing.\n'
                            '[green]toggle_backup[/green]\n\tEnables/disables automatic daily backup of WTF directory.'
                            '\n[green]toggle_dev [Name][/green]\n\tCommand accepts an addon name (or "global") as'
-                           ' argument.\n\tPrioritizes alpha/beta versions for the provided addon.\n'
+                           ' argument.\n\tPrioritizes alpha/beta versions for the provided addon.'
                            '\n[green]toggle_block [Name][/green]\n\tCommand accepts an addon name as'
-                           ' argument.\n\tBlocks/unblocks updating of the provided addon.\n'
+                           ' argument.\n\tBlocks/unblocks updating of the provided addon.'
+                           '\n[green]toggle_compact_mode [Name][/green]\n\tEnables/disables compact table mode that '
+                           'hides entries of up-to-date addons.\n'
                            '[green]toggle_wa [Username][/green]\n\tEnables/disables automatic WeakAuras updates.\n\tI'
                            'f a username is provided check will start to ignore the specified author.\n'
                            '[green]set_wa_api [API key][/green]\n\tSets Wago API key required to access private auras'
