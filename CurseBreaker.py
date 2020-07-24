@@ -598,10 +598,10 @@ class TUI:
                 self.console.print('\n[green]Detected WeakAuras:[/green]')
                 for aura in statuswa[1]:
                     self.console.print(aura, highlight=False)
-                self.console.print('\n[green]Outdated Plater scripts:[/green]')
+                self.console.print('\n[green]Outdated Plater profiles/scripts:[/green]')
                 for aura in statusplater[0]:
                     self.console.print(aura, highlight=False)
-                self.console.print('\n[green]Detected Plater scripts:[/green]')
+                self.console.print('\n[green]Detected Plater profiles/scripts:[/green]')
                 for aura in statusplater[1]:
                     self.console.print(aura, highlight=False)
             else:
@@ -609,7 +609,7 @@ class TUI:
                     self.console.print(f'\n[green]The number of outdated WeakAuras:[/green] '
                                        f'{len(statuswa[0])}', highlight=False)
                 if len(statusplater[0]) > 0:
-                    self.console.print(f'\n[green]The number of outdated Plater scripts:[/green] '
+                    self.console.print(f'\n[green]The number of outdated Plater profiles/scripts:[/green] '
                                        f'{len(statusplater[0])}', highlight=False)
         elif verbose:
             self.console.print('No compatible addon is installed.')
@@ -657,8 +657,8 @@ class TUI:
                            '[green]force_update [URL/Name][/green]\n\tCommand accepts a space-separated list of addon n'
                            'ames or full links.\n\tSelected addons will be reinstalled or updated regardless of their c'
                            'urrent state.\n'
-                           '[green]wago_update[/green]\n\tCommand detects all installed WeakAuras, Plater scripts and '
-                           'generate WeakAuras Companion payload.\n'
+                           '[green]wago_update[/green]\n\tCommand detects all installed WeakAuras and Plater '
+                           'profiles/scripts.\n\tAnd then generate WeakAuras Companion payload.\n'
                            '[green]status[/green]\n\tPrints the current state of all installed addons.\n'
                            '[green]orphans[/green]\n\tPrints list of orphaned directories and files.\n'
                            '[green]search [Keyword][/green]\n\tExecutes addon search on CurseForge.\n'
@@ -674,8 +674,9 @@ class TUI:
                            'hides entries of up-to-date addons.\n'
                            '[green]toggle_wago [Username][/green]\n\tEnables/disables automatic Wago updates.\n\tI'
                            'f a username is provided check will start to ignore the specified author.\n'
-                           '[green]set_wago_api [API key][/green]\n\tSets Wago API key required to access private auras'
-                           '.\n\tIt can be procured here: [link=https://wago.io/account]https://wago.io/account[/link]'
+                           '[green]set_wago_api [API key][/green]\n\tSets Wago API key required to access private '
+                           'entries.\n\tIt can be procured here: '
+                           '[link=https://wago.io/account]https://wago.io/account[/link]'
                            '\n[green]set_wago_wow_account [Account name][/green]\n\tSets WoW account used by Wago up'
                            'dater.\n\tNeeded only if compatibile addons are used on more than one WoW account.\n'
                            '[green]uri_integration[/green]\n\tEnables integration with CurseForge page.\n\t[i]"Install"'
