@@ -140,7 +140,7 @@ class TUI:
                         self.core.backup_wtf(None if self.headless else self.console)
                     if self.core.config['WAUsername'] != 'DISABLED':
                         self.setup_table()
-                        self.c_wa_update(None, False)
+                        self.c_wago_update(None, False)
                 except Exception as e:
                     self.handle_exception(e)
                 self.console.print('')
@@ -294,7 +294,7 @@ class TUI:
             'uninstall': WordCompleter(addons, ignore_case=True),
             'update': WordCompleter(addons, ignore_case=True),
             'force_update': WordCompleter(addons, ignore_case=True),
-            'wa_update': None,
+            'wago_update': None,
             'status': WordCompleter(addons, ignore_case=True),
             'orphans': None,
             'search': None,
@@ -304,9 +304,9 @@ class TUI:
             'toggle_dev': WordCompleter(addons + ['global'], ignore_case=True, sentence=True),
             'toggle_block': WordCompleter(addons, ignore_case=True, sentence=True),
             'toggle_compact_mode': None,
-            'toggle_wa': None,
-            'set_wa_api': None,
-            'set_wa_wow_account': WordCompleter(accounts, ignore_case=True, sentence=True),
+            'toggle_wago': None,
+            'set_wago_api': None,
+            'set_wago_wow_account': WordCompleter(accounts, ignore_case=True, sentence=True),
             'uri_integration': None,
             'help': None,
             'exit': None
@@ -520,27 +520,27 @@ class TUI:
         self.console.print('Table compact mode is now:',
                            '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
 
-    def c_toggle_wa(self, args):
+    def c_toggle_wago(self, args):
         if args:
             if args == self.core.config['WAUsername']:
-                self.console.print(f'WeakAuras version check is now: [green]ENABLED[/green]\nAuras created by '
+                self.console.print(f'Wago version check is now: [green]ENABLED[/green]\nEntries created by '
                                    f'[bold white]{self.core.config["WAUsername"]}[/bold white] are now included.')
                 self.core.config['WAUsername'] = ''
             else:
                 self.core.config['WAUsername'] = args.strip()
-                self.console.print(f'WeakAuras version check is now: [green]ENABLED[/green]\nAuras created by '
+                self.console.print(f'Wago version check is now: [green]ENABLED[/green]\nEntries created by '
                                    f'[bold white]{self.core.config["WAUsername"]}[/bold white] are now ignored.')
         else:
             if self.core.config['WAUsername'] == 'DISABLED':
                 self.core.config['WAUsername'] = ''
-                self.console.print('WeakAuras version check is now: [green]ENABLED[/green]')
+                self.console.print('Wago version check is now: [green]ENABLED[/green]')
             else:
                 self.core.config['WAUsername'] = 'DISABLED'
                 shutil.rmtree(Path('Interface/AddOns/WeakAurasCompanion'), ignore_errors=True)
-                self.console.print('WeakAuras version check is now: [red]DISABLED[/red]')
+                self.console.print('Wago version check is now: [red]DISABLED[/red]')
         self.core.save_config()
 
-    def c_set_wa_api(self, args):
+    def c_set_wago_api(self, args):
         if args:
             self.console.print('Wago API key is now set.')
             self.core.config['WAAPIKey'] = args.strip()
@@ -552,10 +552,11 @@ class TUI:
         else:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts API key as an argument.')
 
-    def c_set_wa_wow_account(self, args):
+    def c_set_wago_wow_account(self, args):
         if args:
             args = args.strip()
-            if os.path.isfile(Path(f'WTF/Account/{args}/SavedVariables/WeakAuras.lua')):
+            if os.path.isfile(Path(f'WTF/Account/{args}/SavedVariables/WeakAuras.lua')) or \
+                    os.path.isfile(Path(f'WTF/Account/{args}/SavedVariables/Plater.lua')):
                 self.console.print(f'WoW account name set to: [bold white]{args}[/bold white]')
                 self.core.config['WAAccountName'] = args
                 self.core.save_config()
@@ -564,46 +565,54 @@ class TUI:
         else:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts the WoW account name as an argument.')
 
-    def c_wa_update(self, _, verbose=True):
-        if os.path.isdir(Path('Interface/AddOns/WeakAuras')):
+    def c_wago_update(self, _, verbose=True):
+        if os.path.isdir(Path('Interface/AddOns/WeakAuras')) or os.path.isdir(Path('Interface/AddOns/Plater')):
             accounts = self.core.detect_accounts()
             if len(accounts) == 0:
                 return
             elif len(accounts) > 1 and self.core.config['WAAccountName'] == '':
                 if verbose:
-                    self.console.print('More than one WoW account detected.\nPlease use [bold white]set_wa_wow_account['
-                                       '/bold white] command to set the correct account name.')
+                    self.console.print('More than one WoW account detected.\nPlease use [bold white]set_wago_wow_accoun'
+                                       't[''/bold white] command to set the correct account name.')
                 else:
                     self.console.print('\n[green]More than one WoW account detected.[/green]\nPlease use [bold white]se'
-                                       't_wa_wow_account[/bold white] command to set the correct account name.')
+                                       't_wago_wow_account[/bold white] command to set the correct account name.')
                 return
             elif len(accounts) == 1 and self.core.config['WAAccountName'] == '':
                 self.core.config['WAAccountName'] = accounts[0]
                 self.core.save_config()
-            wa = WagoUpdater(self.core.config['WAUsername'], self.core.config['WAAccountName'],
-                             self.core.config['WAAPIKey'])
-            if self.core.waCompanionVersion != self.core.config['WACompanionVersion']:
-                self.core.config['WACompanionVersion'] = self.core.waCompanionVersion
+            wago = WagoUpdater(self.core.config['WAUsername'], self.core.config['WAAccountName'],
+                               self.core.config['WAAPIKey'])
+            if self.core.wagoCompanionVersion != self.core.config['WACompanionVersion']:
+                self.core.config['WACompanionVersion'] = self.core.wagoCompanionVersion
                 self.core.save_config()
                 force = True
             else:
                 force = False
-            wa.parse_storage()
-            status = wa.check_updates()
-            wa.install_companion(self.core.clientType, force)
-            wa.install_data()
+            wago.install_companion(self.core.clientType, force)
+            statuswa, statusplater = wago.update()
             if verbose:
                 self.console.print('[green]Outdated WeakAuras:[/green]')
-                for aura in status[0]:
+                for aura in statuswa[0]:
                     self.console.print(aura, highlight=False)
                 self.console.print('\n[green]Detected WeakAuras:[/green]')
-                for aura in status[1]:
+                for aura in statuswa[1]:
+                    self.console.print(aura, highlight=False)
+                self.console.print('\n[green]Outdated Plater scripts:[/green]')
+                for aura in statusplater[0]:
+                    self.console.print(aura, highlight=False)
+                self.console.print('\n[green]Detected Plater scripts:[/green]')
+                for aura in statusplater[1]:
                     self.console.print(aura, highlight=False)
             else:
-                self.console.print(f'\n[green]The number of outdated WeakAuras:[/green] {len(status[0])}',
-                                   highlight=False)
+                if len(statuswa[0]) > 0:
+                    self.console.print(f'\n[green]The number of outdated WeakAuras:[/green] '
+                                       f'{len(statuswa[0])}', highlight=False)
+                if len(statusplater[0]) > 0:
+                    self.console.print(f'\n[green]The number of outdated Plater scripts:[/green] '
+                                       f'{len(statusplater[0])}', highlight=False)
         elif verbose:
-            self.console.print('WeakAuras addon is not installed.')
+            self.console.print('No compatible addon is installed.')
 
     def c_search(self, args):
         if args:
@@ -648,8 +657,8 @@ class TUI:
                            '[green]force_update [URL/Name][/green]\n\tCommand accepts a space-separated list of addon n'
                            'ames or full links.\n\tSelected addons will be reinstalled or updated regardless of their c'
                            'urrent state.\n'
-                           '[green]wa_update[/green]\n\tCommand detects all installed WeakAuras and generate WeakAura'
-                           's Companion payload.\n'
+                           '[green]wago_update[/green]\n\tCommand detects all installed WeakAuras, Plater scripts and '
+                           'generate WeakAuras Companion payload.\n'
                            '[green]status[/green]\n\tPrints the current state of all installed addons.\n'
                            '[green]orphans[/green]\n\tPrints list of orphaned directories and files.\n'
                            '[green]search [Keyword][/green]\n\tExecutes addon search on CurseForge.\n'
@@ -663,12 +672,12 @@ class TUI:
                            ' argument.\n\tBlocks/unblocks updating of the provided addon.'
                            '\n[green]toggle_compact_mode [Name][/green]\n\tEnables/disables compact table mode that '
                            'hides entries of up-to-date addons.\n'
-                           '[green]toggle_wa [Username][/green]\n\tEnables/disables automatic WeakAuras updates.\n\tI'
+                           '[green]toggle_wago [Username][/green]\n\tEnables/disables automatic Wago updates.\n\tI'
                            'f a username is provided check will start to ignore the specified author.\n'
-                           '[green]set_wa_api [API key][/green]\n\tSets Wago API key required to access private auras'
+                           '[green]set_wago_api [API key][/green]\n\tSets Wago API key required to access private auras'
                            '.\n\tIt can be procured here: [link=https://wago.io/account]https://wago.io/account[/link]'
-                           '\n[green]set_wa_wow_account [Account name][/green]\n\tSets WoW account used by WeakAuras up'
-                           'dater.\n\tNeeded only if WeakAuras are used on more than one WoW account.\n'
+                           '\n[green]set_wago_wow_account [Account name][/green]\n\tSets WoW account used by Wago up'
+                           'dater.\n\tNeeded only if compatibile addons are used on more than one WoW account.\n'
                            '[green]uri_integration[/green]\n\tEnables integration with CurseForge page.\n\t[i]"Install"'
                            '[/i] button will now start this application.\n'
                            '\n[bold green]Supported URL:[/bold green]\n\thttps://www.curseforge.com/wow/addons/[[addon_'

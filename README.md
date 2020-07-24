@@ -34,13 +34,13 @@ By default **CurseBreaker** will create backups of entire `WTF` directory.
 - Tukui: `https://www.tukui.org/addons.php?id=[addon_id]`, `https://www.tukui.org/classic-addons.php?id=[addon_id]`, `tu:[addon_id]`, `tuc:[addon_id]`
 - Tukui GitLab: `ElvUI`, `ElvUI:Dev`, `Tukui`, `SLE:Dev`
 - GitHub Releases: `https://github.com/[username]/[repository_name]`, `gh:[username]/[repository_name]`
-- Wago: **CurseBreaker** can update auras like WeakAuras Companion.
+- Wago: **CurseBreaker** can update auras and Plater profiles/scripts like WeakAuras Companion.
 
 ## WEAKAURAS SUPPORT
-**CurseBreaker** by default will try to update all detected WeakAuras. Process work the same as WeakAuras Companion.\
-Aura updates will still need to be applied in-game in the WeakAuras option menu.\
+**CurseBreaker** by default will try to update all detected WeakAuras and Plater profiles/scripts. Process work the same as WeakAuras Companion.\
+All updates will still need to be applied in-game in the WeakAuras/Plater option menu.\
 Command `toggle_wa` can be used to set a single author name that will be ignored during the update.\
-Additionally Wago API key can be set with `set_wa_api` command so non-public auras will also be upgradeable.
+Additionally Wago API key can be set with `set_wa_api` command so non-public entries will also be upgradeable.
 
 ## KNOWN ISSUES
 - Using "double" WoWInterface projects ([example](https://www.wowinterface.com/downloads/info5086-BigWigsBossmods)) will always install a retail version of the addon. It can't be fixed as WoWInterface API doesn't support this type of project.

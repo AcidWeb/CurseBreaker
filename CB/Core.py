@@ -33,7 +33,7 @@ class Core:
         self.configPath = Path('WTF/CurseBreaker.json')
         self.cachePath = Path('WTF/CurseBreaker.cache')
         self.clientType = 'wow_retail'
-        self.waCompanionVersion = 111
+        self.wagoCompanionVersion = 111
         self.config = None
         self.cfIDs = None
         self.cfDirs = None
@@ -500,7 +500,8 @@ class Core:
             accounts = os.listdir(Path('WTF/Account'))
             accounts_processed = []
             for account in accounts:
-                if os.path.isfile(Path(f'WTF/Account/{account}/SavedVariables/WeakAuras.lua')):
+                if os.path.isfile(Path(f'WTF/Account/{account}/SavedVariables/WeakAuras.lua')) or \
+                        os.path.isfile(Path(f'WTF/Account/{account}/SavedVariables/Plater.lua')):
                     accounts_processed.append(account)
             return accounts_processed
         else:

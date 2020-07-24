@@ -6,22 +6,23 @@ from pathlib import Path
 from . import retry, HEADERS
 
 
-class WagoUpdater:
-    def __init__(self, username, accountname, apikey):
-        self.username = username
-        self.accountName = accountname
-        self.apiKey = apikey
+class BaseParser:
+    def __init__(self):
         self.lua = LuaRuntime()
         self.urlParser = re.compile('/([a-zA-Z0-9_-]+)/(\d+)')
-        self.waList = {}
-        self.waIgnored = {}
-        self.uidCache = {}
-        self.idCache = {}
-        self.dataCache = {'slugs': [], 'uids': [], 'ids': []}
-        if self.username == 'DISABLED':
-            self.username = ''
-        if not os.path.isfile(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua')):
-            raise RuntimeError('Incorrect WoW account name!')
+        self.list = {}
+        self.ignored = {}
+        self.uids = {}
+        self.ids = {}
+        self.data = {'slugs': [], 'uids': [], 'ids': []}
+
+
+class WeakAuraParser(BaseParser):
+    def __init__(self, accountname):
+        super().__init__()
+        self.accountName = accountname
+        self.api = 'weakauras'
+        self.parse_storage()
 
     def parse_storage(self):
         with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua'), 'r', encoding='utf-8',
@@ -32,67 +33,124 @@ class WagoUpdater:
             if wadata['displays'][wa]['url']:
                 search = self.urlParser.search(wadata['displays'][wa]['url'])
                 if search is not None and search.group(1) and search.group(2):
-                    self.uidCache[wadata['displays'][wa]['uid']] = search.group(1)
-                    self.idCache[wadata['displays'][wa]['id']] = search.group(1)
+                    self.uids[wadata['displays'][wa]['uid']] = search.group(1)
+                    self.ids[wadata['displays'][wa]['id']] = search.group(1)
                     if not wadata['displays'][wa]['parent'] and not wadata['displays'][wa]['ignoreWagoUpdate']:
                         if wadata['displays'][wa]['skipWagoUpdate']:
-                            self.waIgnored[search.group(1)] = int(wadata['displays'][wa]['skipWagoUpdate'])
-                        self.waList[search.group(1)] = int(search.group(2))
+                            self.ignored[search.group(1)] = int(wadata['displays'][wa]['skipWagoUpdate'])
+                        self.list[search.group(1)] = int(search.group(2))
 
-    @retry('Failed to parse WeakAura data.')
-    def check_updates(self):
-        wa = [[], []]
-        if len(self.waList) > 0:
-            payload = requests.get(f'https://data.wago.io/api/check/weakauras?ids={",".join(self.waList.keys())}',
+
+class PlaterParser(BaseParser):
+    def __init__(self, accountname):
+        super().__init__()
+        self.accountName = accountname
+        self.api = 'plater'
+        self.parse_storage()
+
+    def parse_storage(self):
+        with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/Plater.lua'), 'r', encoding='utf-8',
+                  errors='ignore') as file:
+            data = file.read().replace('PlaterDB = {', '{')
+        platerdata = self.lua.eval(data)
+        for profile in platerdata['profiles']:
+            for script in platerdata['profiles'][profile]['script_data']:
+                if platerdata['profiles'][profile]['script_data'][script]['url']:
+                    search = self.urlParser.search(platerdata['profiles'][profile]['script_data'][script]['url'])
+                    if search is not None and search.group(1) and search.group(2):
+                        self.ids[platerdata['profiles'][profile]['script_data'][script]['Name']] = search.group(1)
+                        if not platerdata['profiles'][profile]['script_data'][script]['ignoreWagoUpdate']:
+                            if platerdata['profiles'][profile]['script_data'][script]['skipWagoUpdate']:
+                                self.ignored[search.group(1)] = int(platerdata['profiles'][profile]['script_data']
+                                                                    [script]['skipWagoUpdate'])
+                            self.list[search.group(1)] = int(search.group(2))
+            for hook in platerdata['profiles'][profile]['hook_data']:
+                if platerdata['profiles'][profile]['hook_data'][hook]['url']:
+                    search = self.urlParser.search(platerdata['profiles'][profile]['hook_data'][hook]['url'])
+                    if search is not None and search.group(1) and search.group(2):
+                        self.ids[platerdata['profiles'][profile]['hook_data'][hook]['Name']] = search.group(1)
+                        if not platerdata['profiles'][profile]['hook_data'][hook]['ignoreWagoUpdate']:
+                            if platerdata['profiles'][profile]['hook_data'][hook]['skipWagoUpdate']:
+                                self.ignored[search.group(1)] = int(platerdata['profiles'][profile]['hook_data']
+                                                                    [hook]['skipWagoUpdate'])
+                        self.list[search.group(1)] = int(search.group(2))
+            if platerdata['profiles'][profile]['url']:
+                search = self.urlParser.search(platerdata['profiles'][profile]['url'])
+                if search is not None and search.group(1) and search.group(2):
+                    self.ids[profile] = search.group(1)
+                    if not platerdata['profiles'][profile]['ignoreWagoUpdate']:
+                        if platerdata['profiles'][profile]['skipWagoUpdate']:
+                            self.ignored[search.group(1)] = int(platerdata['profiles'][profile]['skipWagoUpdate'])
+                        self.list[search.group(1)] = int(search.group(2))
+
+
+class WagoUpdater:
+    def __init__(self, username, accountname, apikey):
+        self.username = username
+        self.accountName = accountname
+        self.apiKey = apikey
+        if self.username == 'DISABLED':
+            self.username = ''
+
+    @retry('Failed to parse Wago data.')
+    def check_updates(self, addon):
+        output = [[], []]
+        if len(addon.list) > 0:
+            payload = requests.get(f'https://data.wago.io/api/check/{addon.api}?ids={",".join(addon.list.keys())}',
                                    headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']}).json()
             if 'error' in payload or 'msg' in payload:
                 raise RuntimeError
-            for aura in payload:
-                if 'username' in aura and (not self.username or aura['username'] != self.username):
-                    if not aura['slug'] in self.waList:
-                        aura['slug'] = aura['_id']
-                    if aura['version'] > self.waList[aura['slug']] and \
-                       (not aura['slug'] in self.waIgnored or
-                       (aura['slug'] in self.waIgnored and aura['version'] != self.waIgnored[aura['slug']])):
-                        wa[0].append(aura['name'])
-                        self.update_aura(aura)
-                    elif 'name' in aura:
-                        wa[1].append(aura['name'])
-            wa[0].sort()
-            wa[1].sort()
-        return wa
+            for entry in payload:
+                if 'username' in entry and (not self.username or entry['username'] != self.username):
+                    if not entry['slug'] in addon.list:
+                        entry['slug'] = entry['_id']
+                    if entry['version'] > addon.list[entry['slug']] and (not entry['slug'] in addon.ignored or
+                       (entry['slug'] in addon.ignored and entry['version'] != addon.ignored[entry['slug']])):
+                        output[0].append(entry['name'])
+                        self.update_entry(entry, addon)
+                    elif 'name' in entry:
+                        output[1].append(entry['name'])
+            output[0].sort()
+            output[1].sort()
+        return output
 
-    @retry('Failed to parse WeakAura data.')
-    def update_aura(self, aura):
-        raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={aura["slug"]}',
+    @retry('Failed to parse Wago data.')
+    def update_entry(self, entry, addon):
+        raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={entry["slug"]}',
                            headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']}).text
-        slug = f'    ["{aura["slug"]}"] = {{\n      name = [=[{aura["name"]}]=],\n      author = [=[' \
-               f'{aura["username"]}]=],\n      encoded = [=[{raw}]=],\n      wagoVersion = [=[' \
-               f'{aura["version"]}]=],\n      wagoSemver = [=[{aura["versionString"]}]=],\n    }},\n'
+        slug = f'    ["{entry["slug"]}"] = {{\n      name = [=[{entry["name"]}]=],\n      author = [=[' \
+               f'{entry["username"]}]=],\n      encoded = [=[{raw}]=],\n      wagoVersion = [=[' \
+               f'{entry["version"]}]=],\n      wagoSemver = [=[{entry["versionString"]}]=],\n'
         uids = ''
         ids = ''
-        for u in self.uidCache:
-            if self.uidCache[u] == aura["slug"]:
-                uids = uids + f'    ["{u}"] = [=[{aura["slug"]}]=],\n'
-        for i in self.idCache:
-            if self.idCache[i] == aura["slug"]:
-                ids = ids + f'    ["{i}"] = [=[{aura["slug"]}]=],\n'
-        self.dataCache['slugs'].append(slug)
-        self.dataCache['uids'].append(uids)
-        self.dataCache['ids'].append(ids)
+        for u in addon.uids:
+            if addon.uids[u] == entry["slug"]:
+                uids = uids + f'    ["{u}"] = [=[{entry["slug"]}]=],\n'
+        for i in addon.ids:
+            if addon.ids[i] == entry["slug"]:
+                ids = ids + f'    ["{i}"] = [=[{entry["slug"]}]=],\n'
+        addon.data['slugs'].append(slug)
+        addon.data['uids'].append(uids)
+        addon.data['ids'].append(ids)
 
-    def install_data(self):
+    def install_data(self, wadata, platerdata):
         with open(Path('Interface/AddOns/WeakAurasCompanion/data.lua'), 'w', newline='\n', encoding='utf-8') as out:
             out.write('-- file generated automatically\nWeakAurasCompanion = {\n  slugs = {\n')
-            for slug in self.dataCache['slugs']:
-                out.write(slug)
+            for slug in wadata['slugs']:
+                out.write(slug + '    },\n')
             out.write('  },\n  uids = {\n')
-            for uid in self.dataCache['uids']:
+            for uid in wadata['uids']:
                 out.write(uid)
             out.write('  },\n  ids = {\n')
-            for ids in self.dataCache['ids']:
+            for ids in wadata['ids']:
                 out.write(ids)
-            out.write('  },\n  stash = {\n  }\n}')
+            out.write('  },\n  stash = {\n  },\n  Plater = {\n    slugs = {\n')
+            for slug in platerdata['slugs']:
+                out.write('  ' + slug.replace('      ', '        ') + '      },\n')
+            out.write('    },\n    uids = {\n    },\n    ids = {\n')
+            for ids in platerdata['ids']:
+                out.write('  ' + ids)
+            out.write('    },\n    stash = {\n    }\n  }\n}')
 
     def install_companion(self, client_type, force):
         if not os.path.isdir(Path('Interface/AddOns/WeakAurasCompanion')) or force:
@@ -123,3 +181,19 @@ class WagoUpdater:
                 out.write('-- file generated automatically\nWeakAurasCompanion = {\n  slugs = {\n  },\n  uids = {\n  },'
                           '\n  ids = {\n  },\n  stash = {\n  },\n  Plater = {\n    slugs = {\n    },\n    uids = {\n   '
                           ' },\n    ids = {\n    },\n    stash = {\n    },\n  },\n}')
+
+    def update(self):
+        if os.path.isdir(Path('Interface/AddOns/WeakAuras')) and os.path.isfile(
+                Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua')):
+            wa = WeakAuraParser(self.accountName)
+        else:
+            wa = BaseParser()
+        if os.path.isdir(Path('Interface/AddOns/Plater')) and os.path.isfile(
+                Path(f'WTF/Account/{self.accountName}/SavedVariables/Plater.lua')):
+            plater = PlaterParser(self.accountName)
+        else:
+            plater = BaseParser()
+        statuswa = self.check_updates(wa)
+        statusplater = self.check_updates(plater)
+        self.install_data(wa.data, plater.data)
+        return statuswa, statusplater
