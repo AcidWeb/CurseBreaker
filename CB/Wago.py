@@ -120,7 +120,8 @@ class WagoUpdater:
                            headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']}).text
         slug = f'    ["{entry["slug"]}"] = {{\n      name = [=[{entry["name"]}]=],\n      author = [=[' \
                f'{entry["username"]}]=],\n      encoded = [=[{raw}]=],\n      wagoVersion = [=[' \
-               f'{entry["version"]}]=],\n      wagoSemver = [=[{entry["versionString"]}]=],\n'
+               f'{entry["version"]}]=],\n      wagoSemver = [=[{entry["versionString"]}]=],\n      ' \
+               f'versionNote = [=[]=],\n'
         uids = ''
         ids = ''
         for u in addon.uids:
