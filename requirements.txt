@@ -2,5 +2,7 @@ prompt_toolkit
 cloudscraper
 checksumdir
 requests
+markdown
+bbcode
 rich
 lupa

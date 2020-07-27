@@ -1,9 +1,24 @@
 import os
 import re
+import bbcode
 import requests
+from io import StringIO
 from lupa import LuaRuntime
 from pathlib import Path
+from markdown import Markdown
 from . import retry, HEADERS
+
+
+def markdown_unmark_element(element, stream=None):
+    if stream is None:
+        stream = StringIO()
+    if element.text:
+        stream.write(element.text)
+    for sub in element:
+        markdown_unmark_element(sub, stream)
+    if element.tail:
+        stream.write(element.tail)
+    return stream.getvalue()
 
 
 class BaseParser:
@@ -89,6 +104,10 @@ class WagoUpdater:
         self.username = username
         self.accountName = accountname
         self.apiKey = apikey
+        self.bbParser = bbcode.Parser()
+        Markdown.output_formats['plain'] = markdown_unmark_element
+        self.mdParser = Markdown(output_format='plain')
+        self.mdParser.stripTopLevelTags = False
         if self.username == 'DISABLED':
             self.username = ''
 
@@ -114,6 +133,15 @@ class WagoUpdater:
             output[1].sort()
         return output
 
+    def parse_changelog(self, entry):
+        if 'changelog' in entry and 'text' in entry['changelog']:
+            if entry['changelog']['format'] == 'bbcode':
+                return self.bbParser.strip(entry['changelog']['text'])
+            elif entry['changelog']['format'] == 'markdown':
+                return self.mdParser.convert(entry['changelog']['text'])
+        else:
+            return ''
+
     @retry('Failed to parse Wago data.')
     def update_entry(self, entry, addon):
         raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={entry["slug"]}',
@@ -121,7 +149,7 @@ class WagoUpdater:
         slug = f'    ["{entry["slug"]}"] = {{\n      name = [=[{entry["name"]}]=],\n      author = [=[' \
                f'{entry["username"]}]=],\n      encoded = [=[{raw}]=],\n      wagoVersion = [=[' \
                f'{entry["version"]}]=],\n      wagoSemver = [=[{entry["versionString"]}]=],\n      ' \
-               f'versionNote = [=[]=],\n'
+               f'versionNote = [=[{self.parse_changelog(entry)}]=],\n'
         uids = ''
         ids = ''
         for u in addon.uids:
