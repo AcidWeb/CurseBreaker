@@ -203,6 +203,22 @@ class Core:
         else:
             raise NotImplementedError('Provided URL is not supported.')
 
+    def parse_url_source(self, url):
+        if url.startswith('https://www.curseforge.com/wow/addons/'):
+            return 'CF'
+        elif url.startswith('https://www.wowinterface.com/downloads/'):
+            return 'WoWI'
+        elif url.startswith('https://www.tukui.org/addons.php?id=') or \
+                url.startswith('https://www.tukui.org/classic-addons.php?id=') or \
+                url.lower().startswith('elvui') or \
+                url.lower().startswith('tukui') or \
+                url.lower() == 'sle:dev':
+            return 'Tukui'
+        elif url.startswith('https://github.com/'):
+            return 'GitHub'
+        else:
+            return '?'
+
     def add_addon(self, url, ignore):
         if 'twitch://' in url:
             url = url.split('/download-client')[0].replace('twitch://', 'https://').strip()
@@ -279,8 +295,8 @@ class Core:
             if force:
                 modified = False
                 blocked = False
-            return new.name, new.currentVersion, oldversion, modified, blocked
-        return url, False, False, False, False
+            return new.name, new.currentVersion, oldversion, modified, blocked, self.parse_url_source(old['URL'])
+        return url, False, False, False, False, self.parse_url_source(url)
 
     def check_checksum(self, addon, bulk=True):
         checksums = {}

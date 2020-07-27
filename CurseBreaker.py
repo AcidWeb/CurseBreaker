@@ -389,7 +389,7 @@ class TUI:
                                'full links as an argument.\n\t[bold white]Flags:[/bold white]\n\t\t[bold white]-k[/bold'
                                ' white] - Keep the addon files after uninstalling.', highlight=False)
 
-    def c_update(self, args, addline=False, update=True, force=False):
+    def c_update(self, args, addline=False, update=True, force=False, provider=False):
         if len(self.core.cfCache) > 0 or len(self.core.wowiCache) > 0:
             self.core.cfCache = {}
             self.core.wowiCache = {}
@@ -411,29 +411,33 @@ class TUI:
                 for addon in addons:
                     try:
                         # noinspection PyTypeChecker
-                        name, versionnew, versionold, modified, blocked = self.core.\
+                        name, versionnew, versionold, modified, blocked, source = self.core.\
                             update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
+                        if provider:
+                            source = f' [bold white]{source}[/bold white]'
+                        else:
+                            source = ''
                         if versionold:
                             if versionold == versionnew:
                                 if modified:
-                                    self.table.add_row('[bold red]Modified[/bold red]',
+                                    self.table.add_row(f'[bold red]Modified[/bold red]{source}',
                                                        Text(name, no_wrap=True), Text(versionold, no_wrap=True))
                                 else:
                                     if self.core.config['CompactMode'] and compacted > -1:
                                         compacted += 1
                                     else:
-                                        self.table.add_row('[green]Up-to-date[/green]', Text(name, no_wrap=True),
-                                                           Text(versionold, no_wrap=True))
+                                        self.table.add_row(f'[green]Up-to-date[/green]{source}',
+                                                           Text(name, no_wrap=True), Text(versionold, no_wrap=True))
                             else:
                                 if modified or blocked:
-                                    self.table.add_row('[bold red]Update suppressed[/bold red]',
+                                    self.table.add_row(f'[bold red]Update suppressed[/bold red]{source}',
                                                        Text(name, no_wrap=True), Text(versionold, no_wrap=True))
                                 else:
                                     self.table.add_row(f'[yellow]{"Updated" if update else "Update available"}'
-                                                       f'[/yellow]', Text(name, no_wrap=True),
+                                                       f'[/yellow]{source}', Text(name, no_wrap=True),
                                                        Text(versionnew, style='yellow', no_wrap=True))
                         else:
-                            self.table.add_row(f'[bold black]Not installed[/bold black]',
+                            self.table.add_row(f'[bold black]Not installed[/bold black]{source}',
                                                Text(addon, no_wrap=True), Text('', no_wrap=True))
                     except Exception as e:
                         exceptions.append(e)
@@ -457,7 +461,12 @@ class TUI:
                                'full links as an argument.')
 
     def c_status(self, args):
-        self.c_update(args, False, False)
+        if args and args.startswith('-s'):
+            args = args[2:]
+            optsource = True
+        else:
+            optsource = False
+        self.c_update(args, False, False, False, optsource)
 
     def c_orphans(self, _):
         orphansd, orphansf = self.core.find_orphans()
@@ -668,7 +677,8 @@ class TUI:
                            'urrent state.\n'
                            '[green]wago_update[/green]\n\tCommand detects all installed WeakAuras and Plater profiles/s'
                            'cripts.\n\tAnd then generate WeakAuras Companion payload.\n'
-                           '[green]status[/green]\n\tPrints the current state of all installed addons.\n'
+                           '[green]status[/green]\n\tPrints the current state of all installed addons.\n\t[bold white]F'
+                           'lags:[/bold white]\n\t\t[bold white]-s[/bold white] - Display the source of the addons.\n'
                            '[green]orphans[/green]\n\tPrints list of orphaned directories and files.\n'
                            '[green]search [Keyword][/green]\n\tExecutes addon search on CurseForge.\n'
                            '[green]import[/green]\n\tCommand attempts to import already installed addons.\n'
