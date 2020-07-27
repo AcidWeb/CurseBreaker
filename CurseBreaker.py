@@ -56,7 +56,7 @@ class TUI:
         if not glob.glob('World*.app') and not glob.glob('Wow*.exe') or \
                 not os.path.isdir(Path('Interface/AddOns')) or not os.path.isdir('WTF'):
             self.console.print('[bold red]This executable should be placed in the same directory where Wow.exe, '
-                               'WowClassic.exe or World of Warcraft.app is located.[/bold red]\n\n')
+                               'WowClassic.exe or World of Warcraft.app is located.[/bold red]\n')
             pause(self.headless)
             sys.exit(1)
         # Detect Classic client
@@ -70,7 +70,7 @@ class TUI:
             os.remove('PermissionTest')
         except IOError:
             self.console.print('[bold red]CurseBreaker doesn\'t have write rights for the current directory.\n'
-                               'Try starting it with administrative privileges.[/bold red]\n\n')
+                               'Try starting it with administrative privileges.[/bold red]\n')
             pause(self.headless)
             sys.exit(1)
         self.auto_update()
@@ -78,7 +78,7 @@ class TUI:
             self.core.init_config()
         except RuntimeError:
             self.console.print('[bold red]The config file is corrupted. Restore the earlier version from backup.'
-                               '[/bold red]\n\n')
+                               '[/bold red]\n')
             pause(self.headless)
             sys.exit(1)
         self.setup_table()
@@ -153,9 +153,9 @@ class TUI:
         self.print_header()
         self.console.print('Use command [green]help[/green] or press [green]TAB[/green] to see a list of available comm'
                            'ands.\nCommand [green]exit[/green] or pressing [green]CTRL+D[/green] will close the applica'
-                           'tion.\n\n')
+                           'tion.\n')
         if len(self.core.config['Addons']) == 0:
-            self.console.print('Command [green]import[/green] might be used to detect already installed addons.\n\n')
+            self.console.print('Command [green]import[/green] might be used to detect already installed addons.\n')
         # Prompt session
         while True:
             try:
@@ -210,12 +210,12 @@ class TUI:
                                     f.write(gzip.decompress(payload.content))
                         os.chmod(sys.executable, 0o775)
                         self.console.print(f'[bold green]Update complete! Please restart the application.[/bold green]'
-                                           f'\n\n[green]Changelog:[/green]\n{changelog}\n\n')
+                                           f'\n\n[green]Changelog:[/green]\n{changelog}\n')
                         self.print_log()
                         pause(self.headless)
                         sys.exit(0)
             except Exception as e:
-                self.console.print(f'[bold red]Update failed!\n\nReason: {str(e)}[/bold red]\n\n')
+                self.console.print(f'[bold red]Update failed!\n\nReason: {str(e)}[/bold red]\n')
                 self.print_log()
                 pause(self.headless)
                 sys.exit(1)
@@ -239,7 +239,7 @@ class TUI:
                                f'[yellow]{datetime.now()}[/yellow]', highlight=False)
         else:
             self.console.print(Rule(f'[bold green]CurseBreaker[/bold green] [bold red]v{__version__}[/bold red]'))
-            self.console.print('\n')
+            self.console.print('')
 
     def print_log(self):
         if self.headless:
@@ -439,7 +439,7 @@ class TUI:
                         exceptions.append(e)
                     progress.update(task, advance=1 if args else 0.5, refresh=True)
         if addline:
-            self.console.print('\n')
+            self.console.print('')
         self.console.print(self.table)
         if compacted > 0:
             self.console.print(f'Additionally [green]{compacted}[/green] addons are up-to-date.')
@@ -594,18 +594,22 @@ class TUI:
             wago.install_companion(self.core.clientType, force)
             statuswa, statusplater = wago.update()
             if verbose:
-                self.console.print('[green]Outdated WeakAuras:[/green]')
-                for aura in statuswa[0]:
-                    self.console.print(aura, highlight=False)
-                self.console.print('\n[green]Detected WeakAuras:[/green]')
-                for aura in statuswa[1]:
-                    self.console.print(aura, highlight=False)
-                self.console.print('\n[green]Outdated Plater profiles/scripts:[/green]')
-                for aura in statusplater[0]:
-                    self.console.print(aura, highlight=False)
-                self.console.print('\n[green]Detected Plater profiles/scripts:[/green]')
-                for aura in statusplater[1]:
-                    self.console.print(aura, highlight=False)
+                if len(statuswa[0]) > 0 or len(statuswa[1]) > 0:
+                    self.console.print('[green]Outdated WeakAuras:[/green]')
+                    for aura in statuswa[0]:
+                        self.console.print(aura, highlight=False)
+                    self.console.print('\n[green]Detected WeakAuras:[/green]')
+                    for aura in statuswa[1]:
+                        self.console.print(aura, highlight=False)
+                if len(statusplater[0]) > 0 or len(statusplater[1]) > 0:
+                    if len(statuswa[0]) != 0 or len(statuswa[1]) != 0:
+                        self.console.print('')
+                    self.console.print('[green]Outdated Plater profiles/scripts:[/green]')
+                    for aura in statusplater[0]:
+                        self.console.print(aura, highlight=False)
+                    self.console.print('\n[green]Detected Plater profiles/scripts:[/green]')
+                    for aura in statusplater[1]:
+                        self.console.print(aura, highlight=False)
             else:
                 if len(statuswa[0]) > 0:
                     self.console.print(f'\n[green]The number of outdated WeakAuras:[/green] '
