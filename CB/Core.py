@@ -242,10 +242,11 @@ class Core:
             return True, new.name, new.currentVersion
         return False, addon['Name'], addon['Version']
 
-    def del_addon(self, url):
+    def del_addon(self, url, keep):
         old = self.check_if_installed(url)
         if old:
-            self.cleanup(old['Directories'])
+            if not keep:
+                self.cleanup(old['Directories'])
             self.config['IgnoreClientVersion'].pop(old['URL'], None)
             self.config['Addons'][:] = [d for d in self.config['Addons'] if d.get('URL') != url
                                         and d.get('Name') != url]
@@ -433,7 +434,7 @@ class Core:
                           + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""')
 
     @retry()
-    def parse_cf_id(self, url):
+    def parse_cf_id(self, url, bulk=False):
         if not self.cfIDs:
             # noinspection PyBroadException
             try:
@@ -459,8 +460,11 @@ class Core:
                     payload = self.scraper.get(f'https://www.curseforge.com{renamecheck.headers["location"]}'
                                                f'/download-client')
                 if payload.status_code == 404:
-                    raise RuntimeError(slug + '\nThe project could be removed from CurseForge or renamed. Uninstall it '
-                                              '(and reinstall if it still exists) to fix this issue.')
+                    if bulk:
+                        return 0
+                    else:
+                        raise RuntimeError(f'{slug}\nThe project could be removed from CurseForge or renamed. Uninstall'
+                                           f' it (and reinstall if it still exists) to fix this issue.')
             xml = parseString(payload.text)
             project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
             self.config['CFCacheCloudFlare'][slug] = project
@@ -482,7 +486,7 @@ class Core:
         ids_wowi = []
         for addon in addons:
             if addon['URL'].startswith('https://www.curseforge.com/wow/addons/'):
-                ids_cf.append(int(self.parse_cf_id(addon['URL'])))
+                ids_cf.append(int(self.parse_cf_id(addon['URL'], True)))
             elif addon['URL'].startswith('https://www.wowinterface.com/downloads/'):
                 ids_wowi.append(re.findall(r'\d+', addon['URL'])[0].strip())
         if len(ids_cf) > 0:

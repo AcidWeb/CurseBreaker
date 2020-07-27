@@ -352,25 +352,30 @@ class TUI:
             self.console.print(self.table)
         else:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts a space-separated list of links as an arg'
-                               'ument.\n\tOption [bold white]-i[/bold white] will disable the client version check.\n[b'
-                               'old green]Supported URL:[/bold green]\n\thttps://www.curseforge.com/wow/addons/[[addon_'
-                               'name]] [bold white]|[/bold white] cf:[[addon_name]]\n\thttps://www.wowinterface.com/dow'
-                               'nloads/[[addon_name]] [bold white]|[/bold white] wowi:[[addon_id]]\n\thttps://www.tukui'
-                               '.org/addons.php?id=[[addon_id]] [bold white]|[/bold white] tu:[[addon_id]]\n\thttps://w'
-                               'ww.tukui.org/classic-addons.php?id=[[addon_id]] [bold white]|[/bold white] tuc:[[addon_'
-                               'id]]\n\thttps://github.com/[[username]]/[[repository_name]] [bold white]|[/bold white] '
-                               'gh:[[username]]/[[repository_name]]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTu'
-                               'kui\n\tSLE:Dev', highlight=False)
+                               'ument.[bold white]\n\tFlags:[/bold white]\n\t\t[bold white]-i[/bold white] - Disable th'
+                               'e client version check.\n[bold green]Supported URL:[/bold green]\n\thttps://www.cursefo'
+                               'rge.com/wow/addons/[[addon_name]] [bold white]|[/bold white] cf:[[addon_name]]\n\thttps'
+                               '://www.wowinterface.com/downloads/[[addon_name]] [bold white]|[/bold white] wowi:[[addo'
+                               'n_id]]\n\thttps://www.tukui.org/addons.php?id=[[addon_id]] [bold white]|[/bold white] t'
+                               'u:[[addon_id]]\n\thttps://www.tukui.org/classic-addons.php?id=[[addon_id]] [bold white]'
+                               '|[/bold white] tuc:[[addon_id]]\n\thttps://github.com/[[username]]/[[repository_name]] '
+                               '[bold white]|[/bold white] gh:[[username]]/[[repository_name]]\n\tElvUI [bold white]|[/'
+                               'bold white] ElvUI:Dev\n\tTukui\n\tSLE:Dev', highlight=False)
 
     def c_uninstall(self, args):
         if args:
+            if args.startswith('-k '):
+                args = args[3:]
+                optkeep = True
+            else:
+                optkeep = False
             addons = self.parse_args(args)
             with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|',
                           auto_refresh=False, console=self.console) as progress:
                 task = progress.add_task('', total=len(addons))
                 while not progress.finished:
                     for addon in addons:
-                        name, version = self.core.del_addon(addon)
+                        name, version = self.core.del_addon(addon, optkeep)
                         if name:
                             self.table.add_row(f'[bold red]Uninstalled[/bold red]',
                                                Text(name, no_wrap=True), Text(version, no_wrap=True))
@@ -381,11 +386,8 @@ class TUI:
             self.console.print(self.table)
         else:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts a space-separated list of addon names or '
-                               'full links as an argument.\n[bold green]Supported URL:[/bold green]\n\thttps://www.curs'
-                               'eforge.com/wow/addons/[[addon_name]]\n\thttps://www.wowinterface.com/downloads/[[addon_'
-                               'name]]\n\thttps://www.tukui.org/addons.php?id=[[addon_id]]\n\thttps://www.tukui.org/cla'
-                               'ssic-addons.php?id=[[addon_id]]\n\thttps://github.com/[[username]]/[[repository_name]]',
-                               highlight=False)
+                               'full links as an argument.\n\t[bold white]Flags:[/bold white]\n\t\t[bold white]-k[/bold'
+                               ' white] - Keep the addon files after uninstalling.', highlight=False)
 
     def c_update(self, args, addline=False, update=True, force=False):
         if len(self.core.cfCache) > 0 or len(self.core.wowiCache) > 0:
@@ -649,36 +651,38 @@ class TUI:
         self.console.print(self.core.export_addons(), highlight=False)
 
     def c_help(self, _):
-        self.console.print('[green]install [URL][/green]\n\tCommand accepts a space-separated list of links.\n'
+        self.console.print('[green]install [URL][/green]\n\tCommand accepts a space-separated list of links.\n\t[bold w'
+                           'hite]Flags:[/bold white]\n\t\t[bold white]-i[/bold white] - Disable the client version chec'
+                           'k.\n'
                            '[green]uninstall [URL/Name][/green]\n\tCommand accepts a space-separated list of addon name'
-                           's or full links.\n'
+                           's or full links.\n\t[bold white]Flags:[/bold white]\n\t\t[bold white]-k[/bold white] - Keep'
+                           ' the addon files after uninstalling.\n'
                            '[green]update [URL/Name][/green]\n\tCommand accepts a space-separated list of addon names o'
                            'r full links.\n\tIf no argument is provided all non-modified addons will be updated.\n'
                            '[green]force_update [URL/Name][/green]\n\tCommand accepts a space-separated list of addon n'
                            'ames or full links.\n\tSelected addons will be reinstalled or updated regardless of their c'
                            'urrent state.\n'
-                           '[green]wago_update[/green]\n\tCommand detects all installed WeakAuras and Plater '
-                           'profiles/scripts.\n\tAnd then generate WeakAuras Companion payload.\n'
+                           '[green]wago_update[/green]\n\tCommand detects all installed WeakAuras and Plater profiles/s'
+                           'cripts.\n\tAnd then generate WeakAuras Companion payload.\n'
                            '[green]status[/green]\n\tPrints the current state of all installed addons.\n'
                            '[green]orphans[/green]\n\tPrints list of orphaned directories and files.\n'
                            '[green]search [Keyword][/green]\n\tExecutes addon search on CurseForge.\n'
                            '[green]import[/green]\n\tCommand attempts to import already installed addons.\n'
                            '[green]export[/green]\n\tCommand prints list of all installed addons in a form suitable f'
                            'or sharing.\n'
-                           '[green]toggle_backup[/green]\n\tEnables/disables automatic daily backup of WTF directory.'
-                           '\n[green]toggle_dev [Name][/green]\n\tCommand accepts an addon name (or "global") as'
-                           ' argument.\n\tPrioritizes alpha/beta versions for the provided addon.'
-                           '\n[green]toggle_block [Name][/green]\n\tCommand accepts an addon name as'
-                           ' argument.\n\tBlocks/unblocks updating of the provided addon.'
-                           '\n[green]toggle_compact_mode [Name][/green]\n\tEnables/disables compact table mode that '
-                           'hides entries of up-to-date addons.\n'
-                           '[green]toggle_wago [Username][/green]\n\tEnables/disables automatic Wago updates.\n\tI'
-                           'f a username is provided check will start to ignore the specified author.\n'
-                           '[green]set_wago_api [API key][/green]\n\tSets Wago API key required to access private '
-                           'entries.\n\tIt can be procured here: '
-                           '[link=https://wago.io/account]https://wago.io/account[/link]'
-                           '\n[green]set_wago_wow_account [Account name][/green]\n\tSets WoW account used by Wago up'
-                           'dater.\n\tNeeded only if compatibile addons are used on more than one WoW account.\n'
+                           '[green]toggle_backup[/green]\n\tEnables/disables automatic daily backup of WTF directory.\n'
+                           '[green]toggle_dev [Name][/green]\n\tCommand accepts an addon name (or "global") as argument'
+                           '.\n\tPrioritizes alpha/beta versions for the provided addon.\n'
+                           '[green]toggle_block [Name][/green]\n\tCommand accepts an addon name as argument.\n\tBlocks/'
+                           'unblocks updating of the provided addon.\n'
+                           '[green]toggle_compact_mode [Name][/green]\n\tEnables/disables compact table mode that hides'
+                           ' entries of up-to-date addons.\n'
+                           '[green]toggle_wago [Username][/green]\n\tEnables/disables automatic Wago updates.\n\tIf a u'
+                           'sername is provided check will start to ignore the specified author.\n'
+                           '[green]set_wago_api [API key][/green]\n\tSets Wago API key required to access private entri'
+                           'es.\n\tIt can be procured here: https://wago.io/account\n'
+                           '[green]set_wago_wow_account [Account name][/green]\n\tSets WoW account used by Wago updater'
+                           '.\n\tNeeded only if compatibile addons are used on more than one WoW account.\n'
                            '[green]uri_integration[/green]\n\tEnables integration with CurseForge page.\n\t[i]"Install"'
                            '[/i] button will now start this application.\n'
                            '\n[bold green]Supported URL:[/bold green]\n\thttps://www.curseforge.com/wow/addons/[[addon_'
