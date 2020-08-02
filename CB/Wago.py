@@ -90,7 +90,7 @@ class PlaterParser(BaseParser):
                                 if platerdata['profiles'][profile]['hook_data'][hook]['skipWagoUpdate']:
                                     self.ignored[search.group(1)] = int(platerdata['profiles'][profile]['hook_data']
                                                                         [hook]['skipWagoUpdate'])
-                            self.list[search.group(1)] = int(search.group(2))
+                                self.list[search.group(1)] = int(search.group(2))
             if platerdata['profiles'][profile]['url']:
                 search = self.urlParser.search(platerdata['profiles'][profile]['url'])
                 if search is not None and search.group(1) and search.group(2):
