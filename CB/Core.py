@@ -312,15 +312,14 @@ class Core:
         self.checksumCache[result[0]] = result[1]
 
     def bulk_check_checksum(self, addons, pbar):
-        pool = Pool()
-        workers = []
-        for addon in addons:
-            w = pool.apply_async(self.check_checksum, (addon, ), callback=self.bulk_check_checksum_callback)
-            workers.append(w)
-        for w in workers:
-            w.wait()
-            # TODO Handle progress monitoring better
-            pbar.update(0, advance=0.5, refresh=True)
+        with Pool() as pool:
+            workers = []
+            for addon in addons:
+                w = pool.apply_async(self.check_checksum, (addon, ), callback=self.bulk_check_checksum_callback)
+                workers.append(w)
+            for w in workers:
+                w.wait()
+                pbar.update(0, advance=0.5, refresh=True)
 
     def dev_toggle(self, url):
         if url == 'global':
