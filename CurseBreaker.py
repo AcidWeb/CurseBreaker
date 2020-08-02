@@ -354,13 +354,13 @@ class TUI:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts a space-separated list of links as an arg'
                                'ument.[bold white]\n\tFlags:[/bold white]\n\t\t[bold white]-i[/bold white] - Disable th'
                                'e client version check.\n[bold green]Supported URL:[/bold green]\n\thttps://www.cursefo'
-                               'rge.com/wow/addons/[[addon_name]] [bold white]|[/bold white] cf:[[addon_name]]\n\thttps'
-                               '://www.wowinterface.com/downloads/[[addon_name]] [bold white]|[/bold white] wowi:[[addo'
-                               'n_id]]\n\thttps://www.tukui.org/addons.php?id=[[addon_id]] [bold white]|[/bold white] t'
-                               'u:[[addon_id]]\n\thttps://www.tukui.org/classic-addons.php?id=[[addon_id]] [bold white]'
-                               '|[/bold white] tuc:[[addon_id]]\n\thttps://github.com/[[username]]/[[repository_name]] '
-                               '[bold white]|[/bold white] gh:[[username]]/[[repository_name]]\n\tElvUI [bold white]|[/'
-                               'bold white] ElvUI:Dev\n\tTukui\n\tSLE:Dev', highlight=False)
+                               'rge.com/wow/addons/\[addon_name] [bold white]|[/bold white] cf:\[addon_name]\n\thttps:/'
+                               '/www.wowinterface.com/downloads/\[addon_name] [bold white]|[/bold white] wowi:\[addon_i'
+                               'd]\n\thttps://www.tukui.org/addons.php?id=\[addon_id] [bold white]|[/bold white] tu:\[a'
+                               'ddon_id]\n\thttps://www.tukui.org/classic-addons.php?id=\[addon_id] [bold white]|[/bold'
+                               ' white] tuc:\[addon_id]\n\thttps://github.com/\[username]/\[repository_name] [bold whit'
+                               'e]|[/bold white] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white] '
+                               'ElvUI:Dev\n\tTukui\n\tSLE:Dev', highlight=False)
 
     def c_uninstall(self, args):
         if args:
@@ -472,7 +472,7 @@ class TUI:
         orphansd, orphansf = self.core.find_orphans()
         self.console.print('[green]Directories that are not part of any installed addon:[/green]')
         for orphan in sorted(orphansd):
-            self.console.print(orphan.replace('[GIT]', '[yellow][[GIT]][/yellow]'), highlight=False)
+            self.console.print(orphan.replace('[GIT]', '[yellow]\[GIT][/yellow]'), highlight=False)
         self.console.print('\n[green]Files that are leftovers after no longer installed addons:[/green]')
         for orphan in sorted(orphansf):
             self.console.print(orphan, highlight=False)
@@ -635,7 +635,7 @@ class TUI:
             self.console.print('[green]Top results of your search:[/green]')
             for url in results:
                 if self.core.check_if_installed(url):
-                    self.console.print(f'{url} [yellow][[Installed]][/yellow]', highlight=False)
+                    self.console.print(f'{url} [yellow]\[Installed][/yellow]', highlight=False)
                 else:
                     self.console.print(url, highlight=False)
         else:
@@ -689,8 +689,8 @@ class TUI:
                            '.\n\tPrioritizes alpha/beta versions for the provided addon.\n'
                            '[green]toggle_block [Name][/green]\n\tCommand accepts an addon name as argument.\n\tBlocks/'
                            'unblocks updating of the provided addon.\n'
-                           '[green]toggle_compact_mode [Name][/green]\n\tEnables/disables compact table mode that hides'
-                           ' entries of up-to-date addons.\n'
+                           '[green]toggle_compact_mode [/green]\n\tEnables/disables compact table mode that hides entri'
+                           'es of up-to-date addons.\n'
                            '[green]toggle_wago [Username][/green]\n\tEnables/disables automatic Wago updates.\n\tIf a u'
                            'sername is provided check will start to ignore the specified author.\n'
                            '[green]set_wago_api [API key][/green]\n\tSets Wago API key required to access private entri'
@@ -699,14 +699,13 @@ class TUI:
                            '.\n\tNeeded only if compatibile addons are used on more than one WoW account.\n'
                            '[green]uri_integration[/green]\n\tEnables integration with CurseForge page.\n\t[i]"Install"'
                            '[/i] button will now start this application.\n'
-                           '\n[bold green]Supported URL:[/bold green]\n\thttps://www.curseforge.com/wow/addons/[[addon_'
-                           'name]] [bold white]|[/bold white] cf:[[addon_name]]\n\thttps://www.wowinterface.com/downloa'
-                           'ds/[[addon_name]] [bold white]|[/bold white] wowi:[[addon_id]]\n\thttps://www.tukui.org/add'
-                           'ons.php?id=[[addon_id]] [bold white]|[/bold white] tu:[[addon_id]]\n\thttps://www.tukui.org'
-                           '/classic-addons.php?id=[[addon_id]] [bold white]|[/bold white] tuc:[[addon_id]]\n\thttps://'
-                           'github.com/[[username]]/[[repository_name]] [bold white]|[/bold white] gh:[[username]]/[[re'
-                           'pository_name]]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui\n\tSLE:Dev',
-                           highlight=False)
+                           '\n[bold green]Supported URL:[/bold green]\n\thttps://www.curseforge.com/wow/addons/\[addon_'
+                           'name] [bold white]|[/bold white] cf:\[addon_name]\n\thttps://www.wowinterface.com/downloads'
+                           '/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\thttps://www.tukui.org/addons.'
+                           'php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]\n\thttps://www.tukui.org/class'
+                           'ic-addons.php?id=\[addon_id] [bold white]|[/bold white] tuc:\[addon_id]\n\thttps://github.c'
+                           'om/\[username]/\[repository_name] [bold white]|[/bold white] gh:\[username]/\[repository_na'
+                           'me]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui\n\tSLE:Dev', highlight=False)
 
     def c_exit(self, _):
         sys.exit(0)
