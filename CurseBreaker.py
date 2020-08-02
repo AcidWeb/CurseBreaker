@@ -10,6 +10,7 @@ import pickle
 import zipfile
 import requests
 import platform
+import subprocess
 from csv import reader
 from pathlib import Path
 from datetime import datetime
@@ -209,10 +210,11 @@ class TUI:
                                 elif self.os == 'Linux':
                                     f.write(gzip.decompress(payload.content))
                         os.chmod(sys.executable, 0o775)
-                        self.console.print(f'[bold green]Update complete! Please restart the application.[/bold green]'
-                                           f'\n\n[green]Changelog:[/green]\n{changelog}\n')
+                        self.console.print(f'[bold green]Update complete! The application will be restarted now.'
+                                           f'[/bold green]\n\n[green]Changelog:[/green]\n{changelog}\n')
                         self.print_log()
                         pause(self.headless)
+                        subprocess.call([sys.executable] + sys.argv[1:])
                         sys.exit(0)
             except Exception as e:
                 self.console.print(f'[bold red]Update failed!\n\nReason: {str(e)}[/bold red]\n')
