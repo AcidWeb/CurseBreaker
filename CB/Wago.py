@@ -63,36 +63,32 @@ class PlaterParser(BaseParser):
         self.api = 'plater'
         self.parse_storage()
 
+    def parse_storage_internal(self, data):
+        for script in data:
+            if data[script]['url']:
+                search = self.urlParser.search(data[script]['url'])
+                if search is not None and search.group(1) and search.group(2):
+                    self.ids[data[script]['Name']] = search.group(1)
+                    if not data[script]['ignoreWagoUpdate']:
+                        if data[script]['skipWagoUpdate']:
+                            self.ignored[search.group(1)] = int(data[script]['skipWagoUpdate'])
+                        self.list[search.group(1)] = int(search.group(2))
+
     def parse_storage(self):
         with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/Plater.lua'), 'r', encoding='utf-8',
                   errors='ignore') as file:
             data = file.read().replace('PlaterDB = {', '{')
         platerdata = self.lua.eval(data)
         for profile in platerdata['profiles']:
-            if platerdata['profiles'][profile]['script_data']:
-                for script in platerdata['profiles'][profile]['script_data']:
-                    if platerdata['profiles'][profile]['script_data'][script]['url']:
-                        search = self.urlParser.search(platerdata['profiles'][profile]['script_data'][script]['url'])
-                        if search is not None and search.group(1) and search.group(2):
-                            self.ids[platerdata['profiles'][profile]['script_data'][script]['Name']] = search.group(1)
-                            if not platerdata['profiles'][profile]['script_data'][script]['ignoreWagoUpdate']:
-                                if platerdata['profiles'][profile]['script_data'][script]['skipWagoUpdate']:
-                                    self.ignored[search.group(1)] = int(platerdata['profiles'][profile]['script_data']
-                                                                        [script]['skipWagoUpdate'])
-                                self.list[search.group(1)] = int(search.group(2))
-            if platerdata['profiles'][profile]['hook_data']:
-                for hook in platerdata['profiles'][profile]['hook_data']:
-                    if platerdata['profiles'][profile]['hook_data'][hook]['url']:
-                        search = self.urlParser.search(platerdata['profiles'][profile]['hook_data'][hook]['url'])
-                        if search is not None and search.group(1) and search.group(2):
-                            self.ids[platerdata['profiles'][profile]['hook_data'][hook]['Name']] = search.group(1)
-                            if not platerdata['profiles'][profile]['hook_data'][hook]['ignoreWagoUpdate']:
-                                if platerdata['profiles'][profile]['hook_data'][hook]['skipWagoUpdate']:
-                                    self.ignored[search.group(1)] = int(platerdata['profiles'][profile]['hook_data']
-                                                                        [hook]['skipWagoUpdate'])
-                                self.list[search.group(1)] = int(search.group(2))
-            if platerdata['profiles'][profile]['url']:
-                search = self.urlParser.search(platerdata['profiles'][profile]['url'])
+            data = platerdata['profiles'][profile]['script_data']
+            if data:
+                self.parse_storage_internal(data)
+            data = platerdata['profiles'][profile]['hook_data']
+            if data:
+                self.parse_storage_internal(data)
+            data = platerdata['profiles'][profile]['url']
+            if data:
+                search = self.urlParser.search(data)
                 if search is not None and search.group(1) and search.group(2):
                     self.ids[profile] = search.group(1)
                     if not platerdata['profiles'][profile]['ignoreWagoUpdate']:
