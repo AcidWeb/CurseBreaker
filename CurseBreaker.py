@@ -44,6 +44,7 @@ class TUI:
         self.cfSlugs = None
         self.wowiSlugs = None
         self.completer = None
+        self.new_version = None
         self.os = platform.system()
         install()
 
@@ -152,6 +153,8 @@ class TUI:
             sys.exit(1)
         self.setup_completer()
         self.print_header()
+        if self.new_version:
+            self.console.print(f'Update available [red]{__version__}[/red] -> [green]{self.new_version}[/green]\n')
         self.console.print('Use command [green]help[/green] or press [green]TAB[/green] to see a list of available comm'
                            'ands.\nCommand [green]exit[/green] or pressing [green]CTRL+D[/green] will close the applica'
                            'tion.\n')
@@ -198,24 +201,25 @@ class TUI:
                             url = binary['browser_download_url']
                             break
                     if url and StrictVersion(remoteversion[1:]) > StrictVersion(__version__):
-                        self.console.print('[green]Updating CurseBreaker...[/green]')
-                        shutil.move(sys.executable, sys.executable + '.old')
-                        payload = requests.get(url, headers=HEADERS)
-                        if self.os == 'Darwin':
-                            zipfile.ZipFile(io.BytesIO(payload.content)).extractall()
+                        if self.os == 'Linux':
+                            self.new_version = remoteversion[1:]
                         else:
-                            with open(sys.executable, 'wb') as f:
-                                if self.os == 'Windows':
-                                    f.write(payload.content)
-                                elif self.os == 'Linux':
-                                    f.write(gzip.decompress(payload.content))
-                        os.chmod(sys.executable, 0o775)
-                        self.console.print(f'[bold green]Update complete! The application will be restarted now.'
-                                           f'[/bold green]\n\n[green]Changelog:[/green]\n{changelog}\n')
-                        self.print_log()
-                        pause(self.headless)
-                        subprocess.call([sys.executable] + sys.argv[1:])
-                        sys.exit(0)
+                            self.console.print('[green]Updating CurseBreaker...[/green]')
+                            shutil.move(sys.executable, sys.executable + '.old')
+                            payload = requests.get(url, headers=HEADERS)
+                            if self.os == 'Darwin':
+                                zipfile.ZipFile(io.BytesIO(payload.content)).extractall()
+                            else:
+                                with open(sys.executable, 'wb') as f:
+                                    if self.os == 'Windows':
+                                        f.write(payload.content)
+                            os.chmod(sys.executable, 0o775)
+                            self.console.print(f'[bold green]Update complete! The application will be restarted now.'
+                                            f'[/bold green]\n\n[green]Changelog:[/green]\n{changelog}\n')
+                            self.print_log()
+                            pause(self.headless)
+                            subprocess.call([sys.executable] + sys.argv[1:])
+                            sys.exit(0)
             except Exception as e:
                 self.console.print(f'[bold red]Update failed!\n\nReason: {str(e)}[/bold red]\n')
                 self.print_log()
