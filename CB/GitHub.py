@@ -35,11 +35,12 @@ class GitHubAddon:
         for release in self.payload['assets']:
             if release['name'] and '-nolib' not in release['name'] \
                     and release['content_type'] in ['application/x-zip-compressed', 'application/zip']:
-                if self.clientType == 'wow_retail' and not release['name'].endswith('-classic.zip'):
+                if not latest and not release['name'].endswith('-classic.zip'):
                     latest = release['browser_download_url']
-                elif self.clientType == 'wow_classic' and release['name'].endswith('-classic.zip'):
+                elif not latestclassic and release['name'].endswith('-classic.zip'):
                     latestclassic = release['browser_download_url']
-        if (self.clientType == 'wow_retail' and latest) or (self.clientType == 'wow_classic' and not latestclassic):
+        if (self.clientType == 'wow_retail' and latest) or (self.clientType == 'wow_classic' and latest
+                                                            and not latestclassic):
             self.downloadUrl = latest
         elif self.clientType == 'wow_classic' and latestclassic:
             self.downloadUrl = latestclassic
