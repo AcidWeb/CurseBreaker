@@ -160,7 +160,7 @@ class Core:
 
     def parse_url(self, url):
         if url.startswith('https://www.curseforge.com/wow/addons/'):
-            return CurseForgeAddon(self.parse_cf_id(url), self.cfCache,
+            return CurseForgeAddon(url, self.parse_cf_id(url), self.cfCache,
                                    'wow' if url in self.config['IgnoreClientVersion'].keys() else self.clientType,
                                    self.check_if_dev(url))
         elif url.startswith('https://www.wowinterface.com/downloads/'):

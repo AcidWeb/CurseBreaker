@@ -57,7 +57,8 @@ class TUI:
         if not glob.glob('World*.app') and not glob.glob('Wow*.exe') or \
                 not os.path.isdir(Path('Interface/AddOns')) or not os.path.isdir('WTF'):
             self.console.print('[bold red]This executable should be placed in the same directory where Wow.exe, '
-                               'WowClassic.exe or World of Warcraft.app is located.[/bold red]\n')
+                               'WowClassic.exe or World of Warcraft.app is located. Additionally, make sure that '
+                               'this WoW installation was started at least once.[/bold red]\n')
             pause(self.headless)
             sys.exit(1)
         # Detect Classic client
