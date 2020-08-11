@@ -390,14 +390,14 @@ class Core:
         zipf = zipfile.ZipFile(Path('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip'), 'w',
                                zipfile.ZIP_DEFLATED)
         filecount = 0
-        for _, _, files in os.walk('WTF/', topdown=True):
+        for _, _, files in os.walk('WTF/', topdown=True, followlinks=True):
             files = [f for f in files if not f[0] == '.']
             filecount += len(files)
         with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|', auto_refresh=False,
                       console=console) as progress:
             task = progress.add_task('', total=filecount)
             while not progress.finished:
-                for root, _, files in os.walk('WTF/', topdown=True):
+                for root, _, files in os.walk('WTF/', topdown=True, followlinks=True):
                     files = [f for f in files if not f[0] == '.']
                     for f in files:
                         zipf.write(Path(root, f))
@@ -421,7 +421,7 @@ class Core:
                 elif directory not in ignored:
                     orphanedaddon.append(directory)
         directories += directoriesgit + orphanedaddon
-        for root, dirs, files in os.walk('WTF/'):
+        for root, dirs, files in os.walk('WTF/', followlinks=True):
             for f in files:
                 if 'Blizzard_' not in f and f.endswith('.lua'):
                     name = f.split('.')[0]
