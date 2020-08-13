@@ -424,7 +424,7 @@ class Core:
         for root, dirs, files in os.walk('WTF/', followlinks=True):
             for f in files:
                 if 'Blizzard_' not in f and f.endswith('.lua'):
-                    name = f.split('.')[0]
+                    name = os.path.splitext(f)[0]
                     if name not in directories:
                         orphaneconfig.append(str(Path(root, f))[4:])
         return orphanedaddon, orphaneconfig
