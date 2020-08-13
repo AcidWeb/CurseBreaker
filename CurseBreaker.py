@@ -18,6 +18,7 @@ from rich import box
 from rich.text import Text
 from rich.rule import Rule
 from rich.table import Table
+from rich.panel import Panel
 from rich.console import Console
 from rich.progress import Progress, BarColumn
 from rich.traceback import Traceback, install
@@ -135,6 +136,7 @@ class TUI:
                 if not self.headless:
                     self.print_header()
                 try:
+                    self.motd_parser()
                     self.c_update(None, True)
                     if self.core.backup_check():
                         self.setup_table()
@@ -222,6 +224,12 @@ class TUI:
                 self.print_log()
                 pause(self.headless)
                 sys.exit(1)
+
+    def motd_parser(self):
+        payload = requests.get('https://storage.googleapis.com/cursebreaker/motd', headers=HEADERS)
+        if payload.status_code == 200:
+            self.console.print(Panel(payload.content.decode('UTF-8'), title='MOTD', border_style='red'))
+            self.console.print('')
 
     def handle_exception(self, e, table=True):
         if self.table.row_count > 1 and table:
