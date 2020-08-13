@@ -49,7 +49,7 @@ class Core:
             with open(self.configPath, 'r') as f:
                 try:
                     self.config = json.load(f)
-                except (StopIteration, json.JSONDecodeError):
+                except (StopIteration, UnicodeDecodeError, json.JSONDecodeError):
                     raise RuntimeError
         else:
             self.config = {'Addons': [],
