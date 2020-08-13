@@ -181,7 +181,7 @@ class TUI:
                     self.console.print('Command not found.')
 
     def auto_update(self):
-        if getattr(sys, 'frozen', False):
+        if getattr(sys, 'frozen', False) and 'CURSEBREAKER_VARDEXMODE' not in os.environ:
             try:
                 if os.path.isfile(sys.executable + '.old'):
                     try:
