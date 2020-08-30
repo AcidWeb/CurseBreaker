@@ -296,7 +296,7 @@ class TUI:
             slugs.append(f'cf:{item}')
         for item in self.wowiSlugs:
             slugs.append(f'wowi:{item}')
-        slugs.extend(['ElvUI:Dev', 'SLE:Dev'])
+        slugs.extend(['ElvUI:Dev', 'Shadow&Light:Dev'])
         accounts = []
         for account in self.core.detect_accounts():
             accounts.append(account)
@@ -371,7 +371,7 @@ class TUI:
                                'ddon_id]\n\thttps://www.tukui.org/classic-addons.php?id=\[addon_id] [bold white]|[/bold'
                                ' white] tuc:\[addon_id]\n\thttps://github.com/\[username]/\[repository_name] [bold whit'
                                'e]|[/bold white] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white] '
-                               'ElvUI:Dev\n\tTukui\n\tSLE:Dev', highlight=False)
+                               'ElvUI:Dev\n\tTukui\n\tShadow&Light:Dev', highlight=False)
 
     def c_uninstall(self, args):
         if args:
@@ -716,7 +716,8 @@ class TUI:
                            'php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]\n\thttps://www.tukui.org/class'
                            'ic-addons.php?id=\[addon_id] [bold white]|[/bold white] tuc:\[addon_id]\n\thttps://github.c'
                            'om/\[username]/\[repository_name] [bold white]|[/bold white] gh:\[username]/\[repository_na'
-                           'me]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui\n\tSLE:Dev', highlight=False)
+                           'me]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui\n\tShadow&Light:Dev',
+                           highlight=False)
 
     def c_exit(self, _):
         sys.exit(0)

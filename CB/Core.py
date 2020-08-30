@@ -74,7 +74,8 @@ class Core:
 
     def update_config(self):
         if 'Version' not in self.config.keys() or self.config['Version'] != __version__:
-            urlupdate = {'elvui-classic': 'elvui', 'elvui-classic:dev': 'elvui:dev', 'tukui-classic': 'tukui'}
+            urlupdate = {'elvui-classic': 'elvui', 'elvui-classic:dev': 'elvui:dev', 'tukui-classic': 'tukui',
+                         'sle:dev': 'shadow&light:dev'}
             for addon in self.config['Addons']:
                 # 1.1.0
                 if 'Checksums' not in addon.keys():
@@ -85,7 +86,7 @@ class Core:
                 # 1.1.1
                 if addon['Version'] is None:
                     addon['Version'] = '1'
-                # 2.2.0
+                # 2.2.0, 3.9.4
                 if addon['URL'].lower() in urlupdate:
                     addon['URL'] = urlupdate[addon['URL'].lower()]
                 # 2.4.0
@@ -195,7 +196,7 @@ class Core:
                 return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'master')
             else:
                 return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'Classic')
-        elif url.lower() == 'sle:dev':
+        elif url.lower() == 'shadow&light:dev':
             if self.clientType == 'wow_retail':
                 return GitLabAddon('ElvUI Shadow & Light', '45', 'shadow-and-light/shadow-and-light', 'dev')
             else:
