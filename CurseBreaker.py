@@ -10,6 +10,7 @@ import pickle
 import zipfile
 import requests
 import platform
+import pyperclip
 import subprocess
 from csv import reader
 from pathlib import Path
@@ -672,7 +673,9 @@ class TUI:
                                f'detected by this process.')
 
     def c_export(self, _):
-        self.console.print(self.core.export_addons(), highlight=False)
+        payload = self.core.export_addons()
+        pyperclip.copy(payload)
+        self.console.print(f'{payload}\n\nThe command above was copied to the clipboard.', highlight=False)
 
     def c_help(self, _):
         self.console.print('[green]install [URL][/green]\n\tCommand accepts a space-separated list of links.\n\t[bold w'

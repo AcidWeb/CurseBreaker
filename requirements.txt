@@ -1,6 +1,7 @@
 prompt_toolkit
 cloudscraper
 checksumdir
+pyperclip
 requests
 markdown
 bbcode
