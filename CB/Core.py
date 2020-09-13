@@ -213,7 +213,7 @@ class Core:
                 url.startswith('https://www.tukui.org/classic-addons.php?id=') or \
                 url.lower().startswith('elvui') or \
                 url.lower().startswith('tukui') or \
-                url.lower() == 'sle:dev':
+                url.lower() == 'shadow&light:dev':
             return 'Tukui'
         elif url.startswith('https://github.com/'):
             return 'GitHub'
@@ -221,7 +221,9 @@ class Core:
             return '?'
 
     def add_addon(self, url, ignore):
-        if 'twitch://' in url:
+        if url.endswith(':'):
+            raise NotImplementedError('Provided URL is not supported.')
+        elif 'twitch://' in url:
             url = url.split('/download-client')[0].replace('twitch://', 'https://').strip()
         elif url.startswith('cf:'):
             url = f'https://www.curseforge.com/wow/addons/{url[3:]}'
@@ -458,7 +460,7 @@ class Core:
                     with open(self.cachePath, 'wb') as f:
                         f.write(gzip.decompress(requests.get(
                             f'https://storage.googleapis.com/cursebreaker/cfid.pickle.gz', headers=HEADERS).content))
-                    self.config['CFCacheTimestamp'] = time.time()
+                    self.config['CFCacheTimestamp'] = int(time.time())
                     self.save_config()
                 with open(self.cachePath, 'rb') as f:
                     self.cfIDs = pickle.load(f)

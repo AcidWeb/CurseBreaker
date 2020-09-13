@@ -346,7 +346,7 @@ class TUI:
                 optignore = True
             else:
                 optignore = False
-            args = re.sub(r'(\w)([ ]+)(\w)', r'\1,\3', args)
+            args = re.sub(r'([a-zA-Z0-9_:])([ ]+)([a-zA-Z0-9_:])', r'\1,\3', args)
             addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
             with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|',
                           auto_refresh=False, console=self.console) as progress:
