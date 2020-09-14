@@ -37,6 +37,6 @@ class GitLabAddon:
         self.archive.extractall(path)
         for directory in self.directories:
             shutil.rmtree(path / directory, ignore_errors=True)
-            # FIXME - Python bug #32689
+            # FIXME - Python bug #32689 - Fixed in 3.9
             shutil.move(str(path / f'{self.shorthPath}-{self.branch}' / directory), str(path))
         shutil.rmtree(path / f'{self.shorthPath}-{self.branch}')
