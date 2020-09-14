@@ -211,7 +211,8 @@ class TUI:
                         shutil.move(sys.executable, sys.executable + '.old')
                         payload = requests.get(url, headers=HEADERS)
                         if self.os == 'Darwin':
-                            zipfile.ZipFile(io.BytesIO(payload.content)).extractall()
+                            zipfile.ZipFile(io.BytesIO(payload.content)).extractall(path=os.path.dirname(
+                                os.path.abspath(sys.executable)))
                         else:
                             with open(sys.executable, 'wb') as f:
                                 if self.os == 'Windows':
