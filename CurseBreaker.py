@@ -25,6 +25,7 @@ from rich.progress import Progress, BarColumn
 from rich.traceback import Traceback, install
 from multiprocessing import freeze_support
 from prompt_toolkit import PromptSession, HTML
+from prompt_toolkit.shortcuts import confirm
 from prompt_toolkit.completion import WordCompleter, NestedCompleter
 from distutils.version import StrictVersion
 from CB import HEADERS, HEADLESS_TERMINAL_THEME, __version__
@@ -475,8 +476,11 @@ class TUI:
         if args:
             self.c_update(args, False, True, True)
         else:
-            self.console.print('[green]Usage:[/green]\n\tThis command accepts a space-separated list of addon names or '
-                               'full links as an argument.')
+            # noinspection PyTypeChecker
+            answer = confirm(HTML('<ansibrightred>Execute a forced update of all addons and overwrite ALL local '
+                                  'changes?</ansibrightred>'))
+            if answer:
+                self.c_update(False, False, True, True)
 
     def c_status(self, args):
         if args and args.startswith('-s'):
@@ -694,7 +698,7 @@ class TUI:
                            'r full links.\n\tIf no argument is provided all non-modified addons will be updated.\n'
                            '[green]force_update [URL/Name][/green]\n\tCommand accepts a space-separated list of addon n'
                            'ames or full links.\n\tSelected addons will be reinstalled or updated regardless of their c'
-                           'urrent state.\n'
+                           'urrent state.\n\tIf no argument is provided all addons will be forcefully updated.\n'
                            '[green]wago_update[/green]\n\tCommand detects all installed WeakAuras and Plater profiles/s'
                            'cripts.\n\tAnd then generate WeakAuras Companion payload.\n'
                            '[green]status[/green]\n\tPrints the current state of all installed addons.\n\t[bold white]F'
