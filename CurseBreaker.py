@@ -241,7 +241,7 @@ class TUI:
     def handle_exception(self, e, table=True):
         if self.table.row_count > 1 and table:
             self.console.print(self.table)
-        if getattr(sys, 'frozen', False):
+        if getattr(sys, 'frozen', False) and 'CURSEBREAKER_DEBUG' not in os.environ:
             sys.tracebacklimit = 0
         if isinstance(e, list):
             for es in e:
