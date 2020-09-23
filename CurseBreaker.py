@@ -298,7 +298,7 @@ class TUI:
                 self.wowiSlugs = []
         addons = []
         for addon in sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower()):
-            addons.append(f'"{addon["Name"]}"' if ',' in addon["Name"] else addon["Name"])
+            addons.append(addon['Name'])
         slugs = ['ElvUI', 'Tukui']
         for item in self.cfSlugs:
             slugs.append(f'cf:{item}')
@@ -340,10 +340,9 @@ class TUI:
     def parse_args(self, args):
         parsed = []
         for addon in sorted(self.core.config['Addons'], key=lambda k: len(k['Name']), reverse=True):
-            name = f'"{addon["Name"]}"' if ',' in addon['Name'] else addon['Name']
-            if name in args or addon['URL'] in args:
-                parsed.append(name)
-                args = args.replace(name, '', 1)
+            if addon['Name'] in args or addon['URL'] in args:
+                parsed.append(addon['Name'])
+                args = args.replace(addon['Name'], '', 1)
         return sorted(parsed)
 
     def c_install(self, args):
