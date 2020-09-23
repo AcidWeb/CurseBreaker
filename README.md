@@ -4,7 +4,7 @@
 
 TUI/CLI addon updater for World of Warcraft.
 
-![Screenshot](https://i.imgur.com/s9kOx2R.png)
+![Screenshot](https://i.imgur.com/A3DH1xf.png)
 
 ## DOWNLOAD
 The latest release can be found [here](https://github.com/AcidWeb/CurseBreaker/releases/latest).\
