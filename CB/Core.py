@@ -298,8 +298,9 @@ class Core:
             if force:
                 modified = False
                 blocked = False
-            return new.name, new.currentVersion, oldversion, modified, blocked, self.parse_url_source(old['URL'])
-        return url, False, False, False, False, self.parse_url_source(url)
+            return new.name, new.currentVersion, oldversion, modified, blocked, self.parse_url_source(old['URL']),\
+                new.changelogUrl
+        return url, False, False, False, False, self.parse_url_source(url), None
 
     def check_checksum(self, addon, bulk=True):
         checksums = {}

@@ -429,7 +429,7 @@ class TUI:
                 for addon in addons:
                     try:
                         # noinspection PyTypeChecker
-                        name, versionnew, versionold, modified, blocked, source = self.core.\
+                        name, versionnew, versionold, modified, blocked, source, changelog = self.core.\
                             update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
                         if provider:
                             source = f' [bold white]{source}[/bold white]'
@@ -437,23 +437,38 @@ class TUI:
                             source = ''
                         if versionold:
                             if versionold == versionnew:
+                                if changelog:
+                                    versionold = Text.from_markup(f'[link={changelog}]{versionold}[/link]')
+                                    versionold.no_wrap = True
+                                else:
+                                    versionold = Text(versionold, no_wrap=True)
                                 if modified:
                                     self.table.add_row(f'[bold red]Modified[/bold red]{source}',
-                                                       Text(name, no_wrap=True), Text(versionold, no_wrap=True))
+                                                       Text(name, no_wrap=True), versionold)
                                 else:
                                     if self.core.config['CompactMode'] and compacted > -1:
                                         compacted += 1
                                     else:
                                         self.table.add_row(f'[green]Up-to-date[/green]{source}',
-                                                           Text(name, no_wrap=True), Text(versionold, no_wrap=True))
+                                                           Text(name, no_wrap=True), versionold)
                             else:
                                 if modified or blocked:
+                                    if changelog:
+                                        versionold = Text.from_markup(f'[link={changelog}]{versionold}[/link]')
+                                        versionold.no_wrap = True
+                                    else:
+                                        versionold = Text(versionold, no_wrap=True)
                                     self.table.add_row(f'[bold red]Update suppressed[/bold red]{source}',
-                                                       Text(name, no_wrap=True), Text(versionold, no_wrap=True))
+                                                       Text(name, no_wrap=True), versionold)
                                 else:
+                                    if changelog:
+                                        versionnew = Text.from_markup(f'[yellow][link={changelog}]{versionnew}'
+                                                                      f'[/link][/yellow]')
+                                        versionnew.no_wrap = True
+                                    else:
+                                        versionnew = Text(versionnew, style='yellow', no_wrap=True)
                                     self.table.add_row(f'[yellow]{"Updated" if update else "Update available"}'
-                                                       f'[/yellow]{source}', Text(name, no_wrap=True),
-                                                       Text(versionnew, style='yellow', no_wrap=True))
+                                                       f'[/yellow]{source}', Text(name, no_wrap=True), versionnew)
                         else:
                             self.table.add_row(f'[bold black]Not installed[/bold black]{source}',
                                                Text(addon, no_wrap=True), Text('', no_wrap=True))
@@ -656,9 +671,9 @@ class TUI:
             self.console.print('[green]Top results of your search:[/green]')
             for url in results:
                 if self.core.check_if_installed(url):
-                    self.console.print(f'{url} [yellow]\[Installed][/yellow]', highlight=False)
+                    self.console.print(f'[link={url}]{url}[/link] [yellow]\[Installed][/yellow]', highlight=False)
                 else:
-                    self.console.print(url, highlight=False)
+                    self.console.print(f'[link={url}]{url}[/link]', highlight=False)
         else:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts a search query as an argument.')
 
@@ -717,7 +732,8 @@ class TUI:
                            '[green]toggle_wago [Username][/green]\n\tEnables/disables automatic Wago updates.\n\tIf a u'
                            'sername is provided check will start to ignore the specified author.\n'
                            '[green]set_wago_api [API key][/green]\n\tSets Wago API key required to access private entri'
-                           'es.\n\tIt can be procured here: https://wago.io/account\n'
+                           'es.\n\tIt can be procured here:'
+                           ' [link=https://wago.io/account]https://wago.io/account[/link]\n'
                            '[green]set_wago_wow_account [Account name][/green]\n\tSets WoW account used by Wago updater'
                            '.\n\tNeeded only if compatibile addons are used on more than one WoW account.\n'
                            '[green]uri_integration[/green]\n\tEnables integration with CurseForge page.\n\t[i]"Install"'

@@ -18,6 +18,7 @@ class TukuiAddon:
             self.payload = self.payload.json()
         self.name = self.payload['name'].strip().strip('\u200b')
         self.downloadUrl = self.payload['url']
+        self.changelogUrl = self.payload['changelog']
         self.currentVersion = self.payload['version']
         self.archive = None
         self.directories = []

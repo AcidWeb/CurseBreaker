@@ -17,10 +17,24 @@ class GitLabAddon:
         self.name = name
         self.shorthPath = path.split('/')[1]
         self.downloadUrl = f'https://git.tukui.org/{path}/-/archive/{branch}/{self.shorthPath}-{branch}.zip'
+        self.changelogUrl = None
         self.currentVersion = self.payload['commit']['short_id']
         self.branch = branch
         self.archive = None
         self.directories = []
+
+        if name == 'ElvUI':
+            if projectid == '60':
+                self.changelogUrl = 'https://www.tukui.org/download.php?ui=elvui&changelog'
+            elif projectid == '492':
+                self.changelogUrl = 'https://www.tukui.org/classic-addons.php?id=2&changelog'
+        elif name == 'Tukui':
+            if branch == 'master':
+                self.changelogUrl = 'https://www.tukui.org/download.php?ui=tukui&changelog'
+            elif branch == 'Classic':
+                self.changelogUrl = 'https://www.tukui.org/classic-addons.php?id=1&changelog'
+        elif name == 'ElvUI Shadow & Light':
+            self.changelogUrl = 'https://git.tukui.org/shadow-and-light/shadow-and-light/-/commits/dev'
 
     @retry()
     def get_addon(self):

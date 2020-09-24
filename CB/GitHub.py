@@ -25,6 +25,7 @@ class GitHubAddon:
         self.clientType = clienttype
         self.currentVersion = self.payload['tag_name'] or self.payload['name']
         self.downloadUrl = None
+        self.changelogUrl = self.payload['html_url']
         self.archive = None
         self.directories = []
         self.get_latest_package()

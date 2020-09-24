@@ -33,6 +33,7 @@ class CurseForgeAddon:
         self.clientType = clienttype
         self.allowDev = allowdev
         self.downloadUrl = None
+        self.changelogUrl = None
         self.currentVersion = None
         self.archive = None
         self.directories = []
@@ -50,6 +51,7 @@ class CurseForgeAddon:
                 if (self.clientType == 'wow' or f['gameVersionFlavor'] == self.clientType) and \
                         f['releaseType'] in status and '-nolib' not in f['displayName'] and not f['isAlternate']:
                     self.downloadUrl = f['downloadUrl']
+                    self.changelogUrl = f'{self.payload["websiteUrl"]}/files/{f["id"]}'
                     self.currentVersion = f['displayName']
                     break
             if self.downloadUrl and self.currentVersion:

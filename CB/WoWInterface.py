@@ -21,6 +21,7 @@ class WoWInterfaceAddon:
                 self.payload = self.payload[0]
         self.name = self.payload['title'].strip().strip('\u200b')
         self.downloadUrl = self.payload['downloadUri']
+        self.changelogUrl = f'{url}#changelog'
         self.currentVersion = self.payload['version']
         self.archive = None
         self.directories = []
