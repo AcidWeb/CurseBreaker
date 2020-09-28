@@ -125,7 +125,7 @@ class TUI:
                 self.console.print('Command not found.')
                 sys.exit(0)
         # Addons auto update
-        if len(self.core.config['Addons']) > 0:
+        if len(self.core.config['Addons']) > 0 and self.core.config['AutoUpdate']:
             if not self.headless:
                 self.console.print('Automatic update of all addons will start in 5 seconds.\n'
                                    'Press any button to enter interactive mode.', highlight=False)
@@ -323,6 +323,7 @@ class TUI:
             'toggle_dev': WordCompleter(addons + ['global'], ignore_case=True, sentence=True),
             'toggle_block': WordCompleter(addons, ignore_case=True, sentence=True),
             'toggle_compact_mode': None,
+            'toggle_autoupdate': None,
             'toggle_wago': None,
             'set_wago_api': None,
             'set_wago_wow_account': WordCompleter(accounts, ignore_case=True, sentence=True),
@@ -558,13 +559,18 @@ class TUI:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts an addon name as an argument.')
 
     def c_toggle_backup(self, _):
-        status = self.core.backup_toggle()
+        status = self.core.generic_toggle('Backup', 'Enabled')
         self.console.print('Backup of WTF directory is now:',
                            '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
 
     def c_toggle_compact_mode(self, _):
-        status = self.core.compact_mode_toggle()
+        status = self.core.generic_toggle('CompactMode')
         self.console.print('Table compact mode is now:',
+                           '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
+
+    def c_toggle_autoupdate(self, _):
+        status = self.core.generic_toggle('AutoUpdate')
+        self.console.print('The automatic addon update on startup is now:',
                            '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
 
     def c_toggle_wago(self, args):
@@ -729,6 +735,8 @@ class TUI:
                            'unblocks updating of the provided addon.\n'
                            '[green]toggle_compact_mode [/green]\n\tEnables/disables compact table mode that hides entri'
                            'es of up-to-date addons.\n'
+                           '[green]toggle_autoupdate [/green]\n\tEnables/disables the automatic addon update on startup'
+                           '.\n'
                            '[green]toggle_wago [Username][/green]\n\tEnables/disables automatic Wago updates.\n\tIf a u'
                            'sername is provided check will start to ignore the specified author.\n'
                            '[green]set_wago_api [API key][/green]\n\tSets Wago API key required to access private entri'
