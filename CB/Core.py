@@ -207,19 +207,22 @@ class Core:
 
     def parse_url_source(self, url):
         if url.startswith('https://www.curseforge.com/wow/addons/'):
-            return 'CF'
+            return 'CF', url
         elif url.startswith('https://www.wowinterface.com/downloads/'):
-            return 'WoWI'
+            return 'WoWI', url
         elif url.startswith('https://www.tukui.org/addons.php?id=') or \
-                url.startswith('https://www.tukui.org/classic-addons.php?id=') or \
-                url.lower().startswith('elvui') or \
-                url.lower().startswith('tukui') or \
-                url.lower() == 'shadow&light:dev':
-            return 'Tukui'
+                url.startswith('https://www.tukui.org/classic-addons.php?id='):
+            return 'Tukui', url
+        elif url.lower().startswith('elvui'):
+            return 'Tukui', 'https://www.tukui.org/download.php?ui=elvui'
+        elif url.lower().startswith('tukui'):
+            return 'Tukui', 'https://www.tukui.org/download.php?ui=tukui'
+        elif url.lower() == 'shadow&light:dev':
+            return 'Tukui', 'https://www.curseforge.com/wow/addons/elvui-shadow-light'
         elif url.startswith('https://github.com/'):
-            return 'GitHub'
+            return 'GitHub', url
         else:
-            return '?'
+            return '?', None
 
     def add_addon(self, url, ignore):
         if url.endswith(':'):
@@ -277,6 +280,7 @@ class Core:
     def update_addon(self, url, update, force):
         old = self.check_if_installed(url)
         if old:
+            source, sourceurl = self.parse_url_source(old['URL'])
             new = self.parse_url(old['URL'])
             oldversion = old['Version']
             if old['URL'] in self.checksumCache:
@@ -299,9 +303,8 @@ class Core:
             if force:
                 modified = False
                 blocked = False
-            return new.name, new.currentVersion, oldversion, modified, blocked, self.parse_url_source(old['URL']),\
-                new.changelogUrl
-        return url, False, False, False, False, self.parse_url_source(url), None
+            return new.name, new.currentVersion, oldversion, modified, blocked, source, sourceurl, new.changelogUrl
+        return url, False, False, False, False, '?', None, None
 
     def check_checksum(self, addon, bulk=True):
         checksums = {}

@@ -346,6 +346,14 @@ class TUI:
                 args = args.replace(addon['Name'], '', 1)
         return sorted(parsed)
 
+    def parse_link(self, text, link):
+        if link:
+            obj = Text.from_markup(f'[link={link}]{text}[/link]')
+            obj.no_wrap = True
+            return obj
+        else:
+            return Text(text, no_wrap=True)
+
     def c_install(self, args):
         if args:
             if args.startswith('-i '):
@@ -430,7 +438,7 @@ class TUI:
                 for addon in addons:
                     try:
                         # noinspection PyTypeChecker
-                        name, versionnew, versionold, modified, blocked, source, changelog = self.core.\
+                        name, versionnew, versionold, modified, blocked, source, sourceurl, changelog = self.core.\
                             update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
                         if provider:
                             source = f' [bold white]{source}[/bold white]'
@@ -438,41 +446,33 @@ class TUI:
                             source = ''
                         if versionold:
                             if versionold == versionnew:
-                                if changelog:
-                                    versionold = Text.from_markup(f'[link={changelog}]{versionold}[/link]')
-                                    versionold.no_wrap = True
-                                else:
-                                    versionold = Text(versionold, no_wrap=True)
                                 if modified:
                                     self.table.add_row(f'[bold red]Modified[/bold red]{source}',
-                                                       Text(name, no_wrap=True), versionold)
+                                                       self.parse_link(name, sourceurl),
+                                                       self.parse_link(versionold, changelog))
                                 else:
                                     if self.core.config['CompactMode'] and compacted > -1:
                                         compacted += 1
                                     else:
                                         self.table.add_row(f'[green]Up-to-date[/green]{source}',
-                                                           Text(name, no_wrap=True), versionold)
+                                                           self.parse_link(name, sourceurl),
+                                                           self.parse_link(versionold, changelog))
                             else:
                                 if modified or blocked:
-                                    if changelog:
-                                        versionold = Text.from_markup(f'[link={changelog}]{versionold}[/link]')
-                                        versionold.no_wrap = True
-                                    else:
-                                        versionold = Text(versionold, no_wrap=True)
                                     self.table.add_row(f'[bold red]Update suppressed[/bold red]{source}',
-                                                       Text(name, no_wrap=True), versionold)
+                                                       self.parse_link(name, sourceurl),
+                                                       self.parse_link(versionold, changelog))
                                 else:
-                                    if changelog:
-                                        versionnew = Text.from_markup(f'[yellow][link={changelog}]{versionnew}'
-                                                                      f'[/link][/yellow]')
-                                        versionnew.no_wrap = True
-                                    else:
-                                        versionnew = Text(versionnew, style='yellow', no_wrap=True)
-                                    self.table.add_row(f'[yellow]{"Updated" if update else "Update available"}'
-                                                       f'[/yellow]{source}', Text(name, no_wrap=True), versionnew)
+                                    version = self.parse_link(versionnew, changelog)
+                                    version.stylize('yellow')
+                                    self.table.add_row(
+                                        f'[yellow]{"Updated" if update else "Update available"}[/yellow]{source}',
+                                        self.parse_link(name, sourceurl),
+                                        version)
                         else:
                             self.table.add_row(f'[bold black]Not installed[/bold black]{source}',
-                                               Text(addon, no_wrap=True), Text('', no_wrap=True))
+                                               Text(addon, no_wrap=True),
+                                               Text('', no_wrap=True))
                     except Exception as e:
                         exceptions.append(e)
                     progress.update(task, advance=1 if args else 0.5, refresh=True)
