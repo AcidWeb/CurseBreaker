@@ -123,12 +123,12 @@ class WagoUpdater:
                         entry['slug'] = entry['_id']
                     if entry['version'] > addon.list[entry['slug']] and (not entry['slug'] in addon.ignored or
                        (entry['slug'] in addon.ignored and entry['version'] != addon.ignored[entry['slug']])):
-                        output[0].append(entry['name'])
+                        output[0].append([entry['name'], entry['url']])
                         self.update_entry(entry, addon)
                     elif 'name' in entry:
-                        output[1].append(entry['name'])
-            output[0].sort()
-            output[1].sort()
+                        output[1].append([entry['name'], entry['url']])
+            output[0] = sorted(output[0], key=lambda v: v[0])
+            output[1] = sorted(output[1], key=lambda v: v[0])
         return output
 
     def parse_changelog(self, entry):

@@ -648,19 +648,19 @@ class TUI:
                 if len(statuswa[0]) > 0 or len(statuswa[1]) > 0:
                     self.console.print('[green]Outdated WeakAuras:[/green]')
                     for aura in statuswa[0]:
-                        self.console.print(aura, highlight=False)
+                        self.console.print(f'[link={aura[1]}]{aura[0]}[/link]', highlight=False)
                     self.console.print('\n[green]Detected WeakAuras:[/green]')
                     for aura in statuswa[1]:
-                        self.console.print(aura, highlight=False)
+                        self.console.print(f'[link={aura[1]}]{aura[0]}[/link]', highlight=False)
                 if len(statusplater[0]) > 0 or len(statusplater[1]) > 0:
                     if len(statuswa[0]) != 0 or len(statuswa[1]) != 0:
                         self.console.print('')
                     self.console.print('[green]Outdated Plater profiles/scripts:[/green]')
                     for aura in statusplater[0]:
-                        self.console.print(aura, highlight=False)
+                        self.console.print(f'[link={aura[1]}]{aura[0]}[/link]', highlight=False)
                     self.console.print('\n[green]Detected Plater profiles/scripts:[/green]')
                     for aura in statusplater[1]:
-                        self.console.print(aura, highlight=False)
+                        self.console.print(f'[link={aura[1]}]{aura[0]}[/link]', highlight=False)
             else:
                 if len(statuswa[0]) > 0:
                     self.console.print(f'\n[green]The number of outdated WeakAuras:[/green] '
