@@ -62,7 +62,8 @@ class Core:
                            'WAAPIKey': '',
                            'WACompanionVersion': 0,
                            'CFCacheTimestamp': 0,
-                           'CompactMode': False}
+                           'CompactMode': False,
+                           'AutoUpdate': True}
             self.save_config()
         if not os.path.isdir('WTF-Backup') and self.config['Backup']['Enabled']:
             os.mkdir('WTF-Backup')
