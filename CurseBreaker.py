@@ -273,7 +273,7 @@ class TUI:
                 window = windll.kernel32.GetConsoleWindow()
                 if window:
                     windll.user32.ShowWindow(window, 0)
-        elif 'WINDIR' in os.environ and 'WT_SESSION' not in os.environ:
+        elif 'WINDIR' in os.environ and 'WT_SESSION' not in os.environ and 'ALACRITTY_LOG' not in os.environ:
             set_terminal_size(100, 50)
             windll.kernel32.SetConsoleScreenBufferSize(windll.kernel32.GetStdHandle(-11), wintypes._COORD(100, 200))
             self.console = Console(width=97)
