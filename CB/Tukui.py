@@ -18,10 +18,14 @@ class TukuiAddon:
             self.payload = self.payload.json()
         self.name = self.payload['name'].strip().strip('\u200b')
         self.downloadUrl = self.payload['url']
-        self.changelogUrl = self.payload['changelog']
         self.currentVersion = self.payload['version']
         self.archive = None
         self.directories = []
+
+        if 'changelog' in self.payload:
+            self.changelogUrl = self.payload['changelog']
+        else:
+            self.changelogUrl = None
 
     @retry()
     def get_addon(self):
