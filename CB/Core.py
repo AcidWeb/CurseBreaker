@@ -250,7 +250,7 @@ class Core:
             new.get_addon()
             addon = self.check_if_installed_dirs(new.directories)
             if addon:
-                return False, addon['Name'], addon['Version']
+                return False, addon['Name'], addon['Version'], None
             self.cleanup(new.directories)
             new.install(self.path)
             checksums = {}
@@ -263,8 +263,8 @@ class Core:
                                           'Checksums': checksums
                                           })
             self.save_config()
-            return True, new.name, new.currentVersion
-        return False, addon['Name'], addon['Version']
+            return True, new.name, new.currentVersion, new.dependencies
+        return False, addon['Name'], addon['Version'], None
 
     def del_addon(self, url, keep):
         old = self.check_if_installed(url)
@@ -304,8 +304,9 @@ class Core:
             if force:
                 modified = False
                 blocked = False
-            return new.name, new.currentVersion, oldversion, modified, blocked, source, sourceurl, new.changelogUrl
-        return url, False, False, False, False, '?', None, None
+            return new.name, new.currentVersion, oldversion, modified, blocked, source, sourceurl, new.changelogUrl,\
+                new.dependencies
+        return url, False, False, False, False, '?', None, None, None
 
     def check_checksum(self, addon, bulk=True):
         checksums = {}
@@ -458,7 +459,7 @@ class Core:
                           + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""')
 
     @retry()
-    def parse_cf_id(self, url, bulk=False):
+    def parse_cf_id(self, url, bulk=False, reverse=False):
         if not self.cfIDs:
             # noinspection PyBroadException
             try:
@@ -473,6 +474,11 @@ class Core:
                 self.cfIDs = {**self.config['CFCacheCloudFlare'], **self.cfIDs}
             except Exception:
                 self.cfIDs = {}
+        if reverse:
+            try:
+                return list(self.cfIDs.keys())[list(self.cfIDs.values()).index(str(url))]
+            except ValueError:
+                return None
         slug = url.split('/')[-1]
         if slug in self.cfIDs:
             project = self.cfIDs[slug]
@@ -510,7 +516,7 @@ class Core:
         ids_wowi = []
         for addon in addons:
             if addon['URL'].startswith('https://www.curseforge.com/wow/addons/'):
-                ids_cf.append(int(self.parse_cf_id(addon['URL'], True)))
+                ids_cf.append(int(self.parse_cf_id(addon['URL'], bulk=True)))
             elif addon['URL'].startswith('https://www.wowinterface.com/downloads/'):
                 ids_wowi.append(re.findall(r'\d+', addon['URL'])[0].strip())
         if len(ids_cf) > 0:
@@ -591,3 +597,29 @@ class Core:
                 url = addon['URL'].lower()
             addons.append(url)
         return f'install {",".join(sorted(addons))}'
+
+
+class DependenciesParser:
+    def __init__(self, core):
+        self.core = core
+        self.dependencies = []
+
+    def add_dependency(self, dependency):
+        if dependency:
+            self.dependencies = self.dependencies + dependency
+
+    def parse_dependency(self):
+        self.dependencies = list(set(self.dependencies))
+        slugs = []
+        processed = []
+        for d in self.dependencies:
+            slug = self.core.parse_cf_id(d, reverse=True)
+            if slug:
+                slugs.append(f'https://www.curseforge.com/wow/addons/{slug}')
+        for s in slugs:
+            if not self.core.check_if_installed(s):
+                processed.append(s)
+        if len(processed) > 0:
+            return ','.join(processed)
+        else:
+            return None

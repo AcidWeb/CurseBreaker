@@ -24,6 +24,7 @@ class WoWInterfaceAddon:
         self.changelogUrl = f'{url}#changelog'
         self.currentVersion = self.payload['version']
         self.archive = None
+        self.dependencies = None
         self.directories = []
 
     @retry()

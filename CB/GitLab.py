@@ -21,6 +21,7 @@ class GitLabAddon:
         self.currentVersion = self.payload['commit']['short_id']
         self.branch = branch
         self.archive = None
+        self.dependencies = None
         self.directories = []
 
         if name == 'ElvUI':

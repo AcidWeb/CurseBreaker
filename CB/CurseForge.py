@@ -36,6 +36,7 @@ class CurseForgeAddon:
         self.changelogUrl = None
         self.currentVersion = None
         self.archive = None
+        self.dependencies = None
         self.directories = []
         self.get_current_version()
 
@@ -53,6 +54,13 @@ class CurseForgeAddon:
                     self.downloadUrl = f['downloadUrl']
                     self.changelogUrl = f'{self.payload["websiteUrl"]}/files/{f["id"]}'
                     self.currentVersion = f['displayName']
+                    if len(f['dependencies']) > 0:
+                        self.dependencies = []
+                        for d in f['dependencies']:
+                            if d['type'] == 3:
+                                self.dependencies.append(d['addonId'])
+                        if len(self.dependencies) == 0:
+                            self.dependencies = None
                     break
             if self.downloadUrl and self.currentVersion:
                 break

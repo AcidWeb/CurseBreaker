@@ -27,6 +27,7 @@ class GitHubAddon:
         self.downloadUrl = None
         self.changelogUrl = self.payload['html_url']
         self.archive = None
+        self.dependencies = None
         self.directories = []
         self.get_latest_package()
 

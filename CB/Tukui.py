@@ -20,6 +20,7 @@ class TukuiAddon:
         self.downloadUrl = self.payload['url']
         self.currentVersion = self.payload['version']
         self.archive = None
+        self.dependencies = None
         self.directories = []
 
         if 'changelog' in self.payload:

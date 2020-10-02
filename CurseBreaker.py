@@ -29,7 +29,7 @@ from prompt_toolkit.shortcuts import confirm
 from prompt_toolkit.completion import WordCompleter, NestedCompleter
 from distutils.version import StrictVersion
 from CB import HEADERS, HEADLESS_TERMINAL_THEME, __version__
-from CB.Core import Core
+from CB.Core import Core, DependenciesParser
 from CB.Compat import pause, timeout, clear, set_terminal_title, set_terminal_size, getch, kbhit
 from CB.Wago import WagoUpdater
 
@@ -354,13 +354,14 @@ class TUI:
         else:
             return Text(text, no_wrap=True)
 
-    def c_install(self, args):
+    def c_install(self, args, recursion=False):
         if args:
             if args.startswith('-i '):
                 args = args[3:]
                 optignore = True
             else:
                 optignore = False
+            dependencies = DependenciesParser(self.core)
             args = re.sub(r'([a-zA-Z0-9_:])([ ]+)([a-zA-Z0-9_:])', r'\1,\3', args)
             addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
             with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|',
@@ -368,15 +369,21 @@ class TUI:
                 task = progress.add_task('', total=len(addons))
                 while not progress.finished:
                     for addon in addons:
-                        installed, name, version = self.core.add_addon(addon, optignore)
+                        installed, name, version, deps = self.core.add_addon(addon, optignore)
                         if installed:
                             self.table.add_row('[green]Installed[/green]', Text(name, no_wrap=True),
                                                Text(version, no_wrap=True))
+                            if not recursion:
+                                dependencies.add_dependency(deps)
                         else:
                             self.table.add_row('[bold black]Already installed[/bold black]',
                                                Text(name, no_wrap=True), Text(version, no_wrap=True))
                         progress.update(task, advance=1, refresh=True)
             self.console.print(self.table)
+            dependencies = dependencies.parse_dependency()
+            if dependencies:
+                self.setup_table()
+                self.c_install(dependencies, recursion=True)
         else:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts a space-separated list of links as an arg'
                                'ument.[bold white]\n\tFlags:[/bold white]\n\t\t[bold white]-i[/bold white] - Disable th'
@@ -428,6 +435,7 @@ class TUI:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
             compacted = 0
         exceptions = []
+        dependencies = DependenciesParser(self.core)
         with Progress('{task.completed:.0f}/{task.total}', '|', BarColumn(bar_width=None), '|',
                       auto_refresh=False, console=None if self.headless else self.console) as progress:
             task = progress.add_task('', total=len(addons))
@@ -438,8 +446,9 @@ class TUI:
                 for addon in addons:
                     try:
                         # noinspection PyTypeChecker
-                        name, versionnew, versionold, modified, blocked, source, sourceurl, changelog = self.core.\
-                            update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
+                        name, versionnew, versionold, modified, blocked, source, sourceurl, changelog, deps = \
+                            self.core.update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
+                        dependencies.add_dependency(deps)
                         if provider:
                             source = f' [bold white]{source}[/bold white]'
                         else:
@@ -479,6 +488,10 @@ class TUI:
         if addline:
             self.console.print('')
         self.console.print(self.table)
+        dependencies = dependencies.parse_dependency()
+        if dependencies and update:
+            self.setup_table()
+            self.c_install(dependencies, recursion=True)
         if compacted > 0:
             self.console.print(f'Additionally [green]{compacted}[/green] addons are up-to-date.')
         if len(addons) == 0:
