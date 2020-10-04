@@ -51,6 +51,7 @@ class TUI:
         self.table = None
         self.cfSlugs = None
         self.wowiSlugs = None
+        self.tipsDatabase = None
         self.completer = None
         self.os = platform.system()
         install()
@@ -317,6 +318,7 @@ class TUI:
             'status': WordCompleter(addons, ignore_case=True),
             'orphans': None,
             'search': None,
+            'recommendations': None,
             'import': {'install': None},
             'export': None,
             'toggle_backup': None,
@@ -696,6 +698,30 @@ class TUI:
         else:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts a search query as an argument.')
 
+    def c_recommendations(self, _):
+        if not self.tipsDatabase:
+            # noinspection PyBroadException
+            try:
+                self.tipsDatabase = pickle.load(gzip.open(io.BytesIO(
+                    requests.get('https://storage.googleapis.com/cursebreaker/recommendations.pickle.gz',
+                                 headers=HEADERS).content)))
+            except Exception:
+                self.tipsDatabase = {}
+        if len(self.tipsDatabase) > 0:
+            found = False
+            for tip in self.tipsDatabase:
+                breaker = False
+                for addon, data in tip['Addons'].items():
+                    check = True if self.core.check_if_installed(addon) else False
+                    breaker = check == data['Installed']
+                if breaker:
+                    found = True
+                    recomendation = tip["Recomendation"].replace('|n', '\n')
+                    self.console.print(f'[bold white underline]{tip["Title"]}[/bold white underline] by [green]'
+                                       f'{tip["Author"]}[/green]\n\n{recomendation}\n', highlight=False)
+            if not found:
+                self.console.print('Not found any recommendations for you. Good job!')
+
     def c_import(self, args):
         hit, partial_hit, miss = self.core.detect_addons()
         if args == 'install' and len(hit) > 0:
@@ -738,6 +764,8 @@ class TUI:
                            'lags:[/bold white]\n\t\t[bold white]-s[/bold white] - Display the source of the addons.\n'
                            '[green]orphans[/green]\n\tPrints list of orphaned directories and files.\n'
                            '[green]search [Keyword][/green]\n\tExecutes addon search on CurseForge.\n'
+                           '[green]recommendations[/green]\n\tCheck the list of currently installed addons against a co'
+                           'mmunity-driven database of tips.\n'
                            '[green]import[/green]\n\tCommand attempts to import already installed addons.\n'
                            '[green]export[/green]\n\tCommand prints list of all installed addons in a form suitable f'
                            'or sharing.\n'
