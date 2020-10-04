@@ -38,6 +38,7 @@ class Core:
         self.config = None
         self.cfIDs = None
         self.cfDirs = None
+        self.cfDirsCompact = None
         self.cfCache = {}
         self.wowiCache = {}
         self.checksumCache = {}
@@ -225,13 +226,6 @@ class Core:
             return 'GitHub', url
         else:
             return '?', None
-
-    def parse_directory_list(self, slug):
-        output = []
-        for directory, slugs in self.cfDirs.items():
-            if slug in slugs:
-                output.append(directory)
-        return output
 
     def add_addon(self, url, ignore):
         if url.endswith(':'):
@@ -550,9 +544,12 @@ class Core:
             return []
 
     def detect_addons(self):
-        if not self.cfDirs:
+        if not self.cfDirs or not self.cfDirsCompact:
             self.cfDirs = pickle.load(gzip.open(io.BytesIO(
                 requests.get(f'https://storage.googleapis.com/cursebreaker/cfdir{self.clientType}.pickle.gz',
+                             headers=HEADERS).content)))
+            self.cfDirsCompact = pickle.load(gzip.open(io.BytesIO(
+                requests.get(f'https://storage.googleapis.com/cursebreaker/cfdircompact{self.clientType}.pickle.gz',
                              headers=HEADERS).content)))
         addon_dirs = os.listdir(self.path)
         ignored = ['ElvUI_OptionsUI', 'Tukui_Config', '+Wowhead_Looter', 'WeakAurasCompanion', 'SharedMedia_MyMedia',
@@ -562,7 +559,7 @@ class Core:
         miss = []
         for directory in addon_dirs:
             if os.path.isdir(self.path / directory) and not os.path.islink(self.path / directory) and \
-                    not os.path.isdir(self.path / directory / '.git'):
+                    not os.path.isdir(self.path / directory / '.git') and not directory.startswith('Blizzard_'):
                 if directory in self.cfDirs:
                     if len(self.cfDirs[directory]) > 1:
                         partial_hit.append(self.cfDirs[directory])
@@ -594,8 +591,12 @@ class Core:
         for partial in partial_hit:
             partial_hit_temp = {}
             for addon in partial:
-                directories = self.parse_directory_list(addon)
-                complete = True
+                if addon in self.cfDirsCompact:
+                    directories = self.cfDirsCompact[addon]
+                    complete = True
+                else:
+                    directories = []
+                    complete = False
                 for directory in directories:
                     if not os.path.isdir(self.path / directory):
                         complete = False
