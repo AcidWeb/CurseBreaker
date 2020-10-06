@@ -352,13 +352,19 @@ class TUI:
                 args = args.replace(addon['Name'], '', 1)
         return sorted(parsed)
 
-    def parse_link(self, text, link):
-        if link:
-            obj = Text.from_markup(f'[link={link}]{text}[/link]')
-            obj.no_wrap = True
-            return obj
+    def parse_link(self, text, link, dev=None):
+        if dev == 1:
+            dev = ' [B]'
+        elif dev == 2:
+            dev = ' [A]'
         else:
-            return Text(text, no_wrap=True)
+            dev = ''
+        if link:
+            obj = Text.from_markup(f'[link={link}]{text}[/link][bold]{dev}[/bold]')
+        else:
+            obj = Text.from_markup(f'{text}[bold]{dev}[/bold]')
+        obj.no_wrap = True
+        return obj
 
     def c_install(self, args, recursion=False):
         if args:
@@ -452,7 +458,7 @@ class TUI:
                 for addon in addons:
                     try:
                         # noinspection PyTypeChecker
-                        name, versionnew, versionold, modified, blocked, source, sourceurl, changelog, deps = \
+                        name, versionnew, versionold, modified, blocked, source, sourceurl, changelog, deps, dstate = \
                             self.core.update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
                         dependencies.add_dependency(deps)
                         if provider:
@@ -464,21 +470,21 @@ class TUI:
                                 if modified:
                                     self.table.add_row(f'[bold red]Modified[/bold red]{source}',
                                                        self.parse_link(name, sourceurl),
-                                                       self.parse_link(versionold, changelog))
+                                                       self.parse_link(versionold, changelog, dstate))
                                 else:
                                     if self.core.config['CompactMode'] and compacted > -1:
                                         compacted += 1
                                     else:
                                         self.table.add_row(f'[green]Up-to-date[/green]{source}',
                                                            self.parse_link(name, sourceurl),
-                                                           self.parse_link(versionold, changelog))
+                                                           self.parse_link(versionold, changelog, dstate))
                             else:
                                 if modified or blocked:
                                     self.table.add_row(f'[bold red]Update suppressed[/bold red]{source}',
                                                        self.parse_link(name, sourceurl),
-                                                       self.parse_link(versionold, changelog))
+                                                       self.parse_link(versionold, changelog, dstate))
                                 else:
-                                    version = self.parse_link(versionnew, changelog)
+                                    version = self.parse_link(versionnew, changelog, dstate)
                                     version.stylize('yellow')
                                     self.table.add_row(
                                         f'[yellow]{"Updated" if update else "Update available"}[/yellow]{source}',

@@ -290,8 +290,9 @@ class Core:
     def update_addon(self, url, update, force):
         old = self.check_if_installed(url)
         if old:
-            source, sourceurl = self.parse_url_source(old['URL'])
             new = self.parse_url(old['URL'])
+            dev = self.check_if_dev(old['URL'])
+            source, sourceurl = self.parse_url_source(old['URL'])
             oldversion = old['Version']
             if old['URL'] in self.checksumCache:
                 modified = self.checksumCache[old['URL']]
@@ -313,8 +314,8 @@ class Core:
             if force:
                 modified = False
                 blocked = False
-            return new.name, new.currentVersion, oldversion, modified, blocked, source, sourceurl, new.changelogUrl,\
-                new.dependencies
+            return new.name, new.currentVersion, oldversion, modified, blocked, source, sourceurl,\
+                new.changelogUrl, new.dependencies, dev
         return url, False, False, False, False, '?', None, None, None
 
     def check_checksum(self, addon, bulk=True):
