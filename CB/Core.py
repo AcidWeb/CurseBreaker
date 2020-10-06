@@ -39,6 +39,7 @@ class Core:
         self.cfIDs = None
         self.cfDirs = None
         self.cfDirsCompact = None
+        self.blocklist = None
         self.cfCache = {}
         self.wowiCache = {}
         self.checksumCache = {}
@@ -164,6 +165,12 @@ class Core:
                 shutil.rmtree(self.path / directory, ignore_errors=True)
 
     def parse_url(self, url):
+        if not self.blocklist:
+            self.blocklist = pickle.load(gzip.open(io.BytesIO(requests.get(
+                f'https://storage.googleapis.com/cursebreaker/blocklist.pickle.gz', headers=HEADERS).content)))
+        for block in self.blocklist:
+            if block in url.lower():
+                raise RuntimeError(f'{url}\nThe addon is unavailable. You can\'t manage it with this application.')
         if url.startswith('https://www.curseforge.com/wow/addons/'):
             return CurseForgeAddon(url, self.parse_cf_id(url), self.cfCache,
                                    'wow' if url in self.config['IgnoreClientVersion'].keys() else self.clientType,
