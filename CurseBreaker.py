@@ -245,12 +245,16 @@ class TUI:
             self.console.print(self.table)
         if getattr(sys, 'frozen', False) and 'CURSEBREAKER_DEBUG' not in os.environ:
             sys.tracebacklimit = 0
+            width = 0
+        else:
+            width = 100
         if isinstance(e, list):
             for es in e:
                 self.console.print(Traceback.from_exception(exc_type=es.__class__, exc_value=es,
-                                                            traceback=es.__traceback__))
+                                                            traceback=es.__traceback__, width=width))
         else:
-            self.console.print(Traceback.from_exception(exc_type=e.__class__, exc_value=e, traceback=e.__traceback__))
+            self.console.print(Traceback.from_exception(exc_type=e.__class__, exc_value=e,
+                                                        traceback=e.__traceback__, width=width))
 
     def print_header(self):
         clear()
