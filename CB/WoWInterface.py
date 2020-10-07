@@ -26,6 +26,7 @@ class WoWInterfaceAddon:
         self.archive = None
         self.dependencies = None
         self.directories = []
+        self.author = [self.payload['UIAuthorName']]
 
     @retry()
     def get_addon(self):

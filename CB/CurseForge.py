@@ -38,7 +38,12 @@ class CurseForgeAddon:
         self.archive = None
         self.dependencies = None
         self.directories = []
+        self.author = []
         self.get_current_version()
+
+        for author in self.payload['authors']:
+            if '_ForgeUser' not in author['name']:
+                self.author.append(author['name'])
 
     def get_current_version(self):
         files = sorted(self.payload['latestFiles'], key=itemgetter('id'), reverse=True)

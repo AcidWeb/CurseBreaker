@@ -341,7 +341,7 @@ class TUI:
     def setup_table(self):
         self.table = Table(box=box.SQUARE)
         self.table.add_column('Status', header_style='bold white', no_wrap=True, justify='center')
-        self.table.add_column('Name', header_style='bold white')
+        self.table.add_column('Name / Author' if self.core.config['ShowAuthors'] else 'Name', header_style='bold white')
         self.table.add_column('Version', header_style='bold white')
 
     def parse_args(self, args):
@@ -352,17 +352,22 @@ class TUI:
                 args = args.replace(addon['Name'], '', 1)
         return sorted(parsed)
 
-    def parse_link(self, text, link, dev=None):
+    def parse_link(self, text, link, dev=None, authors=None):
         if dev == 1:
-            dev = ' [B]'
+            dev = ' [bold][B][/bold]'
         elif dev == 2:
-            dev = ' [A]'
+            dev = ' [bold][A][/bold]'
         else:
             dev = ''
-        if link:
-            obj = Text.from_markup(f'[link={link}]{text}[/link][bold]{dev}[/bold]')
+        if authors and self.core.config['ShowAuthors']:
+            authors.sort()
+            authors = f' [bold black]by {", ".join(authors)}[/bold black]'
         else:
-            obj = Text.from_markup(f'{text}[bold]{dev}[/bold]')
+            authors = ''
+        if link:
+            obj = Text.from_markup(f'[link={link}]{text}[/link]{dev}{authors}')
+        else:
+            obj = Text.from_markup(f'{text}{dev}{authors}')
         obj.no_wrap = True
         return obj
 
@@ -457,9 +462,9 @@ class TUI:
             while not progress.finished:
                 for addon in addons:
                     try:
-                        # noinspection PyTypeChecker
-                        name, versionnew, versionold, modified, blocked, source, sourceurl, changelog, deps, dstate = \
-                            self.core.update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
+                        name, authors, versionnew, versionold, modified, blocked, source, sourceurl, changelog, deps,\
+                            dstate = self.core.update_addon(addon if isinstance(addon, str) else addon['URL'],
+                                                            update, force)
                         dependencies.add_dependency(deps)
                         if provider:
                             source = f' [bold white]{source}[/bold white]'
@@ -469,26 +474,26 @@ class TUI:
                             if versionold == versionnew:
                                 if modified:
                                     self.table.add_row(f'[bold red]Modified[/bold red]{source}',
-                                                       self.parse_link(name, sourceurl),
+                                                       self.parse_link(name, sourceurl, authors=authors),
                                                        self.parse_link(versionold, changelog, dstate))
                                 else:
                                     if self.core.config['CompactMode'] and compacted > -1:
                                         compacted += 1
                                     else:
                                         self.table.add_row(f'[green]Up-to-date[/green]{source}',
-                                                           self.parse_link(name, sourceurl),
+                                                           self.parse_link(name, sourceurl, authors=authors),
                                                            self.parse_link(versionold, changelog, dstate))
                             else:
                                 if modified or blocked:
                                     self.table.add_row(f'[bold red]Update suppressed[/bold red]{source}',
-                                                       self.parse_link(name, sourceurl),
+                                                       self.parse_link(name, sourceurl, authors=authors),
                                                        self.parse_link(versionold, changelog, dstate))
                                 else:
                                     version = self.parse_link(versionnew, changelog, dstate)
                                     version.stylize('yellow')
                                     self.table.add_row(
                                         f'[yellow]{"Updated" if update else "Update available"}[/yellow]{source}',
-                                        self.parse_link(name, sourceurl),
+                                        self.parse_link(name, sourceurl, authors=authors),
                                         version)
                         else:
                             self.table.add_row(f'[bold black]Not installed[/bold black]{source}',

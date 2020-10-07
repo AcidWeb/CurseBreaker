@@ -66,7 +66,8 @@ class Core:
                            'WACompanionVersion': 0,
                            'CFCacheTimestamp': 0,
                            'CompactMode': False,
-                           'AutoUpdate': True}
+                           'AutoUpdate': True,
+                           'ShowAuthors': True}
             self.save_config()
         if not os.path.isdir('WTF-Backup') and self.config['Backup']['Enabled']:
             os.mkdir('WTF-Backup')
@@ -113,7 +114,8 @@ class Core:
                         ['3.0.1', 'CFCacheTimestamp', 0],
                         ['3.1.10', 'CFCacheCloudFlare', {}],
                         ['3.7.0', 'CompactMode', False],
-                        ['3.10.0', 'AutoUpdate', True]]:
+                        ['3.10.0', 'AutoUpdate', True],
+                        ['3.12.0', 'ShowAuthors', True]]:
                 if add[1] not in self.config.keys():
                     self.config[add[1]] = add[2]
             for delete in [['1.3.0', 'URLCache'],
@@ -314,9 +316,9 @@ class Core:
             if force:
                 modified = False
                 blocked = False
-            return new.name, new.currentVersion, oldversion, modified, blocked, source, sourceurl,\
+            return new.name, new.author, new.currentVersion, oldversion, modified, blocked, source, sourceurl,\
                 new.changelogUrl, new.dependencies, dev
-        return url, False, False, False, False, '?', None, None, None
+        return url, [], False, False, False, False, '?', None, None, None, None
 
     def check_checksum(self, addon, bulk=True):
         checksums = {}
