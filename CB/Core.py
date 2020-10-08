@@ -613,12 +613,13 @@ class Core:
                         break
                 if complete:
                     partial_hit_temp[addon] = len(directories)
-            partial_hit_parsed_max = max(partial_hit_temp.items(), key=lambda x: x[1])
-            partial_hit_parsed_temp = []
-            for key, value in partial_hit_temp.items():
-                if value == partial_hit_parsed_max[1]:
-                    partial_hit_parsed_temp.append(key)
-            partial_hit_parsed.append(partial_hit_parsed_temp)
+            if len(partial_hit_temp) > 0:
+                partial_hit_parsed_max = max(partial_hit_temp.items(), key=lambda x: x[1])
+                partial_hit_parsed_temp = []
+                for key, value in partial_hit_temp.items():
+                    if value == partial_hit_parsed_max[1]:
+                        partial_hit_parsed_temp.append(key)
+                partial_hit_parsed.append(partial_hit_parsed_temp)
         partial_hit_parsed.sort()
         partial_hit = list(partial_hit_parsed for partial_hit_parsed, _ in itertools.groupby(partial_hit_parsed))
 
