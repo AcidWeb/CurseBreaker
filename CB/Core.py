@@ -34,7 +34,7 @@ class Core:
         self.configPath = Path('WTF/CurseBreaker.json')
         self.cachePath = Path('WTF/CurseBreaker.cache')
         self.clientType = 'wow_retail'
-        self.wagoCompanionVersion = 111
+        self.wagoCompanionVersion = 112
         self.config = None
         self.cfIDs = None
         self.cfDirs = None
@@ -80,7 +80,7 @@ class Core:
     def update_config(self):
         if 'Version' not in self.config.keys() or self.config['Version'] != __version__:
             urlupdate = {'elvui-classic': 'elvui', 'elvui-classic:dev': 'elvui:dev', 'tukui-classic': 'tukui',
-                         'sle:dev': 'shadow&light:dev'}
+                         'sle:dev': 'shadow&light:dev', 'elvui:beta': 'elvui:dev'}
             for addon in self.config['Addons']:
                 # 1.1.0
                 if 'Checksums' not in addon.keys():
@@ -91,7 +91,7 @@ class Core:
                 # 1.1.1
                 if addon['Version'] is None:
                     addon['Version'] = '1'
-                # 2.2.0, 3.9.4
+                # 2.2.0, 3.9.4, 3.11.0
                 if addon['URL'].lower() in urlupdate:
                     addon['URL'] = urlupdate[addon['URL'].lower()]
                 # 2.4.0
@@ -201,9 +201,6 @@ class Core:
                 return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'development')
             else:
                 return GitLabAddon('ElvUI', '492', 'elvui/elvui-classic', 'development')
-        # TODO Remove after 9.0 release
-        elif url.lower() == 'elvui:beta':
-            return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'beta')
         elif url.lower() == 'tukui':
             if self.clientType == 'wow_retail':
                 return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'master')
