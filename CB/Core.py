@@ -91,7 +91,7 @@ class Core:
                 # 1.1.1
                 if addon['Version'] is None:
                     addon['Version'] = '1'
-                # 2.2.0, 3.9.4, 3.11.0
+                # 2.2.0, 3.9.4, 3.12.0
                 if addon['URL'].lower() in urlupdate:
                     addon['URL'] = urlupdate[addon['URL'].lower()]
                 # 2.4.0
