@@ -657,6 +657,7 @@ class DependenciesParser:
     def __init__(self, core):
         self.core = core
         self.dependencies = []
+        self.ignore = [14328, 15049]
 
     def add_dependency(self, dependency):
         if dependency:
@@ -664,6 +665,9 @@ class DependenciesParser:
 
     def parse_dependency(self):
         self.dependencies = list(set(self.dependencies))
+        for ignore in self.ignore:
+            if ignore in self.dependencies:
+                self.dependencies.remove(ignore)
         slugs = []
         processed = []
         for d in self.dependencies:
