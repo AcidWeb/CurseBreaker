@@ -401,6 +401,7 @@ class TUI:
             dependencies = dependencies.parse_dependency()
             if dependencies:
                 self.setup_table()
+                self.console.print('Installing dependencies:')
                 self.c_install(dependencies, recursion=True)
         else:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts a space-separated list of links as an arg'
@@ -509,6 +510,7 @@ class TUI:
         dependencies = dependencies.parse_dependency()
         if dependencies and update:
             self.setup_table()
+            self.console.print('Installing dependencies:')
             self.c_install(dependencies, recursion=True)
         if compacted > 0:
             self.console.print(f'Additionally [green]{compacted}[/green] addons are up-to-date.')
