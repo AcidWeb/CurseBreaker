@@ -583,7 +583,6 @@ class Core:
         hit = list(set(hit))
         partial_hit.sort()
         partial_hit = list(partial_hit for partial_hit, _ in itertools.groupby(partial_hit))
-        miss = list(set(miss))
 
         partial_hit_parsed = []
         for partial in partial_hit:
@@ -617,6 +616,14 @@ class Core:
                     if value == partial_hit_parsed_max[1]:
                         partial_hit_parsed_temp.append(key)
                 partial_hit_parsed.append(partial_hit_parsed_temp)
+            else:
+                for addon in partial:
+                    if addon in self.cfDirsCompact:
+                        directories = self.cfDirsCompact[addon]
+                        for directory in directories:
+                            if os.path.isdir(self.path / directory):
+                                miss.append(directory)
+        miss = list(set(miss))
         partial_hit_parsed.sort()
         partial_hit = list(partial_hit_parsed for partial_hit_parsed, _ in itertools.groupby(partial_hit_parsed))
 
