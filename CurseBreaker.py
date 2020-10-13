@@ -292,15 +292,21 @@ class TUI:
         if not self.cfSlugs or not self.wowiSlugs:
             # noinspection PyBroadException
             try:
+                if 'cf' in self.core.config['BlockedAddonSources']:
+                    raise ValueError
                 self.cfSlugs = pickle.load(gzip.open(io.BytesIO(
-                    requests.get('https://storage.googleapis.com/cursebreaker/cfslugs.pickle.gz',
-                                 headers=HEADERS).content)))
-                self.wowiSlugs = pickle.load(gzip.open(io.BytesIO(
-                    requests.get('https://storage.googleapis.com/cursebreaker/wowislugs.pickle.gz',
-                                 headers=HEADERS).content)))
+                    requests.get('https://storage.googleapis.com/cursebreaker/cfslugs.pickle.gz',headers=HEADERS).content)))
             except Exception:
                 self.cfSlugs = []
+            # noinspection PyBroadException
+            try:
+                if 'wowi' in self.core.config['BlockedAddonSources']:
+                    raise ValueError
+                self.wowiSlugs = pickle.load(gzip.open(io.BytesIO(
+                    requests.get('https://storage.googleapis.com/cursebreaker/wowislugs.pickle.gz',headers=HEADERS).content)))
+            except Exception:
                 self.wowiSlugs = []
+    
         addons = []
         for addon in sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower()):
             addons.append(addon['Name'])
@@ -365,6 +371,28 @@ class TUI:
             obj = Text.from_markup(f'{text}[bold]{dev}[/bold]')
         obj.no_wrap = True
         return obj
+    
+    def c_enable_source(self, args):
+        if args:
+            sources = args.split(" ")
+            for addon_source in sources:
+                self.console.print('[green]Enabling Source: {}\n'.format(addon_source))
+                self.core.allow_source(addon_source)
+            self.setup_completer()
+
+    def c_disable_source(self, args):
+        if args:
+            sources = args.split(" ")
+            #addon_list = self.core.config['Addons']
+            for addon_source in sources:
+                self.console.print('[green]Disabling Source: {}\n'.format(addon_source))
+                self.core.block_source(addon_source)
+            self.setup_completer()
+        else:
+            self.console.print('[green]Usage:[/green]\n\tThis command accepts an addon source to disable downloads from.'
+                                'Disabling a source this way will prevent CurseBreaker from downloading or managing'
+                                ' any addons installed this way.'
+                               '[bold white]\n Examples include:[/bold white] \n\t\t[bold white] e.g cf, wowi')
 
     def c_install(self, args, recursion=False):
         if args:

@@ -75,6 +75,18 @@ class Core:
     def save_config(self):
         with open(self.configPath, 'w') as outfile:
             json.dump(self.config, outfile, sort_keys=True, indent=4, separators=(',', ': '))
+    
+    def allow_source(self, source):
+        if source not in self.config['BlockedAddonSources']:
+            return
+        self.config['BlockedAddonSources'].remove(source)
+        self.save_config()
+    
+    def block_source(self, source):
+        if source in self.config['BlockedAddonSources']:
+            return
+        self.config['BlockedAddonSources'].append(source)
+        self.save_config()
 
     def update_config(self):
         if 'Version' not in self.config.keys() or self.config['Version'] != __version__:
@@ -113,7 +125,8 @@ class Core:
                         ['3.0.1', 'CFCacheTimestamp', 0],
                         ['3.1.10', 'CFCacheCloudFlare', {}],
                         ['3.7.0', 'CompactMode', False],
-                        ['3.10.0', 'AutoUpdate', True]]:
+                        ['3.10.0', 'AutoUpdate', True],
+                        ['3.12.0', 'BlockedAddonSources', []],]:
                 if add[1] not in self.config.keys():
                     self.config[add[1]] = add[2]
             for delete in [['1.3.0', 'URLCache'],
