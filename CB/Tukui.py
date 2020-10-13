@@ -22,6 +22,7 @@ class TukuiAddon:
         self.archive = None
         self.dependencies = None
         self.directories = []
+        self.author = [self.payload['author']]
 
         if 'changelog' in self.payload:
             self.changelogUrl = self.payload['changelog']

@@ -34,7 +34,7 @@ class Core:
         self.configPath = Path('WTF/CurseBreaker.json')
         self.cachePath = Path('WTF/CurseBreaker.cache')
         self.clientType = 'wow_retail'
-        self.wagoCompanionVersion = 111
+        self.wagoCompanionVersion = 1110
         self.config = None
         self.cfIDs = None
         self.cfDirs = None
@@ -66,7 +66,8 @@ class Core:
                            'WACompanionVersion': 0,
                            'CFCacheTimestamp': 0,
                            'CompactMode': False,
-                           'AutoUpdate': True}
+                           'AutoUpdate': True,
+                           'ShowAuthors': True}
             self.save_config()
         if not os.path.isdir('WTF-Backup') and self.config['Backup']['Enabled']:
             os.mkdir('WTF-Backup')
@@ -91,7 +92,7 @@ class Core:
     def update_config(self):
         if 'Version' not in self.config.keys() or self.config['Version'] != __version__:
             urlupdate = {'elvui-classic': 'elvui', 'elvui-classic:dev': 'elvui:dev', 'tukui-classic': 'tukui',
-                         'sle:dev': 'shadow&light:dev'}
+                         'sle:dev': 'shadow&light:dev', 'elvui:beta': 'elvui:dev'}
             for addon in self.config['Addons']:
                 # 1.1.0
                 if 'Checksums' not in addon.keys():
@@ -102,7 +103,7 @@ class Core:
                 # 1.1.1
                 if addon['Version'] is None:
                     addon['Version'] = '1'
-                # 2.2.0, 3.9.4
+                # 2.2.0, 3.9.4, 3.12.0
                 if addon['URL'].lower() in urlupdate:
                     addon['URL'] = urlupdate[addon['URL'].lower()]
                 # 2.4.0
@@ -126,7 +127,8 @@ class Core:
                         ['3.1.10', 'CFCacheCloudFlare', {}],
                         ['3.7.0', 'CompactMode', False],
                         ['3.10.0', 'AutoUpdate', True],
-                        ['3.12.0', 'BlockedAddonSources', []],]:
+                        ['3.12.0', 'ShowAuthors', True],
+                        ['3.12.1', 'BlockedAddonSources', []]]:
                 if add[1] not in self.config.keys():
                     self.config[add[1]] = add[2]
             for delete in [['1.3.0', 'URLCache'],
@@ -212,9 +214,6 @@ class Core:
                 return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'development')
             else:
                 return GitLabAddon('ElvUI', '492', 'elvui/elvui-classic', 'development')
-        # TODO Remove after 9.0 release
-        elif url.lower() == 'elvui:beta':
-            return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'beta')
         elif url.lower() == 'tukui':
             if self.clientType == 'wow_retail':
                 return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'master')
@@ -327,9 +326,9 @@ class Core:
             if force:
                 modified = False
                 blocked = False
-            return new.name, new.currentVersion, oldversion, modified, blocked, source, sourceurl,\
+            return new.name, new.author, new.currentVersion, oldversion, modified, blocked, source, sourceurl,\
                 new.changelogUrl, new.dependencies, dev
-        return url, False, False, False, False, '?', None, None, None
+        return url, [], False, False, False, False, '?', None, None, None, None
 
     def check_checksum(self, addon, bulk=True):
         checksums = {}
@@ -597,7 +596,6 @@ class Core:
         hit = list(set(hit))
         partial_hit.sort()
         partial_hit = list(partial_hit for partial_hit, _ in itertools.groupby(partial_hit))
-        miss = list(set(miss))
 
         partial_hit_parsed = []
         for partial in partial_hit:
@@ -624,12 +622,21 @@ class Core:
                         break
                 if complete:
                     partial_hit_temp[addon] = len(directories)
-            partial_hit_parsed_max = max(partial_hit_temp.items(), key=lambda x: x[1])
-            partial_hit_parsed_temp = []
-            for key, value in partial_hit_temp.items():
-                if value == partial_hit_parsed_max[1]:
-                    partial_hit_parsed_temp.append(key)
-            partial_hit_parsed.append(partial_hit_parsed_temp)
+            if len(partial_hit_temp) > 0:
+                partial_hit_parsed_max = max(partial_hit_temp.items(), key=lambda x: x[1])
+                partial_hit_parsed_temp = []
+                for key, value in partial_hit_temp.items():
+                    if value == partial_hit_parsed_max[1]:
+                        partial_hit_parsed_temp.append(key)
+                partial_hit_parsed.append(partial_hit_parsed_temp)
+            else:
+                for addon in partial:
+                    if addon in self.cfDirsCompact:
+                        directories = self.cfDirsCompact[addon]
+                        for directory in directories:
+                            if os.path.isdir(self.path / directory):
+                                miss.append(directory)
+        miss = list(set(miss))
         partial_hit_parsed.sort()
         partial_hit = list(partial_hit_parsed for partial_hit_parsed, _ in itertools.groupby(partial_hit_parsed))
 
@@ -670,6 +677,7 @@ class DependenciesParser:
     def __init__(self, core):
         self.core = core
         self.dependencies = []
+        self.ignore = [14328, 15049]
 
     def add_dependency(self, dependency):
         if dependency:
@@ -677,6 +685,9 @@ class DependenciesParser:
 
     def parse_dependency(self):
         self.dependencies = list(set(self.dependencies))
+        for ignore in self.ignore:
+            if ignore in self.dependencies:
+                self.dependencies.remove(ignore)
         slugs = []
         processed = []
         for d in self.dependencies:
