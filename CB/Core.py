@@ -88,6 +88,16 @@ class Core:
             return
         self.config['BlockedAddonSources'].append(source)
         self.save_config()
+    
+    def url_repo_mapping(self):
+        return { "cf":"https://www.curseforge.com", "wowi":"https://www.wowinterface.com", "gh":"https://github.com"}
+    
+    def is_addon_source_blocked(self, addon_url):
+        for repo, url in self.url_repo_mapping().items():
+            if repo in self.config['BlockedAddonSources']:
+                if addon_url.startswith(url):
+                    return True
+        return False
 
     def update_config(self):
         if 'Version' not in self.config.keys() or self.config['Version'] != __version__:

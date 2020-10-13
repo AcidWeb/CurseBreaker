@@ -384,6 +384,8 @@ class TUI:
             for addon_source in sources:
                 self.console.print('[green]Enabling Source: {}\n'.format(addon_source))
                 self.core.allow_source(addon_source)
+            self.cfSlugs = None
+            self.wowiSlugs = None
             self.setup_completer()
 
     def c_disable_source(self, args):
@@ -393,6 +395,8 @@ class TUI:
             for addon_source in sources:
                 self.console.print('[green]Disabling Source: {}\n'.format(addon_source))
                 self.core.block_source(addon_source)
+            self.cfSlugs = None
+            self.wowiSlugs = None
             self.setup_completer()
         else:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts an addon source to disable downloads from.'
@@ -492,6 +496,10 @@ class TUI:
             while not progress.finished:
                 for addon in addons:
                     try:
+                        if self.core.is_addon_source_blocked(addon['URL']):
+                            self.table.add_row(f'[bold red]Source Blocked[/bold red]', self.parse_link(addon['Name'], addon['URL'], authors=""), self.parse_link(addon['Version'], ""))
+                            progress.update(task, advance=1, refresh=True)
+                            continue
                         name, authors, versionnew, versionold, modified, blocked, source, sourceurl, changelog, deps,\
                             dstate = self.core.update_addon(addon if isinstance(addon, str) else addon['URL'],
                                                             update, force)
