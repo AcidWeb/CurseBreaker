@@ -34,7 +34,7 @@ class Core:
         self.configPath = Path('WTF/CurseBreaker.json')
         self.cachePath = Path('WTF/CurseBreaker.cache')
         self.clientType = 'wow_retail'
-        self.wagoCompanionVersion = 112
+        self.wagoCompanionVersion = 1110
         self.config = None
         self.cfIDs = None
         self.cfDirs = None
