@@ -168,6 +168,7 @@ class TUI:
                            'tion.\n')
         if len(self.core.config['Addons']) == 0:
             self.console.print('Command [green]import[/green] might be used to detect already installed addons.\n')
+        self.motd_parser()
         # Prompt session
         while True:
             try:
