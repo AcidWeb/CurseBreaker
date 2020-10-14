@@ -9,7 +9,7 @@ class GitHubAddon:
     @retry()
     def __init__(self, url, clienttype):
         project = url.replace('https://github.com/', '')
-        self.payload = requests.get(f'https://api.github.com/repos/{project}/releases', headers=HEADERS)
+        self.payload = requests.get(f'https://api.github.com/repos/{project}/releases', headers=HEADERS, timeout=5)
         if self.payload.status_code == 404:
             raise RuntimeError(url)
         else:
@@ -52,7 +52,7 @@ class GitHubAddon:
 
     @retry()
     def get_addon(self):
-        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS).content))
+        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS, timeout=5).content))
         for file in self.archive.namelist():
             if file.lower().endswith('.toc') and '/' not in file:
                 raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')

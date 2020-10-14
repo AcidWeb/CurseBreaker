@@ -169,7 +169,8 @@ class Core:
     def parse_url(self, url):
         if not self.blocklist:
             self.blocklist = pickle.load(gzip.open(io.BytesIO(requests.get(
-                f'https://storage.googleapis.com/cursebreaker/blocklist.pickle.gz', headers=HEADERS).content)))
+                f'https://storage.googleapis.com/cursebreaker/blocklist.pickle.gz', headers=HEADERS,
+                timeout=5).content)))
         for block in self.blocklist:
             if block in url.lower():
                 raise RuntimeError(f'{url}\nThe addon is unavailable. You can\'t manage it with this application.')
@@ -452,7 +453,7 @@ class Core:
     def search(self, query):
         results = []
         payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/search?gameId=1&pageSize=10&searchFilter='
-                               f'{html.escape(query.strip())}', headers=HEADERS).json()
+                               f'{html.escape(query.strip())}', headers=HEADERS, timeout=5).json()
         for result in payload:
             results.append(result['websiteUrl'])
         return results
@@ -475,7 +476,8 @@ class Core:
                 if not os.path.isfile(self.cachePath) or time.time() - self.config['CFCacheTimestamp'] > 86400:
                     with open(self.cachePath, 'wb') as f:
                         f.write(gzip.decompress(requests.get(
-                            f'https://storage.googleapis.com/cursebreaker/cfid.pickle.gz', headers=HEADERS).content))
+                            f'https://storage.googleapis.com/cursebreaker/cfid.pickle.gz', headers=HEADERS,
+                            timeout=5).content))
                     self.config['CFCacheTimestamp'] = int(time.time())
                     self.save_config()
                 with open(self.cachePath, 'rb') as f:
@@ -515,7 +517,8 @@ class Core:
     def parse_cf_xml(self, path):
         xml = parse(path)
         project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
-        payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/{project}', headers=HEADERS).json()
+        payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/{project}', headers=HEADERS,
+                               timeout=5).json()
         url = payload['websiteUrl'].strip()
         return url
 
@@ -529,12 +532,13 @@ class Core:
             elif addon['URL'].startswith('https://www.wowinterface.com/downloads/'):
                 ids_wowi.append(re.findall(r'\d+', addon['URL'])[0].strip())
         if len(ids_cf) > 0:
-            payload = requests.post('https://addons-ecs.forgesvc.net/api/v2/addon', json=ids_cf, headers=HEADERS).json()
+            payload = requests.post('https://addons-ecs.forgesvc.net/api/v2/addon', json=ids_cf,
+                                    headers=HEADERS, timeout=5).json()
             for addon in payload:
                 self.cfCache[str(addon['id'])] = addon
         if len(ids_wowi) > 0:
             payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{",".join(ids_wowi)}.json',
-                                   headers=HEADERS).json()
+                                   headers=HEADERS, timeout=5).json()
             for addon in payload:
                 self.wowiCache[str(addon['UID'])] = addon
 
@@ -554,10 +558,10 @@ class Core:
         if not self.cfDirs or not self.cfDirsCompact:
             self.cfDirs = pickle.load(gzip.open(io.BytesIO(
                 requests.get(f'https://storage.googleapis.com/cursebreaker/cfdir{self.clientType}.pickle.gz',
-                             headers=HEADERS).content)))
+                             headers=HEADERS, timeout=5).content)))
             self.cfDirsCompact = pickle.load(gzip.open(io.BytesIO(
                 requests.get(f'https://storage.googleapis.com/cursebreaker/cfdircompact{self.clientType}.pickle.gz',
-                             headers=HEADERS).content)))
+                             headers=HEADERS, timeout=5).content)))
         addon_dirs = os.listdir(self.path)
         ignored = ['ElvUI_OptionsUI', 'Tukui_Config', '+Wowhead_Looter', 'WeakAurasCompanion', 'SharedMedia_MyMedia',
                    '.DS_Store']

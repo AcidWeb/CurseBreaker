@@ -197,7 +197,7 @@ class TUI:
                     except PermissionError:
                         pass
                 payload = requests.get('https://api.github.com/repos/AcidWeb/CurseBreaker/releases/latest',
-                                       headers=HEADERS).json()
+                                       headers=HEADERS, timeout=5).json()
                 if 'name' in payload and 'body' in payload and 'assets' in payload:
                     remoteversion = payload['name']
                     changelog = payload['body']
@@ -211,7 +211,7 @@ class TUI:
                     if url and StrictVersion(remoteversion[1:]) > StrictVersion(__version__):
                         self.console.print('[green]Updating CurseBreaker...[/green]')
                         shutil.move(sys.executable, sys.executable + '.old')
-                        payload = requests.get(url, headers=HEADERS)
+                        payload = requests.get(url, headers=HEADERS, timeout=5)
                         if self.os == 'Darwin':
                             zipfile.ZipFile(io.BytesIO(payload.content)).extractall(path=os.path.dirname(
                                 os.path.abspath(sys.executable)))
@@ -235,7 +235,7 @@ class TUI:
                 sys.exit(1)
 
     def motd_parser(self):
-        payload = requests.get('https://storage.googleapis.com/cursebreaker/motd', headers=HEADERS)
+        payload = requests.get('https://storage.googleapis.com/cursebreaker/motd', headers=HEADERS, timeout=5)
         if payload.status_code == 200:
             self.console.print(Panel(payload.content.decode('UTF-8'), title='MOTD', border_style='red'))
             self.console.print('')
@@ -294,10 +294,10 @@ class TUI:
             try:
                 self.cfSlugs = pickle.load(gzip.open(io.BytesIO(
                     requests.get('https://storage.googleapis.com/cursebreaker/cfslugs.pickle.gz',
-                                 headers=HEADERS).content)))
+                                 headers=HEADERS, timeout=5).content)))
                 self.wowiSlugs = pickle.load(gzip.open(io.BytesIO(
                     requests.get('https://storage.googleapis.com/cursebreaker/wowislugs.pickle.gz',
-                                 headers=HEADERS).content)))
+                                 headers=HEADERS, timeout=5).content)))
             except Exception:
                 self.cfSlugs = []
                 self.wowiSlugs = []
@@ -731,7 +731,7 @@ class TUI:
             try:
                 self.tipsDatabase = pickle.load(gzip.open(io.BytesIO(
                     requests.get('https://storage.googleapis.com/cursebreaker/recommendations.pickle.gz',
-                                 headers=HEADERS).content)))
+                                 headers=HEADERS, timeout=5).content)))
             except Exception:
                 self.tipsDatabase = {}
         if len(self.tipsDatabase) > 0:

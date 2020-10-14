@@ -114,7 +114,8 @@ class WagoUpdater:
         output = [[], []]
         if len(addon.list) > 0:
             payload = requests.get(f'https://data.wago.io/api/check/{addon.api}?ids={",".join(addon.list.keys())}',
-                                   headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']}).json()
+                                   headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']},
+                                   timeout=5).json()
             if 'error' in payload or 'msg' in payload:
                 raise RuntimeError
             for entry in payload:
@@ -143,7 +144,7 @@ class WagoUpdater:
     @retry('Failed to parse Wago data.')
     def update_entry(self, entry, addon):
         raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={entry["slug"]}',
-                           headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']}).text
+                           headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']}, timeout=5).text
         slug = f'    ["{entry["slug"]}"] = {{\n      name = [=[{entry["name"]}]=],\n      author = [=[' \
                f'{entry["username"]}]=],\n      encoded = [=[{raw}]=],\n      wagoVersion = [=[' \
                f'{entry["version"]}]=],\n      wagoSemver = [=[{entry["versionString"]}]=],\n      ' \

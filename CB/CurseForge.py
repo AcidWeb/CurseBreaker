@@ -14,7 +14,7 @@ class CurseForgeAddon:
             self.payload = checkcache[project]
         else:
             self.payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/{project}',
-                                        headers=HEADERS)
+                                        headers=HEADERS, timeout=5)
             if self.payload.status_code == 404 or self.payload.status_code == 500:
                 raise RuntimeError(f'{url}\nThis might be a temporary issue with CurseForge API or the project was '
                                    f'removed/renamed. In this case, uninstall it (and reinstall if it still exists) '
@@ -74,7 +74,7 @@ class CurseForgeAddon:
 
     @retry()
     def get_addon(self):
-        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS).content))
+        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS, timeout=5).content))
         for file in self.archive.namelist():
             if '/' not in os.path.dirname(file):
                 self.directories.append(os.path.dirname(file))

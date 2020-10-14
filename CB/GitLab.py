@@ -9,7 +9,7 @@ class GitLabAddon:
     @retry()
     def __init__(self, name, projectid, path, branch):
         self.payload = requests.get(f'https://git.tukui.org/api/v4/projects/{projectid}/repository/branches/{branch}',
-                                    headers=HEADERS)
+                                    headers=HEADERS, timeout=5)
         if self.payload.status_code == 404:
             raise RuntimeError(name)
         else:
@@ -43,7 +43,7 @@ class GitLabAddon:
 
     @retry()
     def get_addon(self):
-        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS).content))
+        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS, timeout=5).content))
         for file in self.archive.namelist():
             file_info = self.archive.getinfo(file)
             if file_info.is_dir() and file_info.filename.count('/') == 2 and '.gitlab' not in file_info.filename:

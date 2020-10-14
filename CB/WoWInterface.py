@@ -14,7 +14,7 @@ class WoWInterfaceAddon:
             self.payload = checkcache[project]
         else:
             self.payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{project}.json',
-                                        headers=HEADERS).json()
+                                        headers=HEADERS, timeout=5).json()
             if 'ERROR' in self.payload:
                 raise RuntimeError(url)
             else:
@@ -30,7 +30,7 @@ class WoWInterfaceAddon:
 
     @retry()
     def get_addon(self):
-        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS).content))
+        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS, timeout=5).content))
         for file in self.archive.namelist():
             if '/' not in os.path.dirname(file):
                 self.directories.append(os.path.dirname(file))
