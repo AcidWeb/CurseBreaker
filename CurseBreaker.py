@@ -571,14 +571,17 @@ class TUI:
                 elif status == -1:
                     self.console.print('[bold red]This feature can be only used with CurseForge addons.[/bold red]')
                 elif status == 0:
-                    self.console.print('All CurseForge addons are now switched'
-                                       if args == 'global' else 'Addon switched to the [yellow]beta[/yellow] channel.')
+                    self.console.print(
+                        'All CurseForge addons are now switched' if args == 'global' else 'Addon switched',
+                        'to the [yellow]beta[/yellow] channel.')
                 elif status == 1:
-                    self.console.print('All CurseForge addons are now switched'
-                                       if args == 'global' else 'Addon switched to the [red]alpha[/red] channel.')
+                    self.console.print(
+                        'All CurseForge addons are now switched' if args == 'global' else 'Addon switched',
+                        'to the [red]alpha[/red] channel.')
                 elif status == 2:
-                    self.console.print('All CurseForge addons are now switched'
-                                       if args == 'global' else 'Addon switched to the [green]stable[/green] channel.')
+                    self.console.print(
+                        'All CurseForge addons are now switched' if args == 'global' else 'Addon switched',
+                        'to the [green]stable[/green] channel.')
             else:
                 self.console.print('[green]Usage:[/green]\n\tThis command accepts an addon name (or "global") as an'
                                    ' argument.', highlight=False)
