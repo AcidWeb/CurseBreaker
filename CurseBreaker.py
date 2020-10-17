@@ -30,7 +30,7 @@ from prompt_toolkit.completion import WordCompleter, NestedCompleter
 from distutils.version import StrictVersion
 from CB import HEADERS, HEADLESS_TERMINAL_THEME, __version__
 from CB.Core import Core, DependenciesParser
-from CB.Compat import pause, timeout, clear, set_terminal_title, set_terminal_size, getch, kbhit
+from CB.Compat import pause, timeout, clear, set_terminal_title, set_terminal_size, KBHit
 from CB.Wago import WagoUpdater
 
 if platform.system() == 'Windows':
@@ -129,16 +129,18 @@ class TUI:
             if not self.headless:
                 self.console.print('Automatic update of all addons will start in 5 seconds.\n'
                                    'Press any button to enter interactive mode.', highlight=False)
+            kb = KBHit()
             starttime = time.time()
             keypress = None
             while True:
                 if self.headless:
                     break
-                elif kbhit():
-                    keypress = getch()
+                elif kb.kbhit():
+                    keypress = kb.getch()
                     break
                 elif time.time() - starttime > 5:
                     break
+            kb.set_normal_term()
             if not keypress:
                 if not self.headless:
                     self.print_header()
