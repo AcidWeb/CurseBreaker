@@ -329,6 +329,7 @@ class TUI:
                        'wago': None},
             'set': {'wago_api': None,
                     'wago_wow_account': WordCompleter(accounts, ignore_case=True, sentence=True)},
+            'show': {'dependencies': None},
             'uri_integration': None,
             'help': None,
             'exit': None
@@ -658,6 +659,20 @@ class TUI:
         else:
             self.console.print('Unknown option.')
 
+    def c_show(self, args):
+        args = args.strip()
+        if args.startswith('dependencies'):
+            addons = sorted(list(filter(lambda k: k['URL'].startswith('https://www.curseforge.com/wow/addons/'),
+                                        self.core.config['Addons'])), key=lambda k: k['Name'].lower())
+            self.core.bulk_check(addons)
+            for addon in addons:
+                dependencies = DependenciesParser(self.core)
+                name, _, _, _, _, _, _, _, _, deps, _ = self.core.update_addon(addon['URL'], False, False)
+                dependencies.add_dependency(deps)
+                deps = dependencies.parse_dependency(output=True)
+                if len(deps) > 0:
+                    self.console.print(f'[green]{name}[/green]\n{", ".join(deps)}')
+
     def c_wago_update(self, _, verbose=True):
         if os.path.isdir(Path('Interface/AddOns/WeakAuras')) or os.path.isdir(Path('Interface/AddOns/Plater')):
             accounts = self.core.detect_accounts()
@@ -812,8 +827,9 @@ class TUI:
                            ' [link=https://wago.io/account]https://wago.io/account[/link]\n'
                            '[green]set wago_wow_account [Account name][/green]\n\tSets WoW account used by Wago updater'
                            '.\n\tNeeded only if compatibile addons are used on more than one WoW account.\n'
-                           '[green]uri_integration[/green]\n\tEnables integration with CurseForge page.\n\t[i]"Install"'
-                           '[/i] button will now start this application.\n'
+                           '[green]show dependencies[/green]\n\tDisplay a list of dependencies of all installed addons.'
+                           '\n[green]uri_integration[/green]\n\tEnables integration with CurseForge page.\n\t[i]"Instal'
+                           'l"[/i] button will now start this application.\n'
                            '\n[bold green]Supported URL:[/bold green]\n\thttps://www.curseforge.com/wow/addons/\[addon_'
                            'name] [bold white]|[/bold white] cf:\[addon_name]\n\thttps://www.wowinterface.com/downloads'
                            '/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\thttps://www.tukui.org/addons.'

@@ -670,7 +670,7 @@ class DependenciesParser:
         if dependency:
             self.dependencies = self.dependencies + dependency
 
-    def parse_dependency(self):
+    def parse_dependency(self, output=False):
         self.dependencies = list(set(self.dependencies))
         for ignore in self.ignore:
             if ignore in self.dependencies:
@@ -681,10 +681,19 @@ class DependenciesParser:
             slug = self.core.parse_cf_id(d, reverse=True)
             if slug:
                 slugs.append(f'https://www.curseforge.com/wow/addons/{slug}')
-        for s in slugs:
-            if not self.core.check_if_installed(s):
-                processed.append(s)
-        if len(processed) > 0:
-            return ','.join(processed)
+        if output:
+            for s in slugs:
+                installed = self.core.check_if_installed(s)
+                if installed:
+                    processed.append(installed['Name'])
+                else:
+                    processed.append(f'cf:{s}')
+            return sorted(processed)
         else:
-            return None
+            for s in slugs:
+                if not self.core.check_if_installed(s):
+                    processed.append(s)
+            if len(processed) > 0:
+                return ','.join(processed)
+            else:
+                return None
