@@ -49,8 +49,7 @@ class TUI:
         self.headless = False
         self.console = None
         self.table = None
-        self.cfSlugs = None
-        self.wowiSlugs = None
+        self.slugs = None
         self.tipsDatabase = None
         self.completer = None
         self.os = platform.system()
@@ -290,25 +289,21 @@ class TUI:
             self.console = Console()
 
     def setup_completer(self):
-        if not self.cfSlugs or not self.wowiSlugs:
+        if not self.slugs:
             # noinspection PyBroadException
             try:
-                self.cfSlugs = pickle.load(gzip.open(io.BytesIO(
-                    requests.get('https://storage.googleapis.com/cursebreaker/cfslugs.pickle.gz',
-                                 headers=HEADERS, timeout=5).content)))
-                self.wowiSlugs = pickle.load(gzip.open(io.BytesIO(
-                    requests.get('https://storage.googleapis.com/cursebreaker/wowislugs.pickle.gz',
+                self.slugs = pickle.load(gzip.open(io.BytesIO(
+                    requests.get('https://storage.googleapis.com/cursebreaker/slugs.pickle.gz',
                                  headers=HEADERS, timeout=5).content)))
             except Exception:
-                self.cfSlugs = []
-                self.wowiSlugs = []
+                self.slugs = {'cf': [], 'wowi': [], 'tukui': []}
         addons = []
         for addon in sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower()):
             addons.append(addon['Name'])
         slugs = ['ElvUI', 'Tukui']
-        for item in self.cfSlugs:
+        for item in self.slugs['cf']:
             slugs.append(f'cf:{item}')
-        for item in self.wowiSlugs:
+        for item in self.slugs['wowi']:
             slugs.append(f'wowi:{item}')
         slugs.extend(['ElvUI:Dev', 'Shadow&Light:Dev'])
         accounts = []
