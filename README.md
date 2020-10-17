@@ -44,7 +44,7 @@ Additionally Wago API key can be set with `set wa_api` command so non-public ent
 
 ## KNOWN ISSUES
 - Using "double" WoWInterface projects ([example](https://www.wowinterface.com/downloads/info5086-BigWigsBossmods)) will always install a retail version of the addon. It can't be fixed as WoWInterface API doesn't support this type of project.
-- WoWInterface projects that need to install files outside the `Interface\AddOns` directory are not supported.
+- WoWInterface projects that need to install files outside the `Interface\AddOns` directory and most of addon compilations are not supported.
 
 ## COPYRIGHT
 **CurseBreaker** is free software/open source, and is distributed under the GNU General Public License v3.
