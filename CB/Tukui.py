@@ -19,6 +19,7 @@ class TukuiAddon:
         self.name = self.payload['name'].strip().strip('\u200b')
         self.downloadUrl = self.payload['url']
         self.currentVersion = self.payload['version']
+        self.uiVersion = self.payload['patch']
         self.archive = None
         self.dependencies = None
         self.directories = []

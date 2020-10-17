@@ -349,7 +349,7 @@ class TUI:
                 args = args.replace(addon['Name'], '', 1)
         return sorted(parsed)
 
-    def parse_link(self, text, link, dev=None, authors=None):
+    def parse_link(self, text, link, dev=None, authors=None, uiversion=None):
         if dev == 1:
             dev = ' [bold][B][/bold]'
         elif dev == 2:
@@ -361,10 +361,14 @@ class TUI:
             authors = f' [bold black]by {", ".join(authors)}[/bold black]'
         else:
             authors = ''
-        if link:
-            obj = Text.from_markup(f'[link={link}]{text}[/link]{dev}{authors}')
+        if uiversion and uiversion not in [self.core.currentRetailVersion, self.core.currentClassicVersion]:
+            uiversion = ' [bold yellow][!][bold yellow]'
         else:
-            obj = Text.from_markup(f'{text}{dev}{authors}')
+            uiversion = ''
+        if link:
+            obj = Text.from_markup(f'[link={link}]{text}[/link]{dev}{authors}{uiversion}')
+        else:
+            obj = Text.from_markup(f'{text}{dev}{authors}{uiversion}')
         obj.no_wrap = True
         return obj
 
@@ -460,9 +464,9 @@ class TUI:
             while not progress.finished:
                 for addon in addons:
                     try:
-                        name, authors, versionnew, versionold, modified, blocked, source, sourceurl, changelog, deps,\
-                            dstate = self.core.update_addon(addon if isinstance(addon, str) else addon['URL'],
-                                                            update, force)
+                        name, authors, versionnew, versionold, uiversion, modified, blocked, source, sourceurl,\
+                            changelog, deps, dstate = self.core.update_addon(
+                                addon if isinstance(addon, str) else addon['URL'], update, force)
                         dependencies.add_dependency(deps)
                         if provider:
                             source = f' [bold white]{source}[/bold white]'
@@ -473,21 +477,24 @@ class TUI:
                                 if modified:
                                     self.table.add_row(f'[bold red]Modified[/bold red]{source}',
                                                        self.parse_link(name, sourceurl, authors=authors),
-                                                       self.parse_link(versionold, changelog, dstate))
+                                                       self.parse_link(versionold, changelog, dstate,
+                                                                       uiversion=uiversion))
                                 else:
                                     if self.core.config['CompactMode'] and compacted > -1:
                                         compacted += 1
                                     else:
                                         self.table.add_row(f'[green]Up-to-date[/green]{source}',
                                                            self.parse_link(name, sourceurl, authors=authors),
-                                                           self.parse_link(versionold, changelog, dstate))
+                                                           self.parse_link(versionold, changelog, dstate,
+                                                                           uiversion=uiversion))
                             else:
                                 if modified or blocked:
                                     self.table.add_row(f'[bold red]Update suppressed[/bold red]{source}',
                                                        self.parse_link(name, sourceurl, authors=authors),
-                                                       self.parse_link(versionold, changelog, dstate))
+                                                       self.parse_link(versionold, changelog, dstate,
+                                                                       uiversion=uiversion))
                                 else:
-                                    version = self.parse_link(versionnew, changelog, dstate)
+                                    version = self.parse_link(versionnew, changelog, dstate, uiversion=uiversion)
                                     version.stylize('yellow')
                                     self.table.add_row(
                                         f'[yellow]{"Updated" if update else "Update available"}[/yellow]{source}',
@@ -667,7 +674,7 @@ class TUI:
             self.core.bulk_check(addons)
             for addon in addons:
                 dependencies = DependenciesParser(self.core)
-                name, _, _, _, _, _, _, _, _, deps, _ = self.core.update_addon(addon['URL'], False, False)
+                name, _, _, _, _, _, _, _, _, _, deps, _ = self.core.update_addon(addon['URL'], False, False)
                 dependencies.add_dependency(deps)
                 deps = dependencies.parse_dependency(output=True)
                 if len(deps) > 0:

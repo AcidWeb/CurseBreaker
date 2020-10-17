@@ -35,6 +35,7 @@ class CurseForgeAddon:
         self.downloadUrl = None
         self.changelogUrl = None
         self.currentVersion = None
+        self.uiVersion = None
         self.archive = None
         self.dependencies = None
         self.directories = []
@@ -59,6 +60,8 @@ class CurseForgeAddon:
                     self.downloadUrl = f['downloadUrl']
                     self.changelogUrl = f'{self.payload["websiteUrl"]}/files/{f["id"]}'
                     self.currentVersion = f['displayName']
+                    if len(f['gameVersion']) > 0:
+                        self.uiVersion = max(f['gameVersion'])
                     if len(f['dependencies']) > 0:
                         self.dependencies = []
                         for d in f['dependencies']:

@@ -35,6 +35,8 @@ class Core:
         self.cachePath = Path('WTF/CurseBreaker.cache')
         self.clientType = 'wow_retail'
         self.wagoCompanionVersion = 1110
+        self.currentRetailVersion = '9.0.1'
+        self.currentClassicVersion = '1.13.5'
         self.config = None
         self.cfIDs = None
         self.dirIndex = None
@@ -313,9 +315,9 @@ class Core:
             if force:
                 modified = False
                 blocked = False
-            return new.name, new.author, new.currentVersion, oldversion, modified, blocked, source, sourceurl,\
-                new.changelogUrl, new.dependencies, dev
-        return url, [], False, False, False, False, '?', None, None, None, None
+            return new.name, new.author, new.currentVersion, oldversion, new.uiVersion, modified, blocked, source, \
+                sourceurl, new.changelogUrl, new.dependencies, dev
+        return url, [], False, False, None, False, False, '?', None, None, None, None
 
     def check_checksum(self, addon, bulk=True):
         checksums = {}

@@ -19,6 +19,7 @@ class GitLabAddon:
         self.downloadUrl = f'https://git.tukui.org/{path}/-/archive/{branch}/{self.shorthPath}-{branch}.zip'
         self.changelogUrl = None
         self.currentVersion = self.payload['commit']['short_id']
+        self.uiVersion = None
         self.branch = branch
         self.archive = None
         self.dependencies = None

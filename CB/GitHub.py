@@ -24,6 +24,7 @@ class GitHubAddon:
         self.name = project.split('/')[1]
         self.clientType = clienttype
         self.currentVersion = self.payload['tag_name'] or self.payload['name']
+        self.uiVersion = None
         self.downloadUrl = None
         self.changelogUrl = self.payload['html_url']
         self.archive = None

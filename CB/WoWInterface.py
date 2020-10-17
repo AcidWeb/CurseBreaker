@@ -24,6 +24,7 @@ class WoWInterfaceAddon:
         self.downloadUrl = self.payload['UIDownload']
         self.changelogUrl = f'{url}#changelog'
         self.currentVersion = self.payload['UIVersion']
+        self.uiVersion = None
         self.archive = None
         self.dependencies = None
         self.directories = []
