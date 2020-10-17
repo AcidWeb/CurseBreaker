@@ -282,9 +282,6 @@ class TUI:
             set_terminal_size(100, 50)
             windll.kernel32.SetConsoleScreenBufferSize(windll.kernel32.GetStdHandle(-11), wintypes._COORD(100, 200))
             self.console = Console(width=97)
-        elif self.os == 'Darwin':
-            set_terminal_size(100, 50)
-            self.console = Console()
         else:
             self.console = Console()
 
