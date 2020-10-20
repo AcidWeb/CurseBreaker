@@ -61,6 +61,7 @@ class TUI:
             self.headless = True
         self.setup_console()
         self.print_header()
+        self.core.init_master_config()
         # Check if executable is in good location
         if not glob.glob('World*.app') and not glob.glob('Wow*.exe') or \
                 not os.path.isdir(Path('Interface/AddOns')) or not os.path.isdir('WTF'):
@@ -361,7 +362,8 @@ class TUI:
             authors = f' [bold black]by {", ".join(authors)}[/bold black]'
         else:
             authors = ''
-        if uiversion and uiversion not in [self.core.currentRetailVersion, self.core.currentClassicVersion]:
+        if uiversion and uiversion not in [self.core.masterConfig['RetailVersion'],
+                                           self.core.masterConfig['ClassicVersion']]:
             uiversion = ' [bold yellow][!][bold yellow]'
         else:
             uiversion = ''
@@ -696,10 +698,9 @@ class TUI:
             elif len(accounts) == 1 and self.core.config['WAAccountName'] == '':
                 self.core.config['WAAccountName'] = accounts[0]
                 self.core.save_config()
-            wago = WagoUpdater(self.core.config['WAUsername'], self.core.config['WAAccountName'],
-                               self.core.config['WAAPIKey'])
-            if self.core.wagoCompanionVersion != self.core.config['WACompanionVersion']:
-                self.core.config['WACompanionVersion'] = self.core.wagoCompanionVersion
+            wago = WagoUpdater(self.core.config, self.core.masterConfig)
+            if self.core.masterConfig['WagoVersion'] != self.core.config['WACompanionVersion']:
+                self.core.config['WACompanionVersion'] = self.core.masterConfig['WagoVersion']
                 self.core.save_config()
                 force = True
             else:

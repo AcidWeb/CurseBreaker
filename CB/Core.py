@@ -34,17 +34,23 @@ class Core:
         self.configPath = Path('WTF/CurseBreaker.json')
         self.cachePath = Path('WTF/CurseBreaker.cache')
         self.clientType = 'wow_retail'
-        self.wagoCompanionVersion = 1110
-        self.currentRetailVersion = '9.0.1'
-        self.currentClassicVersion = '1.13.5'
         self.config = None
+        self.masterConfig = None
         self.cfIDs = None
         self.dirIndex = None
-        self.blocklist = None
         self.cfCache = {}
         self.wowiCache = {}
         self.checksumCache = {}
         self.scraper = cloudscraper.create_scraper()
+
+    def init_master_config(self):
+        # noinspection PyBroadException
+        try:
+            self.masterConfig = pickle.load(gzip.open(io.BytesIO(
+                requests.get('https://storage.googleapis.com/cursebreaker/config.pickle.gz',
+                             headers=HEADERS, timeout=5).content)))
+        except Exception:
+            raise RuntimeError('Failed to fetch the master config file.')
 
     def init_config(self):
         if os.path.isfile('CurseBreaker.json'):
@@ -168,11 +174,7 @@ class Core:
                 shutil.rmtree(self.path / directory, ignore_errors=True)
 
     def parse_url(self, url):
-        if not self.blocklist:
-            self.blocklist = pickle.load(gzip.open(io.BytesIO(requests.get(
-                f'https://storage.googleapis.com/cursebreaker/blocklist.pickle.gz', headers=HEADERS,
-                timeout=5).content)))
-        for block in self.blocklist:
+        for block in self.masterConfig['BlockList']:
             if block in url.lower():
                 raise RuntimeError(f'{url}\nThe addon is unavailable. You can\'t manage it with this application.')
         if url.startswith('https://www.curseforge.com/wow/addons/'):

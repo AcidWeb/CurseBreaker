@@ -98,10 +98,12 @@ class PlaterParser(BaseParser):
 
 
 class WagoUpdater:
-    def __init__(self, username, accountname, apikey):
-        self.username = username
-        self.accountName = accountname
-        self.apiKey = apikey
+    def __init__(self, config, masterconfig):
+        self.username = config['WAUsername']
+        self.accountName = config['WAAccountName']
+        self.apiKey = config['WAAPIKey']
+        self.retailTOC = masterconfig['RetailTOC']
+        self.classicTOC = masterconfig['ClassicTOC']
         self.bbParser = bbcode.Parser()
         Markdown.output_formats['plain'] = markdown_unmark_element
         self.mdParser = Markdown(output_format='plain')
@@ -184,10 +186,10 @@ class WagoUpdater:
         if not os.path.isdir(Path('Interface/AddOns/WeakAurasCompanion')) or force:
             Path('Interface/AddOns/WeakAurasCompanion').mkdir(exist_ok=True)
             with open(Path('Interface/AddOns/WeakAurasCompanion/WeakAurasCompanion.toc'), 'w', newline='\n') as out:
-                out.write(f'## Interface: {"11305" if client_type == "wow_classic" else "90001"}\n## Title: WeakAu'
-                          f'ras Companion\n## Author: The WeakAuras Team\n## Version: 1.1.1\n## Notes: Keep your WeakAu'
-                          f'ras updated!\n## X-Category: Interface Enhancements\n## DefaultState: Enabled\n## LoadOnDem'
-                          f'and: 0\n## OptionalDeps: WeakAuras, Plater\n\ndata.lua\ninit.lua')
+                out.write(f'## Interface: {self.classicTOC if client_type == "wow_classic" else self.retailTOC}\n## Tit'
+                          f'le: WeakAuras Companion\n## Author: The WeakAuras Team\n## Version: 1.1.1\n## Notes: Keep y'
+                          f'our WeakAuas updated!\n## X-Category: Interface Enhancements\n## DefaultState: Enabled\n## '
+                          f'LoadOnDemand: 0\n## OptionalDeps: WeakAuras, Plater\n\ndata.lua\ninit.lua')
             with open(Path('Interface/AddOns/WeakAurasCompanion/init.lua'), 'w', newline='\n') as out:
                 out.write('-- file generated automatically\nlocal buildTimeTarget = 20190123023201\nlocal waBuildTime ='
                           ' tonumber(WeakAuras and WeakAuras.buildTime or 0)\nif waBuildTime and waBuildTime > buildTim'
