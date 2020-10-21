@@ -13,6 +13,7 @@ import platform
 import pyperclip
 import subprocess
 from csv import reader
+from shlex import split
 from pathlib import Path
 from datetime import datetime
 from rich import box
@@ -376,11 +377,11 @@ class TUI:
 
     def c_install(self, args, recursion=False):
         if args:
-            if args.startswith('-i '):
-                args = args[3:]
+            optignore = False
+            pargs = split(args)
+            if '-i' in pargs:
                 optignore = True
-            else:
-                optignore = False
+                args = args.replace('-i', '', 1)
             dependencies = DependenciesParser(self.core)
             args = re.sub(r'([a-zA-Z0-9_:])([ ]+)([a-zA-Z0-9_:])', r'\1,\3', args)
             addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
@@ -419,11 +420,11 @@ class TUI:
 
     def c_uninstall(self, args):
         if args:
-            if args.startswith('-k '):
-                args = args[3:]
+            optkeep = False
+            pargs = split(args)
+            if '-k' in pargs:
                 optkeep = True
-            else:
-                optkeep = False
+                args = args.replace('-k', '', 1)
             addons = self.parse_args(args)
             with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|',
                           auto_refresh=False, console=self.console) as progress:
@@ -444,7 +445,8 @@ class TUI:
                                'full links as an argument.\n\t[bold white]Flags:[/bold white]\n\t\t[bold white]-k[/bold'
                                ' white] - Keep the addon files after uninstalling.', highlight=False)
 
-    def c_update(self, args, addline=False, update=True, force=False, provider=False):
+    def c_update(self, args, addline=False, update=True, force=False, provider=False, reversecompact=False):
+        compact = not self.core.config['CompactMode'] if reversecompact else self.core.config['CompactMode']
         if len(self.core.cfCache) > 0 or len(self.core.wowiCache) > 0:
             self.core.cfCache = {}
             self.core.wowiCache = {}
@@ -482,7 +484,7 @@ class TUI:
                                                        self.parse_link(versionold, changelog, dstate,
                                                                        uiversion=uiversion))
                                 else:
-                                    if self.core.config['CompactMode'] and compacted > -1:
+                                    if compact and compacted > -1:
                                         compacted += 1
                                     else:
                                         self.table.add_row(f'[green]Up-to-date[/green]{source}',
@@ -536,12 +538,17 @@ class TUI:
                 self.c_update(False, False, True, True)
 
     def c_status(self, args):
-        if args and args.startswith('-s'):
-            args = args[2:]
-            optsource = True
-        else:
-            optsource = False
-        self.c_update(args, False, False, False, optsource)
+        optsource = False
+        optcompact = False
+        if args:
+            pargs = split(args)
+            if '-s' in pargs:
+                optsource = True
+                args = args.replace('-s', '', 1)
+            if '-a' in pargs:
+                optcompact = True
+                args = args.replace('-a', '', 1)
+        self.c_update(args, False, False, False, optsource, optcompact)
 
     def c_orphans(self, _):
         orphansd, orphansf = self.core.find_orphans()
@@ -809,7 +816,8 @@ class TUI:
                            '[green]wago_update[/green]\n\tCommand detects all installed WeakAuras and Plater profiles/s'
                            'cripts.\n\tAnd then generate WeakAuras Companion payload.\n'
                            '[green]status[/green]\n\tPrints the current state of all installed addons.\n\t[bold white]F'
-                           'lags:[/bold white]\n\t\t[bold white]-s[/bold white] - Display the source of the addons.\n'
+                           'lags:[/bold white]\n\t\t[bold white]-a[/bold white] - Temporary reverse the table compactin'
+                           'g option.\n\t\t[bold white]-s[/bold white] - Display the source of the addons.\n'
                            '[green]orphans[/green]\n\tPrints list of orphaned directories and files.\n'
                            '[green]search [Keyword][/green]\n\tExecutes addon search on CurseForge.\n'
                            '[green]recommendations[/green]\n\tCheck the list of currently installed addons against a co'
