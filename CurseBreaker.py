@@ -365,7 +365,7 @@ class TUI:
             authors = ''
         if uiversion and uiversion not in [self.core.masterConfig['RetailVersion'],
                                            self.core.masterConfig['ClassicVersion']]:
-            uiversion = ' [bold yellow][!][bold yellow]'
+            uiversion = ' [bold yellow][!][/bold yellow]'
         else:
             uiversion = ''
         if link:
@@ -548,6 +548,7 @@ class TUI:
             if '-a' in pargs:
                 optcompact = True
                 args = args.replace('-a', '', 1)
+            args = args.strip()
         self.c_update(args, False, False, False, optsource, optcompact)
 
     def c_orphans(self, _):
@@ -815,9 +816,11 @@ class TUI:
                            'urrent state.\n\tIf no argument is provided all addons will be forcefully updated.\n'
                            '[green]wago_update[/green]\n\tCommand detects all installed WeakAuras and Plater profiles/s'
                            'cripts.\n\tAnd then generate WeakAuras Companion payload.\n'
-                           '[green]status[/green]\n\tPrints the current state of all installed addons.\n\t[bold white]F'
-                           'lags:[/bold white]\n\t\t[bold white]-a[/bold white] - Temporary reverse the table compactin'
-                           'g option.\n\t\t[bold white]-s[/bold white] - Display the source of the addons.\n'
+                           '[green]status[/green]\n\tPrints the current state of all installed addons.\n\t[bold yellow]'
+                           '[!][/bold yellow] mark means that the latest release is not updated yet for the current WoW'
+                           ' version.\n\t[bold white]Flags:[/bold white]\n\t\t[bold white]-a[/bold white] - Temporary r'
+                           'everse the table compacting option.\n\t\t[bold white]-s[/bold white] - Display the source o'
+                           'f the addons.\n'
                            '[green]orphans[/green]\n\tPrints list of orphaned directories and files.\n'
                            '[green]search [Keyword][/green]\n\tExecutes addon search on CurseForge.\n'
                            '[green]recommendations[/green]\n\tCheck the list of currently installed addons against a co'
