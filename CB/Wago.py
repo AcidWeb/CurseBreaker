@@ -111,6 +111,9 @@ class WagoUpdater:
         if self.username == 'DISABLED':
             self.username = ''
 
+    def clean_string(self, s):
+        return s.replace('"', '\\"')
+
     @retry('Failed to parse Wago data.')
     def check_updates(self, addon):
         output = [[], []]
@@ -155,10 +158,10 @@ class WagoUpdater:
         ids = ''
         for u in addon.uids:
             if addon.uids[u] == entry["slug"]:
-                uids = uids + f'    ["{u}"] = [=[{entry["slug"]}]=],\n'
+                uids = uids + f'    ["{self.clean_string(u)}"] = [=[{entry["slug"]}]=],\n'
         for i in addon.ids:
             if addon.ids[i] == entry["slug"]:
-                ids = ids + f'    ["{i}"] = [=[{entry["slug"]}]=],\n'
+                ids = ids + f'    ["{self.clean_string(i)}"] = [=[{entry["slug"]}]=],\n'
         addon.data['slugs'].append(slug)
         addon.data['uids'].append(uids)
         addon.data['ids'].append(ids)
