@@ -13,7 +13,7 @@ import platform
 import pyperclip
 import subprocess
 from csv import reader
-from shlex import split
+from shlex import split, quote
 from pathlib import Path
 from datetime import datetime
 from rich import box
@@ -378,7 +378,7 @@ class TUI:
     def c_install(self, args, recursion=False):
         if args:
             optignore = False
-            pargs = split(args)
+            pargs = split(quote(args))
             if '-i' in pargs:
                 optignore = True
                 args = args.replace('-i', '', 1)
@@ -421,7 +421,7 @@ class TUI:
     def c_uninstall(self, args):
         if args:
             optkeep = False
-            pargs = split(args)
+            pargs = split(quote(args))
             if '-k' in pargs:
                 optkeep = True
                 args = args.replace('-k', '', 1)
@@ -541,7 +541,7 @@ class TUI:
         optsource = False
         optcompact = False
         if args:
-            pargs = split(args)
+            pargs = split(quote(args))
             if '-s' in pargs:
                 optsource = True
                 args = args.replace('-s', '', 1)
