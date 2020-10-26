@@ -693,6 +693,8 @@ class TUI:
     def c_wago_update(self, _, verbose=True):
         if os.path.isdir(Path('Interface/AddOns/WeakAuras')) or os.path.isdir(Path('Interface/AddOns/Plater')):
             accounts = self.core.detect_accounts()
+            if self.core.config['WAAccountName'] != '' and self.core.config['WAAccountName'] not in accounts:
+                self.core.config['WAAccountName'] = ''
             if len(accounts) == 0:
                 return
             elif len(accounts) > 1 and self.core.config['WAAccountName'] == '':
