@@ -131,10 +131,11 @@ class TUI:
             if not self.headless:
                 self.console.print('Automatic update of all addons will start in 5 seconds.\n'
                                    'Press any button to enter interactive mode.', highlight=False)
-            kb = KBHit()
+                kb = KBHit()
             starttime = time.time()
             keypress = None
             while True:
+                # noinspection PyUnboundLocalVariable
                 if self.headless:
                     break
                 elif kb.kbhit():
@@ -142,7 +143,8 @@ class TUI:
                     break
                 elif time.time() - starttime > 5:
                     break
-            kb.set_normal_term()
+            if not self.headless:
+                kb.set_normal_term()
             if not keypress:
                 if not self.headless:
                     self.print_header()
