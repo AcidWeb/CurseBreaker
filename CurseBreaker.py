@@ -216,17 +216,18 @@ class TUI:
                             break
                     if url and StrictVersion(remoteversion[1:]) > StrictVersion(__version__):
                         self.console.print('[green]Updating CurseBreaker...[/green]')
-                        shutil.move(sys.executable, sys.executable + '.old')
                         payload = requests.get(url, headers=HEADERS, timeout=5)
                         if self.os == 'Darwin':
                             zipfile.ZipFile(io.BytesIO(payload.content)).extractall(path=os.path.dirname(
-                                os.path.abspath(sys.executable)))
+                                os.path.abspath(sys.executable + '.new')))
                         else:
-                            with open(sys.executable, 'wb') as f:
+                            with open(sys.executable + '.new', 'wb') as f:
                                 if self.os == 'Windows':
                                     f.write(payload.content)
                                 elif self.os == 'Linux':
                                     f.write(gzip.decompress(payload.content))
+                        shutil.move(sys.executable, sys.executable + '.old')
+                        shutil.move(sys.executable + '.new', sys.executable)
                         os.chmod(sys.executable, 0o775)
                         self.console.print(f'[bold green]Update complete! The application will be restarted now.'
                                            f'[/bold green]\n\n[green]Changelog:[/green]\n{changelog}\n')
