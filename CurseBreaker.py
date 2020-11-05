@@ -219,7 +219,7 @@ class TUI:
                         payload = requests.get(url, headers=HEADERS, timeout=5)
                         if self.os == 'Darwin':
                             zipfile.ZipFile(io.BytesIO(payload.content)).extractall(path=os.path.dirname(
-                                os.path.abspath(sys.executable + '.new')))
+                                os.path.abspath(sys.executable)))
                         else:
                             with open(sys.executable + '.new', 'wb') as f:
                                 if self.os == 'Windows':
