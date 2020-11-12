@@ -174,6 +174,10 @@ class TUI:
         if len(self.core.config['Addons']) == 0:
             self.console.print('Command [green]import[/green] might be used to detect already installed addons.\n')
         self.motd_parser()
+        if self.core.backup_check():
+            self.console.print(f'[green]Backing up WTF directory:[/green]')
+            self.core.backup_wtf(self.console)
+            self.console.print('')
         # Prompt session
         while True:
             try:
