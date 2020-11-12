@@ -94,8 +94,8 @@ class TUI:
             pause(self.headless)
             sys.exit(1)
         self.setup_table()
-        # Curse URI Support
-        if len(sys.argv) == 2 and 'twitch://' in sys.argv[1]:
+        # CurseForge URI Support
+        if len(sys.argv) == 2 and any(x in sys.argv[1] for x in ['twitch://', 'curseforge://']):
             try:
                 self.c_install(sys.argv[1].strip())
             except Exception as e:
@@ -105,7 +105,7 @@ class TUI:
         if len(sys.argv) == 2 and '.ccip' in sys.argv[1]:
             try:
                 path = sys.argv[1].strip()
-                self.c_install(self.core.parse_cf_xml(path))
+                self.c_install(self.core.parse_cf_payload(path))
                 if os.path.exists(path):
                     os.remove(path)
             except Exception as e:
