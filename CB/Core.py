@@ -552,8 +552,9 @@ class Core:
         if len(ids_wowi) > 0:
             payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{",".join(ids_wowi)}.json',
                                    headers=HEADERS, timeout=5).json()
-            for addon in payload:
-                self.wowiCache[str(addon['UID'])] = addon
+            if 'ERROR' not in payload:
+                for addon in payload:
+                    self.wowiCache[str(addon['UID'])] = addon
 
     def detect_accounts(self):
         if os.path.isdir(Path('WTF/Account')):
