@@ -834,7 +834,7 @@ class TUI:
         payload = self.core.export_addons()
         url = pastebin.create_paste(payload)
         shortened_url = url.split('/')[3]
-        self.console.print(f'Addons have been imported to: {url}.\n\nYou can import using [bold white]import_remote '
+        self.console.print(f'Addons have been exported to: {url}.\n\nYou can import using [bold white]import_remote '
                            f'{shortened_url}[/bold white]', highlight=False)
 
     def c_help(self, _):
