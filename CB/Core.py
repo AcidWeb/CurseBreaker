@@ -74,7 +74,8 @@ class Core:
                            'CFCacheTimestamp': 0,
                            'CompactMode': False,
                            'AutoUpdate': True,
-                           'ShowAuthors': True}
+                           'ShowAuthors': True,
+                           'PastebinAPIKey': ''}
             self.save_config()
         if not os.path.isdir('WTF-Backup') and self.config['Backup']['Enabled']:
             os.mkdir('WTF-Backup')
@@ -122,7 +123,8 @@ class Core:
                         ['3.1.10', 'CFCacheCloudFlare', {}],
                         ['3.7.0', 'CompactMode', False],
                         ['3.10.0', 'AutoUpdate', True],
-                        ['3.12.0', 'ShowAuthors', True]]:
+                        ['3.12.0', 'ShowAuthors', True],
+                        ['3.16.0', 'PastebinAPIKey', '']]:
                 if add[1] not in self.config.keys():
                     self.config[add[1]] = add[2]
             for delete in [['1.3.0', 'URLCache'],

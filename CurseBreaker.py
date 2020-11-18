@@ -810,7 +810,7 @@ class TUI:
 
     def c_import_remote(self, args):
         if args:
-            pastebin = Pastebin('SECRET_KEY')
+            pastebin = Pastebin(self.core.config['PastebinAPIKey'])
             payload = pastebin.get_raw_paste(args)
             if "Not Found (#404)" in payload:
                 self.console.print(f'[bold red]{args}[/bold red] does not appear to be a valid Pastebin paste ID.',
@@ -830,12 +830,27 @@ class TUI:
         self.console.print(f'{payload}\n\nThe command above was copied to the clipboard.', highlight=False)
 
     def c_export_remote(self, _):
-        pastebin = Pastebin('SECRET_KEY')
+        pastebin = Pastebin(self.core.config['PastebinAPIKey'])
         payload = self.core.export_addons()
         url = pastebin.create_paste(payload)
-        shortened_url = url.split('/')[3]
-        self.console.print(f'Addons have been exported to: {url}.\n\nYou can import using [bold white]import_remote '
-                           f'{shortened_url}[/bold white]', highlight=False)
+
+        if "invalid api_dev_key" in url:
+            self.console.print(f'It appears you either have not set up a Pastebin API Key, or it is invalid.\n\nTo set '
+                               f'up an API Key:\n\t1. Create a Pastebin account (https://pastebin.com/signup)\n\t2. Ver'
+                               f'ify the account by checking your email.\n\t3. Your API Key can be found here: https://'
+                               f'pastebin.com/doc_api#1\n\nPlease enter your API Key now, or simple press enter to skip'
+                               , highlight=False)
+            command = self.session.prompt(HTML('<ansibrightgreen>Pastebin API Key></ansibrightgreen> '))
+            self.core.config['PastebinAPIKey'] = command
+            self.core.save_config()
+            self.console.print('\n\n\n\n')
+        elif "Post limit" in url:
+            self.console.print(f'[red]Maximum number of exports per 24 hour period reached. Please wait and try again.['
+                               f'/red]', highlight=False)
+        else:
+            shortened_url = url.split('/')[3]
+            self.console.print(f'Addons have been exported to: {url}.\n\nYou can import using [bold white]import_remote '
+                               f'{shortened_url}[/bold white]', highlight=False)
 
     def c_help(self, _):
         self.console.print('[green]install [URL][/green]\n\tCommand accepts a space-separated list of links.\n\t[bold w'
@@ -861,7 +876,7 @@ class TUI:
                            '[green]recommendations[/green]\n\tCheck the list of currently installed addons against a co'
                            'mmunity-driven database of tips.\n'
                            '[green]import[/green]\n\tCommand attempts to import already installed addons.\n'
-                           '[green]import_remote[/green]\n\tCommand imports addons from Pastebin URL.\n'
+                           '[green]import_remote[/green]\n\tCommand imports addons from Pastebin paste ID.\n'
                            '[green]export[/green]\n\tCommand prints list of all installed addons in a form suitable f'
                            'or sharing.\n'
                            '[green]export_remote[/green]\n\tCommand exports list of all installed addons to Pastebin.\n'
