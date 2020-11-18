@@ -7,3 +7,4 @@ markdown
 bbcode
 rich
 lupa
+pbwrap

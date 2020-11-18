@@ -33,6 +33,7 @@ from CB import HEADERS, HEADLESS_TERMINAL_THEME, __version__
 from CB.Core import Core, DependenciesParser
 from CB.Compat import pause, timeout, clear, set_terminal_title, set_terminal_size, KBHit
 from CB.Wago import WagoUpdater
+from pbwrap import Pastebin
 
 if platform.system() == 'Windows':
     from ctypes import windll, wintypes
@@ -327,7 +328,9 @@ class TUI:
             'search': None,
             'recommendations': None,
             'import': {'install': None},
+            'import_remote': None,
             'export': None,
+            'export_remote': None,
             'toggle': {'authors': None,
                        'autoupdate': None,
                        'backup': None,
@@ -805,10 +808,34 @@ class TUI:
                                f' white] command.\nAddons that are available only on WoWInterface and/or Tukui are not '
                                f'detected by this process.')
 
+    def c_import_remote(self, args):
+        if args:
+            pastebin = Pastebin('SECRET_KEY')
+            payload = pastebin.get_raw_paste(args)
+            if "Not Found (#404)" in payload:
+                self.console.print(f'[bold red]{args}[/bold red] does not appear to be a valid Pastebin paste ID.',
+                                   highlight=False)
+            elif not payload.startswith("install"):
+                self.console.print(f'Paste does not appear to be a CurseBreaker export list.', highlight=False)
+            else:
+                addons = payload.split(' ')[1]
+                self.c_install(addons)
+        else:
+            self.console.print('[green]Usage:[/green]\n\tThis command accepts a Pastebin paste ID as an argument.[bold '
+                               'white]', highlight=False)
+
     def c_export(self, _):
         payload = self.core.export_addons()
         pyperclip.copy(payload)
         self.console.print(f'{payload}\n\nThe command above was copied to the clipboard.', highlight=False)
+
+    def c_export_remote(self, _):
+        pastebin = Pastebin('SECRET_KEY')
+        payload = self.core.export_addons()
+        url = pastebin.create_paste(payload)
+        shortened_url = url.split('/')[3]
+        self.console.print(f'Addons have been imported to: {url}.\n\nYou can import using [bold white]import_remote '
+                           f'{shortened_url}[/bold white]', highlight=False)
 
     def c_help(self, _):
         self.console.print('[green]install [URL][/green]\n\tCommand accepts a space-separated list of links.\n\t[bold w'
@@ -834,8 +861,10 @@ class TUI:
                            '[green]recommendations[/green]\n\tCheck the list of currently installed addons against a co'
                            'mmunity-driven database of tips.\n'
                            '[green]import[/green]\n\tCommand attempts to import already installed addons.\n'
+                           '[green]import_remote[/green]\n\tCommand imports addons from Pastebin URL.\n'
                            '[green]export[/green]\n\tCommand prints list of all installed addons in a form suitable f'
                            'or sharing.\n'
+                           '[green]export_remote[/green]\n\tCommand exports list of all installed addons to Pastebin.\n'
                            '[green]toggle authors[/green]\n\tEnables/disables the display of addon author names in the '
                            'table.\n'
                            '[green]toggle autoupdate[/green]\n\tEnables/disables the automatic addon update on startup'
