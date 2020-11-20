@@ -197,9 +197,9 @@ class Core:
             return GitHubAddon(url, self.clientType)
         elif url.lower() == 'elvui':
             if self.clientType == 'wow_retail':
-                return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'master')
+                return TukuiAddon('ElvUI', False, 'elvui')
             else:
-                return GitLabAddon('ElvUI', '492', 'elvui/elvui-classic', 'master')
+                return TukuiAddon('2', True)
         elif url.lower() == 'elvui:dev':
             if self.clientType == 'wow_retail':
                 return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'development')
@@ -207,9 +207,9 @@ class Core:
                 return GitLabAddon('ElvUI', '492', 'elvui/elvui-classic', 'development')
         elif url.lower() == 'tukui':
             if self.clientType == 'wow_retail':
-                return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'master')
+                return TukuiAddon('Tukui', False, 'tukui')
             else:
-                return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'Classic')
+                return TukuiAddon('1', True)
         elif url.lower() == 'shadow&light:dev':
             if self.clientType == 'wow_retail':
                 return GitLabAddon('ElvUI Shadow & Light', '45', 'shadow-and-light/shadow-and-light', 'dev')

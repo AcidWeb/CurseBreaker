@@ -8,10 +8,14 @@ from . import retry, HEADERS
 
 class TukuiAddon:
     @retry()
-    def __init__(self, url, isclassic):
-        project = re.findall(r'\d+', url)[0]
-        self.payload = requests.get(f'https://www.tukui.org/api.php?{"classic-" if isclassic else ""}addon={project}',
-                                    headers=HEADERS, timeout=5)
+    def __init__(self, url, isclassic, special=None):
+        if special:
+            self.payload = requests.get(f'https://www.tukui.org/client-api.php?ui={special}',
+                                        headers=HEADERS, timeout=5)
+        else:
+            project = re.findall(r'\d+', url)[0]
+            self.payload = requests.get(f'https://www.tukui.org/api.php?'
+                                        f'{"classic-" if isclassic else ""}addon={project}', headers=HEADERS, timeout=5)
         if self.payload.text == '':
             raise RuntimeError(url)
         else:
