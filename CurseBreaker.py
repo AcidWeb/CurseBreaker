@@ -131,20 +131,7 @@ class TUI:
             if not self.headless:
                 self.console.print('Automatic update of all addons will start in 5 seconds.\n'
                                    'Press any button to enter interactive mode.', highlight=False)
-                kb = KBHit()
-            starttime = time.time()
-            keypress = None
-            while True:
-                # noinspection PyUnboundLocalVariable
-                if self.headless:
-                    break
-                elif kb.kbhit():
-                    keypress = kb.getch()
-                    break
-                elif time.time() - starttime > 5:
-                    break
-            if not self.headless:
-                kb.set_normal_term()
+            keypress = self.handle_keypress(5)
             if not keypress:
                 if not self.headless:
                     self.print_header()
@@ -162,8 +149,16 @@ class TUI:
                     self.handle_exception(e)
                 self.console.print('')
                 self.print_log()
-                pause(self.headless)
-                sys.exit(0)
+                if self.headless:
+                    sys.exit(0)
+                else:
+                    self.console.print('Press [bold]I[/bold] to enter interactive mode or any other button to close'
+                                       ' the application.')
+                    keypress = self.handle_keypress(0)
+                    if keypress and keypress.lower() == b'i':
+                        pass
+                    else:
+                        sys.exit(0)
         if self.headless:
             sys.exit(1)
         self.setup_completer()
@@ -265,6 +260,24 @@ class TUI:
         else:
             self.console.print(Traceback.from_exception(exc_type=e.__class__, exc_value=e,
                                                         traceback=e.__traceback__, width=width))
+
+    def handle_keypress(self, wait):
+        if not self.headless:
+            kb = KBHit()
+        starttime = time.time()
+        keypress = None
+        while True:
+            # noinspection PyUnboundLocalVariable
+            if self.headless:
+                break
+            elif kb.kbhit():
+                keypress = kb.getch()
+                break
+            elif wait and time.time() - starttime > wait:
+                break
+        if not self.headless:
+            kb.set_normal_term()
+        return keypress
 
     def print_header(self):
         clear()
