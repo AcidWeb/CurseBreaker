@@ -8,18 +8,18 @@ from . import retry, HEADERS
 
 class TukuiAddon:
     @retry()
-    def __init__(self, url, isclassic, special=None):
+    def __init__(self, url, checkcache, special=None):
         if special:
-            self.payload = requests.get(f'https://www.tukui.org/client-api.php?ui={special}',
-                                        headers=HEADERS, timeout=5)
+            self.payload = requests.get(f'https://www.tukui.org/api.php?ui={special}',
+                                        headers=HEADERS, timeout=5).json()
         else:
             project = re.findall(r'\d+', url)[0]
-            self.payload = requests.get(f'https://www.tukui.org/api.php?'
-                                        f'{"classic-" if isclassic else ""}addon={project}', headers=HEADERS, timeout=5)
-        if self.payload.text == '':
-            raise RuntimeError(url)
-        else:
-            self.payload = self.payload.json()
+            for addon in checkcache:
+                if addon['id'] == project:
+                    self.payload = addon
+                    break
+            else:
+                raise RuntimeError(f'{url}\nProject not found.')
         self.name = self.payload['name'].strip().strip('\u200b')
         self.downloadUrl = self.payload['url']
         self.currentVersion = self.payload['version']

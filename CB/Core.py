@@ -40,6 +40,7 @@ class Core:
         self.dirIndex = None
         self.cfCache = {}
         self.wowiCache = {}
+        self.tukuiCache = None
         self.checksumCache = {}
         self.scraper = cloudscraper.create_scraper()
 
@@ -186,20 +187,23 @@ class Core:
         elif url.startswith('https://www.tukui.org/addons.php?id='):
             if self.clientType == 'wow_classic':
                 raise RuntimeError('Incorrect client version.')
-            return TukuiAddon(url, False)
+            self.bulk_tukui_check()
+            return TukuiAddon(url, self.tukuiCache)
         elif url.startswith('https://www.tukui.org/classic-addons.php?id='):
             if self.clientType == 'wow_retail':
                 raise RuntimeError('Incorrect client version.')
             elif url.endswith('1') or url.endswith('2'):
                 raise RuntimeError('ElvUI and Tukui cannot be installed this way.')
-            return TukuiAddon(url, True)
+            self.bulk_tukui_check()
+            return TukuiAddon(url, self.tukuiCache)
         elif url.startswith('https://github.com/'):
             return GitHubAddon(url, self.clientType)
         elif url.lower() == 'elvui':
             if self.clientType == 'wow_retail':
-                return TukuiAddon('ElvUI', False, 'elvui')
+                return TukuiAddon('ElvUI', self.tukuiCache, 'elvui')
             else:
-                return TukuiAddon('2', True)
+                self.bulk_tukui_check()
+                return TukuiAddon('2', self.tukuiCache)
         elif url.lower() == 'elvui:dev':
             if self.clientType == 'wow_retail':
                 return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'development')
@@ -207,9 +211,10 @@ class Core:
                 return GitLabAddon('ElvUI', '492', 'elvui/elvui-classic', 'development')
         elif url.lower() == 'tukui':
             if self.clientType == 'wow_retail':
-                return TukuiAddon('Tukui', False, 'tukui')
+                return TukuiAddon('Tukui', self.tukuiCache, 'tukui')
             else:
-                return TukuiAddon('1', True)
+                self.bulk_tukui_check()
+                return TukuiAddon('1', self.tukuiCache)
         elif url.lower() == 'shadow&light:dev':
             if self.clientType == 'wow_retail':
                 return GitLabAddon('ElvUI Shadow & Light', '45', 'shadow-and-light/shadow-and-light', 'dev')
@@ -555,6 +560,13 @@ class Core:
             if 'ERROR' not in payload:
                 for addon in payload:
                     self.wowiCache[str(addon['UID'])] = addon
+
+    @retry(custom_error='Failed to parse Tukui API data')
+    def bulk_tukui_check(self):
+        if not self.tukuiCache:
+            self.tukuiCache = requests.get(f'https://www.tukui.org/api.php?'
+                                           f'{"addons" if self.clientType == "wow_retail" else "classic-addons"}',
+                                           headers=HEADERS, timeout=5).json()
 
     def detect_accounts(self):
         if os.path.isdir(Path('WTF/Account')):
