@@ -509,18 +509,21 @@ class Core:
         if slug in self.cfIDs:
             project = self.cfIDs[slug]
         else:
-            payload = self.scraper.get(url + '/download-client')
-            if payload.status_code == 404:
-                renamecheck = self.scraper.get(url, allow_redirects=False)
-                if renamecheck.status_code == 303:
-                    payload = self.scraper.get(f'https://www.curseforge.com{renamecheck.headers["location"]}'
-                                               f'/download-client')
+            try:
+                payload = self.scraper.get(url + '/download-client')
                 if payload.status_code == 404:
-                    if bulk:
-                        return 0
-                    else:
-                        raise RuntimeError(f'{slug}\nThe project could be removed from CurseForge or renamed. Uninstall'
-                                           f' it (and reinstall if it still exists) to fix this issue.')
+                    renamecheck = self.scraper.get(url, allow_redirects=False)
+                    if renamecheck.status_code == 303:
+                        payload = self.scraper.get(f'https://www.curseforge.com{renamecheck.headers["location"]}'
+                                                   f'/download-client')
+                    if payload.status_code == 404:
+                        if bulk:
+                            return 0
+                        else:
+                            raise RuntimeError(f'{slug}\nThe project could be removed from CurseForge or renamed. Unins'
+                                               f'tall it (and reinstall if it still exists) to fix this issue.')
+            except cloudscraper.CloudflareChallengeError:
+                return 0
             xml = parseString(payload.text)
             project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
             self.config['CFCacheCloudFlare'][slug] = project
