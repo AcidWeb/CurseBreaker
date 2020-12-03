@@ -404,20 +404,24 @@ class TUI:
             dependencies = DependenciesParser(self.core)
             args = re.sub(r'([a-zA-Z0-9_:])([ ]+)([a-zA-Z0-9_:])', r'\1,\3', args)
             addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
+            exceptions = []
             with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|',
                           auto_refresh=False, console=self.console) as progress:
                 task = progress.add_task('', total=len(addons))
                 while not progress.finished:
                     for addon in addons:
-                        installed, name, version, deps = self.core.add_addon(addon, optignore)
-                        if installed:
-                            self.table.add_row('[green]Installed[/green]', Text(name, no_wrap=True),
-                                               Text(version, no_wrap=True))
-                            if not recursion:
-                                dependencies.add_dependency(deps)
-                        else:
-                            self.table.add_row('[bold black]Already installed[/bold black]',
-                                               Text(name, no_wrap=True), Text(version, no_wrap=True))
+                        try:
+                            installed, name, version, deps = self.core.add_addon(addon, optignore)
+                            if installed:
+                                self.table.add_row('[green]Installed[/green]', Text(name, no_wrap=True),
+                                                   Text(version, no_wrap=True))
+                                if not recursion:
+                                    dependencies.add_dependency(deps)
+                            else:
+                                self.table.add_row('[bold black]Already installed[/bold black]',
+                                                   Text(name, no_wrap=True), Text(version, no_wrap=True))
+                        except Exception as e:
+                            exceptions.append(e)
                         progress.update(task, advance=1, refresh=True)
             self.console.print(self.table)
             dependencies = dependencies.parse_dependency()
@@ -425,6 +429,8 @@ class TUI:
                 self.setup_table()
                 self.console.print('Installing dependencies:')
                 self.c_install(dependencies, recursion=True)
+            if len(exceptions) > 0:
+                self.handle_exception(exceptions, False)
         else:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts a space-separated list of links as an arg'
                                'ument.[bold white]\n\tFlags:[/bold white]\n\t\t[bold white]-i[/bold white] - Disable th'
