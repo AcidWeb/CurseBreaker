@@ -343,6 +343,7 @@ class TUI:
             'orphans': None,
             'search': None,
             'recommendations': None,
+            'backup': None,
             'import': {'install': None},
             'export': None,
             'toggle': {'authors': None,
@@ -810,6 +811,9 @@ class TUI:
             if not found:
                 self.console.print('Not found any recommendations for you. Good job!')
 
+    def c_backup(self, _):
+        self.core.backup_wtf(None if self.headless else self.console)
+
     def c_import(self, args):
         hit, partial_hit, miss = self.core.detect_addons()
         if args == 'install' and len(hit) > 0:
@@ -857,6 +861,7 @@ class TUI:
                            '[green]search [Keyword][/green]\n\tExecutes addon search on CurseForge.\n'
                            '[green]recommendations[/green]\n\tCheck the list of currently installed addons against a co'
                            'mmunity-driven database of tips.\n'
+                           '[green]backup[/green]\n\tCommand creates a backup of WTF directory.\n'
                            '[green]import[/green]\n\tCommand attempts to import already installed addons.\n'
                            '[green]export[/green]\n\tCommand prints list of all installed addons in a form suitable f'
                            'or sharing.\n'

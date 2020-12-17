@@ -423,8 +423,15 @@ class Core:
             return False
 
     def backup_wtf(self, console):
-        zipf = zipfile.ZipFile(Path('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip'), 'w',
-                               zipfile.ZIP_DEFLATED)
+        archive = Path('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip')
+        if os.path.isfile(archive):
+            suffix = 1
+            while True:
+                archive = Path('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}-{suffix}.zip')
+                if not os.path.isfile(archive):
+                    break
+                suffix += 1
+        zipf = zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED)
         filecount = 0
         for _, _, files in os.walk('WTF/', topdown=True, followlinks=True):
             files = [f for f in files if not f[0] == '.']
