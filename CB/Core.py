@@ -216,6 +216,11 @@ class Core:
             else:
                 self.bulk_tukui_check()
                 return TukuiAddon('1', self.tukuiCache)
+        elif url.lower() == 'tukui:dev':
+            if self.clientType == 'wow_retail':
+                return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'master')
+            else:
+                return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'Classic')
         elif url.lower() == 'shadow&light:dev':
             if self.clientType == 'wow_retail':
                 return GitLabAddon('ElvUI Shadow & Light', '45', 'shadow-and-light/shadow-and-light', 'dev')
