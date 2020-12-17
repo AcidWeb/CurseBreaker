@@ -98,6 +98,7 @@ class PlaterParser(BaseParser):
 
 
 class WagoUpdater:
+    # noinspection PyTypeChecker,PyUnresolvedReferences
     def __init__(self, config, masterconfig):
         self.username = config['WAUsername']
         self.accountName = config['WAAccountName']

@@ -51,7 +51,8 @@ class Core:
                 requests.get('https://storage.googleapis.com/cursebreaker/config.pickle.gz',
                              headers=HEADERS, timeout=5).content)))
         except Exception:
-            raise RuntimeError('Failed to fetch the master config file.')
+            raise RuntimeError('Failed to fetch the master config file. '
+                               'Check your connectivity to Google Cloud.') from None
 
     def init_config(self):
         if os.path.isfile('CurseBreaker.json'):

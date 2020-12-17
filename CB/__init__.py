@@ -2,7 +2,7 @@ import string
 import random
 from rich.terminal_theme import TerminalTheme
 
-__version__ = '3.15.4'
+__version__ = '3.15.5'
 __license__ = 'GPLv3'
 __copyright__ = '2019-2020, Paweł Jastrzębski <pawelj@iosphe.re>'
 __docformat__ = 'restructuredtext en'
@@ -24,13 +24,13 @@ def retry(custom_error=False):
                     return result
             else:
                 if custom_error:
-                    raise RuntimeError(custom_error)
+                    raise RuntimeError(custom_error) from None
                 else:
                     if description:
-                        raise RuntimeError(f'Failed to parse addon data: {description}')
+                        raise RuntimeError(f'Failed to parse addon data: {description}') from None
                     else:
                         raise RuntimeError('Unknown error during parsing addon data. '
-                                           'There may be some issue with the website.')
+                                           'There may be some issue with the website.') from None
         return inner
     return wraps
 
