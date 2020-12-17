@@ -66,6 +66,7 @@ class Core:
         else:
             self.config = {'Addons': [],
                            'IgnoreClientVersion': {},
+                           'IgnoreDependencies': {},
                            'Backup': {'Enabled': True, 'Number': 7},
                            'CFCacheCloudFlare': {},
                            'Version': __version__,
@@ -124,7 +125,8 @@ class Core:
                         ['3.1.10', 'CFCacheCloudFlare', {}],
                         ['3.7.0', 'CompactMode', False],
                         ['3.10.0', 'AutoUpdate', True],
-                        ['3.12.0', 'ShowAuthors', True]]:
+                        ['3.12.0', 'ShowAuthors', True],
+                        ['3.16.0', 'IgnoreDependencies', {}]]:
                 if add[1] not in self.config.keys():
                     self.config[add[1]] = add[2]
             for delete in [['1.3.0', 'URLCache'],
@@ -248,7 +250,7 @@ class Core:
         else:
             return '?', None
 
-    def add_addon(self, url, ignore):
+    def add_addon(self, url, ignore, nodeps):
         if url.endswith(':'):
             raise NotImplementedError('Provided URL is not supported.')
         elif 'twitch://' in url:
@@ -271,6 +273,8 @@ class Core:
         if not addon:
             if ignore:
                 self.config['IgnoreClientVersion'][url] = True
+            if nodeps:
+                self.config['IgnoreDependencies'][url] = True
             new = self.parse_url(url)
             new.get_addon()
             addon = self.check_if_installed_dirs(new.directories)
@@ -288,7 +292,8 @@ class Core:
                                           'Checksums': checksums
                                           })
             self.save_config()
-            return True, new.name, new.currentVersion, new.dependencies
+            return True, new.name, new.currentVersion, \
+                None if url in self.config['IgnoreDependencies'].keys() else new.dependencies
         return False, addon['Name'], addon['Version'], None
 
     def del_addon(self, url, keep):
@@ -297,6 +302,7 @@ class Core:
             if not keep:
                 self.cleanup(old['Directories'])
             self.config['IgnoreClientVersion'].pop(old['URL'], None)
+            self.config['IgnoreDependencies'].pop(old['URL'], None)
             self.config['Addons'][:] = [d for d in self.config['Addons'] if d.get('URL') != url
                                         and d.get('Name') != url]
             self.save_config()
@@ -316,6 +322,7 @@ class Core:
                 modified = self.check_checksum(old, False)
             blocked = self.check_if_blocked(old)
             if force or (new.currentVersion != old['Version'] and update and not modified and not blocked):
+                new.dependencies = None if url in self.config['IgnoreDependencies'].keys() else new.dependencies
                 new.get_addon()
                 self.cleanup(old['Directories'])
                 new.install(self.path)

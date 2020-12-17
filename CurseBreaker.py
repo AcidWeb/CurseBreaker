@@ -402,10 +402,14 @@ class TUI:
     def c_install(self, args, recursion=False):
         if args:
             optignore = False
+            optnodeps = False
             pargs = split(args.replace("'", "\\'"))
             if '-i' in pargs:
                 optignore = True
                 args = args.replace('-i', '', 1)
+            if '-d' in pargs:
+                optnodeps = True
+                args = args.replace('-d', '', 1)
             dependencies = DependenciesParser(self.core)
             args = re.sub(r'([a-zA-Z0-9_:])([ ]+)([a-zA-Z0-9_:])', r'\1,\3', args)
             addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
@@ -416,7 +420,7 @@ class TUI:
                 while not progress.finished:
                     for addon in addons:
                         try:
-                            installed, name, version, deps = self.core.add_addon(addon, optignore)
+                            installed, name, version, deps = self.core.add_addon(addon, optignore, optnodeps)
                             if installed:
                                 self.table.add_row('[green]Installed[/green]', Text(name, no_wrap=True),
                                                    Text(version, no_wrap=True))
