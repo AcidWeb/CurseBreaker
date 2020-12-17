@@ -275,6 +275,7 @@ class TUI:
                 break
             elif wait and time.time() - starttime > wait:
                 break
+            time.sleep(0.01)
         if not self.headless:
             kb.set_normal_term()
         return keypress
