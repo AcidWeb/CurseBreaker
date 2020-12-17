@@ -16,6 +16,7 @@ from csv import reader
 from shlex import split
 from pathlib import Path
 from datetime import datetime
+from contextlib import nullcontext
 from rich import box
 from rich.text import Text
 from rich.rule import Rule
@@ -143,8 +144,10 @@ class TUI:
                         self.console.print(f'\n[green]Backing up WTF directory{"!" if self.headless else ":"}[/green]')
                         self.core.backup_wtf(None if self.headless else self.console)
                     if self.core.config['WAUsername'] != 'DISABLED':
-                        self.setup_table()
-                        self.c_wago_update(None, False)
+                        self.console.print('')
+                        with nullcontext() if self.headless else self.console.status("Processing Wago data"):
+                            self.setup_table()
+                            self.c_wago_update(None, False)
                 except Exception as e:
                     self.handle_exception(e)
                 self.console.print('')
@@ -761,6 +764,7 @@ class TUI:
                     for aura in statusplater[1]:
                         self.console.print(f'[link={aura[1]}]{aura[0]}[/link]', highlight=False)
             else:
+                self.console.control('\033[A')
                 if len(statuswa[0]) > 0:
                     self.console.print(f'\n[green]The number of outdated WeakAuras:[/green] '
                                        f'{len(statuswa[0])}', highlight=False)
