@@ -442,15 +442,16 @@ class TUI:
                 self.handle_exception(exceptions, False)
         else:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts a space-separated list of links as an arg'
-                               'ument.[bold white]\n\tFlags:[/bold white]\n\t\t[bold white]-i[/bold white] - Disable th'
-                               'e client version check.\n[bold green]Supported URL:[/bold green]\n\thttps://www.cursefo'
-                               'rge.com/wow/addons/\[addon_name] [bold white]|[/bold white] cf:\[addon_name]\n\thttps:/'
-                               '/www.wowinterface.com/downloads/\[addon_name] [bold white]|[/bold white] wowi:\[addon_i'
-                               'd]\n\thttps://www.tukui.org/addons.php?id=\[addon_id] [bold white]|[/bold white] tu:\[a'
-                               'ddon_id]\n\thttps://www.tukui.org/classic-addons.php?id=\[addon_id] [bold white]|[/bold'
-                               ' white] tuc:\[addon_id]\n\thttps://github.com/\[username]/\[repository_name] [bold whit'
-                               'e]|[/bold white] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white] '
-                               'ElvUI:Dev\n\tTukui\n\tTukui:Dev\n\tShadow&Light:Dev', highlight=False)
+                               'ument.[bold white]\n\tFlags:[/bold white]\n\t\t[bold white]-d[/bold white] - Disable de'
+                               'pendency parser.\n\t\t[bold white]-i[/bold white] - Disable the client version check.\n'
+                               '[bold green]Supported URL:[/bold green]\n\thttps://www.curseforge.com/wow/addons/\[addo'
+                               'n_name] [bold white]|[/bold white] cf:\[addon_name]\n\thttps://www.wowinterface.com/dow'
+                               'nloads/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\thttps://www.tukui.o'
+                               'rg/addons.php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]\n\thttps://www.t'
+                               'ukui.org/classic-addons.php?id=\[addon_id] [bold white]|[/bold white] tuc:\[addon_id]\n'
+                               '\thttps://github.com/\[username]/\[repository_name] [bold white]|[/bold white] gh:\[use'
+                               'rname]/\[repository_name]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui [bold '
+                               'white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
 
     def c_uninstall(self, args):
         if args:
@@ -844,8 +845,8 @@ class TUI:
 
     def c_help(self, _):
         self.console.print('[green]install [URL][/green]\n\tCommand accepts a space-separated list of links.\n\t[bold w'
-                           'hite]Flags:[/bold white]\n\t\t[bold white]-i[/bold white] - Disable the client version chec'
-                           'k.\n'
+                           'hite]Flags:[/bold white]\n\t\t[bold white]-d[/bold white] - Disable dependency parser.\n\t'
+                           '\t[bold white]-i[/bold white] - Disable the client version check.\n'
                            '[green]uninstall [URL/Name][/green]\n\tCommand accepts a space-separated list of addon name'
                            's or full links.\n\t[bold white]Flags:[/bold white]\n\t\t[bold white]-k[/bold white] - Keep'
                            ' the addon files after uninstalling.\n'
@@ -896,8 +897,8 @@ class TUI:
                            'php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]\n\thttps://www.tukui.org/class'
                            'ic-addons.php?id=\[addon_id] [bold white]|[/bold white] tuc:\[addon_id]\n\thttps://github.c'
                            'om/\[username]/\[repository_name] [bold white]|[/bold white] gh:\[username]/\[repository_na'
-                           'me]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui\n\tTukui:Dev\n\tShadow&Light:Dev'
-                           , highlight=False)
+                           'me]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui [bold white]|[/bold white] Tukui'
+                           ':Dev\n\tShadow&Light:Dev', highlight=False)
 
     def c_exit(self, _):
         sys.exit(0)
