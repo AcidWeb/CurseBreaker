@@ -41,7 +41,7 @@ jobs:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
       with:
-        python-version: 3.8
+        python-version: 3.9
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools wheel
@@ -60,6 +60,9 @@ jobs:
     runs-on: macos-10.15
     steps:
     - uses: actions/checkout@v1
+    - uses: actions/setup-python@v1
+      with:
+        python-version: 3.9
     - name: Install dependencies
       run: |
         python3 -m pip install --upgrade pip setuptools wheel
