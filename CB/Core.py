@@ -321,8 +321,8 @@ class Core:
             else:
                 modified = self.check_checksum(old, False)
             blocked = self.check_if_blocked(old)
+            new.dependencies = None if url in self.config['IgnoreDependencies'].keys() else new.dependencies
             if force or (new.currentVersion != old['Version'] and update and not modified and not blocked):
-                new.dependencies = None if url in self.config['IgnoreDependencies'].keys() else new.dependencies
                 new.get_addon()
                 self.cleanup(old['Directories'])
                 new.install(self.path)
