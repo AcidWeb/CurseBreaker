@@ -52,7 +52,6 @@ class TUI:
         self.console = None
         self.table = None
         self.slugs = None
-        self.tipsDatabase = None
         self.completer = None
         self.os = platform.system()
         install()
@@ -346,7 +345,6 @@ class TUI:
             'status': WordCompleter(addons, ignore_case=True),
             'orphans': None,
             'search': None,
-            'recommendations': None,
             'backup': None,
             'import': {'install': None},
             'export': None,
@@ -797,30 +795,6 @@ class TUI:
         else:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts a search query as an argument.')
 
-    def c_recommendations(self, _):
-        if not self.tipsDatabase:
-            # noinspection PyBroadException
-            try:
-                self.tipsDatabase = pickle.load(gzip.open(io.BytesIO(
-                    requests.get('https://storage.googleapis.com/cursebreaker/recommendations.pickle.gz',
-                                 headers=HEADERS, timeout=5).content)))
-            except Exception:
-                self.tipsDatabase = {}
-        if len(self.tipsDatabase) > 0:
-            found = False
-            for tip in self.tipsDatabase:
-                breaker = False
-                for addon, data in tip['Addons'].items():
-                    check = True if self.core.check_if_installed(addon) else False
-                    breaker = check == data['Installed']
-                if breaker:
-                    found = True
-                    recomendation = tip["Recomendation"].replace('|n', '\n')
-                    self.console.print(f'[bold white underline]{tip["Title"]}[/bold white underline] by [green]'
-                                       f'{tip["Author"]}[/green]\n\n{recomendation}\n', highlight=False)
-            if not found:
-                self.console.print('Not found any recommendations for you. Good job!')
-
     def c_backup(self, _):
         self.core.backup_wtf(None if self.headless else self.console)
 
@@ -869,8 +843,6 @@ class TUI:
                            'f the addons.\n'
                            '[green]orphans[/green]\n\tPrints list of orphaned directories and files.\n'
                            '[green]search [Keyword][/green]\n\tExecutes addon search on CurseForge.\n'
-                           '[green]recommendations[/green]\n\tCheck the list of currently installed addons against a co'
-                           'mmunity-driven database of tips.\n'
                            '[green]backup[/green]\n\tCommand creates a backup of WTF directory.\n'
                            '[green]import[/green]\n\tCommand attempts to import already installed addons.\n'
                            '[green]export[/green]\n\tCommand prints list of all installed addons in a form suitable f'
