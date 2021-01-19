@@ -5,5 +5,5 @@ pyperclip
 requests
 markdown
 bbcode
-rich==9.4.0
+rich
 lupa

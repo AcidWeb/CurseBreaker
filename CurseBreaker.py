@@ -158,7 +158,7 @@ class TUI:
                     self.console.print('Press [bold]I[/bold] to enter interactive mode or any other button to close'
                                        ' the application.')
                     keypress = self.handle_keypress(0)
-                    if keypress and keypress.lower() == b'i':
+                    if keypress and keypress.lower() in [b'i', 'i']:
                         pass
                     else:
                         sys.exit(0)
@@ -237,6 +237,8 @@ class TUI:
                         subprocess.call([sys.executable] + sys.argv[1:])
                         sys.exit(0)
             except Exception as e:
+                if os.path.isfile(sys.executable + '.old'):
+                    shutil.move(sys.executable + '.old', sys.executable)
                 self.console.print(f'[bold red]Update failed!\n\nReason: {str(e)}[/bold red]\n')
                 self.print_log()
                 pause(self.headless)
