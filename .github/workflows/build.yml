@@ -21,7 +21,7 @@ jobs:
         pip install certifi
         git clone https://github.com/pyinstaller/pyinstaller.git
         cd pyinstaller
-        git checkout tags/v4.1
+        git checkout tags/v4.2
         cd bootloader
         python waf all
         cd ..
