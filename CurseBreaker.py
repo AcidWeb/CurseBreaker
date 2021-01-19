@@ -331,6 +331,8 @@ class TUI:
             slugs.append(f'cf:{item}')
         for item in self.slugs['wowi']:
             slugs.append(f'wowi:{item}')
+        for item in self.slugs['ty']:
+            slugs.append(f'ty:{item}')
         slugs.extend(['ElvUI:Dev', 'Tukui:Dev', 'Shadow&Light:Dev'])
         accounts = []
         for account in self.core.detect_accounts():
@@ -451,9 +453,10 @@ class TUI:
                                'nloads/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\thttps://www.tukui.o'
                                'rg/addons.php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]\n\thttps://www.t'
                                'ukui.org/classic-addons.php?id=\[addon_id] [bold white]|[/bold white] tuc:\[addon_id]\n'
-                               '\thttps://github.com/\[username]/\[repository_name] [bold white]|[/bold white] gh:\[use'
-                               'rname]/\[repository_name]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui [bold '
-                               'white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
+                               '\thttps://www.townlong-yak.com/addons/\[addon_name] [bold white]|[/bold white] ty:\[add'
+                               'on_name]\n\thttps://github.com/\[username]/\[repository_name] [bold white]|[/bold white'
+                               '] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTu'
+                               'kui [bold white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
 
     def c_uninstall(self, args):
         if args:
@@ -897,10 +900,11 @@ class TUI:
                            'name] [bold white]|[/bold white] cf:\[addon_name]\n\thttps://www.wowinterface.com/downloads'
                            '/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\thttps://www.tukui.org/addons.'
                            'php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]\n\thttps://www.tukui.org/class'
-                           'ic-addons.php?id=\[addon_id] [bold white]|[/bold white] tuc:\[addon_id]\n\thttps://github.c'
-                           'om/\[username]/\[repository_name] [bold white]|[/bold white] gh:\[username]/\[repository_na'
-                           'me]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui [bold white]|[/bold white] Tukui'
-                           ':Dev\n\tShadow&Light:Dev', highlight=False)
+                           'ic-addons.php?id=\[addon_id] [bold white]|[/bold white] tuc:\[addon_id]\n\thttps://www.town'
+                           'long-yak.com/addons/\[addon_name] [bold white]|[/bold white] ty:\[addon_name]\n\thttps://gi'
+                           'thub.com/\[username]/\[repository_name] [bold white]|[/bold white] gh:\[username]/\[reposit'
+                           'ory_name]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui [bold white]|[/bold white]'
+                           ' Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
 
     def c_exit(self, _):
         sys.exit(0)

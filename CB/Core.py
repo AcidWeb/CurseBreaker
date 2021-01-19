@@ -26,6 +26,7 @@ from .GitHub import GitHubAddon
 from .GitLab import GitLabAddon
 from .CurseForge import CurseForgeAddon
 from .WoWInterface import WoWInterfaceAddon
+from .TownlongYak import TownlongYakAddon
 
 
 class Core:
@@ -201,6 +202,12 @@ class Core:
             return TukuiAddon(url, self.tukuiCache)
         elif url.startswith('https://github.com/'):
             return GitHubAddon(url, self.clientType)
+        elif url.startswith('https://www.townlong-yak.com/addons/'):
+            if url in self.config['IgnoreClientVersion'].keys() or self.clientType == 'wow_retail':
+                clienttype = 0
+            else:
+                clienttype = 1
+            return TownlongYakAddon(url, clienttype)
         elif url.lower() == 'elvui':
             if self.clientType == 'wow_retail':
                 return TukuiAddon('ElvUI', self.tukuiCache, 'elvui')
@@ -247,6 +254,8 @@ class Core:
             return 'Tukui', 'https://www.curseforge.com/wow/addons/elvui-shadow-light'
         elif url.startswith('https://github.com/'):
             return 'GitHub', url
+        elif url.startswith('https://www.townlong-yak.com/addons/'):
+            return 'Townlong Yak', url
         else:
             return '?', None
 
@@ -267,6 +276,8 @@ class Core:
             url = f'https://www.tukui.org/classic-addons.php?id={url[4:]}'
         elif url.startswith('gh:'):
             url = f'https://github.com/{url[3:]}'
+        elif url.startswith('ty:'):
+            url = f'https://www.townlong-yak.com/addons/{url[3:]}'
         if url.endswith('/'):
             url = url[:-1]
         addon = self.check_if_installed(url)
@@ -591,6 +602,33 @@ class Core:
                                            f'{"addons" if self.clientType == "wow_retail" else "classic-addons"}',
                                            headers=HEADERS, timeout=5).json()
 
+    """
+    @retry(custom_error='Failed to parse Townlong Yak API data')
+    def bulk_ty_check(self):
+        token = self.config['TYBundleToken']
+        if token == '':
+            payload = requests.get('https://www.townlong-yak.com/addons/us/new', headers=HEADERS, timeout=5).json()
+            if payload['next']:
+                self.config['TYBundleToken'] = payload['next']
+                self.save_config()
+                self.bulk_ty_check()
+            else:
+                raise RuntimeError
+        else:
+            payload = requests.get(f'https://www.townlong-yak.com/addons/us/{token}', headers=HEADERS, timeout=5).json()
+            if 'next' in payload:
+                for addon in payload['up']:
+                    if addon['pi'] not in self.config['TYCache']:
+                        self.config['TYCache'][addon['pi']] = {}
+                    self.config['TYCache'][addon['pi']][addon['ch']] = {'Version': addon['fv'],
+                                                                        'ChangeLog': addon['re'],
+                                                                        'Link': addon['dl']}
+                self.config['TYBundleToken'] = payload['next']
+                self.save_config()
+                if not payload['current']:
+                    self.bulk_ty_check()
+    """
+
     def detect_accounts(self):
         if os.path.isdir(Path('WTF/Account')):
             accounts = os.listdir(Path('WTF/Account'))
@@ -704,6 +742,8 @@ class Core:
                 url = f'tuc:{addon["URL"].split("?id=")[-1]}'
             elif addon['URL'].startswith('https://github.com/'):
                 url = f'gh:{addon["URL"].replace("https://github.com/", "")}'
+            elif addon['URL'].startswith('https://www.townlong-yak.com/addons/'):
+                url = f'ty:{addon["URL"].replace("https://www.townlong-yak.com/addons/", "")}'
             else:
                 url = addon['URL'].lower()
             addons.append(url)
