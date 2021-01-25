@@ -42,6 +42,7 @@ class Core:
         self.cfCache = {}
         self.wowiCache = {}
         self.tukuiCache = None
+        self.townlongyakCache = None
         self.checksumCache = {}
         self.scraper = cloudscraper.create_scraper()
 
@@ -203,11 +204,12 @@ class Core:
         elif url.startswith('https://github.com/'):
             return GitHubAddon(url, self.clientType)
         elif url.startswith('https://www.townlong-yak.com/addons/'):
+            self.bulk_townlongyak_check()
             if url in self.config['IgnoreClientVersion'].keys() or self.clientType == 'wow_retail':
-                clienttype = 0
+                clienttype = 'retail'
             else:
-                clienttype = 1
-            return TownlongYakAddon(url, clienttype)
+                clienttype = 'classic'
+            return TownlongYakAddon(url, self.townlongyakCache, clienttype)
         elif url.lower() == 'elvui':
             if self.clientType == 'wow_retail':
                 return TukuiAddon('ElvUI', self.tukuiCache, 'elvui')
@@ -602,32 +604,11 @@ class Core:
                                            f'{"addons" if self.clientType == "wow_retail" else "classic-addons"}',
                                            headers=HEADERS, timeout=5).json()
 
-    """
     @retry(custom_error='Failed to parse Townlong Yak API data')
-    def bulk_ty_check(self):
-        token = self.config['TYBundleToken']
-        if token == '':
-            payload = requests.get('https://www.townlong-yak.com/addons/us/new', headers=HEADERS, timeout=5).json()
-            if payload['next']:
-                self.config['TYBundleToken'] = payload['next']
-                self.save_config()
-                self.bulk_ty_check()
-            else:
-                raise RuntimeError
-        else:
-            payload = requests.get(f'https://www.townlong-yak.com/addons/us/{token}', headers=HEADERS, timeout=5).json()
-            if 'next' in payload:
-                for addon in payload['up']:
-                    if addon['pi'] not in self.config['TYCache']:
-                        self.config['TYCache'][addon['pi']] = {}
-                    self.config['TYCache'][addon['pi']][addon['ch']] = {'Version': addon['fv'],
-                                                                        'ChangeLog': addon['re'],
-                                                                        'Link': addon['dl']}
-                self.config['TYBundleToken'] = payload['next']
-                self.save_config()
-                if not payload['current']:
-                    self.bulk_ty_check()
-    """
+    def bulk_townlongyak_check(self):
+        if not self.townlongyakCache:
+            self.townlongyakCache = requests.get('https://hub.dev.wowup.io/addons/author/foxlit',
+                                                 headers=HEADERS, timeout=5).json()
 
     def detect_accounts(self):
         if os.path.isdir(Path('WTF/Account')):
