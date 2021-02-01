@@ -416,25 +416,26 @@ class TUI:
             args = re.sub(r'([a-zA-Z0-9_:])([ ]+)([a-zA-Z0-9_:])', r'\1,\3', args)
             addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
             exceptions = []
-            with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|',
-                          auto_refresh=False, console=self.console) as progress:
-                task = progress.add_task('', total=len(addons))
-                while not progress.finished:
-                    for addon in addons:
-                        try:
-                            installed, name, version, deps = self.core.add_addon(addon, optignore, optnodeps)
-                            if installed:
-                                self.table.add_row('[green]Installed[/green]', Text(name, no_wrap=True),
-                                                   Text(version, no_wrap=True))
-                                if not recursion:
-                                    dependencies.add_dependency(deps)
-                            else:
-                                self.table.add_row('[bold black]Already installed[/bold black]',
-                                                   Text(name, no_wrap=True), Text(version, no_wrap=True))
-                        except Exception as e:
-                            exceptions.append(e)
-                        progress.update(task, advance=1, refresh=True)
-            self.console.print(self.table)
+            if len(addons) > 0:
+                with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|',
+                              auto_refresh=False, console=self.console) as progress:
+                    task = progress.add_task('', total=len(addons))
+                    while not progress.finished:
+                        for addon in addons:
+                            try:
+                                installed, name, version, deps = self.core.add_addon(addon, optignore, optnodeps)
+                                if installed:
+                                    self.table.add_row('[green]Installed[/green]', Text(name, no_wrap=True),
+                                                       Text(version, no_wrap=True))
+                                    if not recursion:
+                                        dependencies.add_dependency(deps)
+                                else:
+                                    self.table.add_row('[bold black]Already installed[/bold black]',
+                                                       Text(name, no_wrap=True), Text(version, no_wrap=True))
+                            except Exception as e:
+                                exceptions.append(e)
+                            progress.update(task, advance=1, refresh=True)
+                self.console.print(self.table)
             dependencies = dependencies.parse_dependency()
             if dependencies:
                 self.setup_table()
@@ -464,20 +465,21 @@ class TUI:
                 optkeep = True
                 args = args.replace('-k', '', 1)
             addons = self.parse_args(args)
-            with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|',
-                          auto_refresh=False, console=self.console) as progress:
-                task = progress.add_task('', total=len(addons))
-                while not progress.finished:
-                    for addon in addons:
-                        name, version = self.core.del_addon(addon, optkeep)
-                        if name:
-                            self.table.add_row(f'[bold red]Uninstalled[/bold red]',
-                                               Text(name, no_wrap=True), Text(version, no_wrap=True))
-                        else:
-                            self.table.add_row(f'[bold black]Not installed[/bold black]',
-                                               Text(addon, no_wrap=True), Text('', no_wrap=True))
-                        progress.update(task, advance=1, refresh=True)
-            self.console.print(self.table)
+            if len(addons) > 0:
+                with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|',
+                              auto_refresh=False, console=self.console) as progress:
+                    task = progress.add_task('', total=len(addons))
+                    while not progress.finished:
+                        for addon in addons:
+                            name, version = self.core.del_addon(addon, optkeep)
+                            if name:
+                                self.table.add_row(f'[bold red]Uninstalled[/bold red]',
+                                                   Text(name, no_wrap=True), Text(version, no_wrap=True))
+                            else:
+                                self.table.add_row(f'[bold black]Not installed[/bold black]',
+                                                   Text(addon, no_wrap=True), Text('', no_wrap=True))
+                            progress.update(task, advance=1, refresh=True)
+                self.console.print(self.table)
         else:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts a space-separated list of addon names or '
                                'full links as an argument.\n\t[bold white]Flags:[/bold white]\n\t\t[bold white]-k[/bold'
@@ -497,71 +499,73 @@ class TUI:
             compacted = 0
         exceptions = []
         dependencies = DependenciesParser(self.core)
-        with Progress('{task.completed:.0f}/{task.total}', '|', BarColumn(bar_width=None), '|',
-                      auto_refresh=False, console=None if self.headless else self.console) as progress:
-            task = progress.add_task('', total=len(addons))
-            if not args:
-                self.core.bulk_check(addons)
-                self.core.bulk_check_checksum(addons, progress)
-            while not progress.finished:
-                for addon in addons:
-                    try:
-                        name, authors, versionnew, versionold, uiversion, modified, blocked, source, sourceurl,\
-                            changelog, deps, dstate = self.core.update_addon(
-                                addon if isinstance(addon, str) else addon['URL'], update, force)
-                        dependencies.add_dependency(deps)
-                        if provider:
-                            source = f' [bold white]{source}[/bold white]'
-                        else:
-                            source = ''
-                        if versionold:
-                            if versionold == versionnew:
-                                if modified:
-                                    self.table.add_row(f'[bold red]Modified[/bold red]{source}',
-                                                       self.parse_link(name, sourceurl, authors=authors),
-                                                       self.parse_link(versionold, changelog, dstate,
-                                                                       uiversion=uiversion))
-                                else:
-                                    if compact and compacted > -1:
-                                        compacted += 1
-                                    else:
-                                        self.table.add_row(f'[green]Up-to-date[/green]{source}',
+        if len(addons) > 0:
+            with Progress('{task.completed:.0f}/{task.total}', '|', BarColumn(bar_width=None), '|',
+                          auto_refresh=False, console=None if self.headless else self.console) as progress:
+                task = progress.add_task('', total=len(addons))
+                if not args:
+                    self.core.bulk_check(addons)
+                    self.core.bulk_check_checksum(addons, progress)
+                while not progress.finished:
+                    for addon in addons:
+                        try:
+                            name, authors, versionnew, versionold, uiversion, modified, blocked, source, sourceurl,\
+                                changelog, deps, dstate = self.core.update_addon(
+                                    addon if isinstance(addon, str) else addon['URL'], update, force)
+                            dependencies.add_dependency(deps)
+                            if provider:
+                                source = f' [bold white]{source}[/bold white]'
+                            else:
+                                source = ''
+                            if versionold:
+                                if versionold == versionnew:
+                                    if modified:
+                                        self.table.add_row(f'[bold red]Modified[/bold red]{source}',
                                                            self.parse_link(name, sourceurl, authors=authors),
                                                            self.parse_link(versionold, changelog, dstate,
                                                                            uiversion=uiversion))
-                            else:
-                                if modified or blocked:
-                                    self.table.add_row(f'[bold red]Update suppressed[/bold red]{source}',
-                                                       self.parse_link(name, sourceurl, authors=authors),
-                                                       self.parse_link(versionold, changelog, dstate,
-                                                                       uiversion=uiversion))
+                                    else:
+                                        if compact and compacted > -1:
+                                            compacted += 1
+                                        else:
+                                            self.table.add_row(f'[green]Up-to-date[/green]{source}',
+                                                               self.parse_link(name, sourceurl, authors=authors),
+                                                               self.parse_link(versionold, changelog, dstate,
+                                                                               uiversion=uiversion))
                                 else:
-                                    version = self.parse_link(versionnew, changelog, dstate, uiversion=uiversion)
-                                    version.stylize('yellow')
-                                    self.table.add_row(
-                                        f'[yellow]{"Updated" if update else "Update available"}[/yellow]{source}',
-                                        self.parse_link(name, sourceurl, authors=authors),
-                                        version)
-                        else:
-                            self.table.add_row(f'[bold black]Not installed[/bold black]{source}',
-                                               Text(addon, no_wrap=True),
-                                               Text('', no_wrap=True))
-                    except Exception as e:
-                        exceptions.append(e)
-                    progress.update(task, advance=1 if args else 0.5, refresh=True)
-        if addline:
-            self.console.print('')
-        self.console.print(self.table)
-        dependencies = dependencies.parse_dependency()
-        if dependencies and update:
-            self.setup_table()
-            self.console.print('Installing dependencies:')
-            self.c_install(dependencies, recursion=True)
-        if compacted > 0:
-            self.console.print(f'Additionally [green]{compacted}[/green] addons are up-to-date.')
-        if len(addons) == 0:
-            self.console.print('Apparently there are no addons installed by CurseBreaker.\n'
-                               'Command [green]import[/green] might be used to detect already installed addons.')
+                                    if modified or blocked:
+                                        self.table.add_row(f'[bold red]Update suppressed[/bold red]{source}',
+                                                           self.parse_link(name, sourceurl, authors=authors),
+                                                           self.parse_link(versionold, changelog, dstate,
+                                                                           uiversion=uiversion))
+                                    else:
+                                        version = self.parse_link(versionnew, changelog, dstate, uiversion=uiversion)
+                                        version.stylize('yellow')
+                                        self.table.add_row(
+                                            f'[yellow]{"Updated" if update else "Update available"}[/yellow]{source}',
+                                            self.parse_link(name, sourceurl, authors=authors),
+                                            version)
+                            else:
+                                self.table.add_row(f'[bold black]Not installed[/bold black]{source}',
+                                                   Text(addon, no_wrap=True),
+                                                   Text('', no_wrap=True))
+                        except Exception as e:
+                            exceptions.append(e)
+                        progress.update(task, advance=1 if args else 0.5, refresh=True)
+            if addline:
+                self.console.print('')
+            self.console.print(self.table)
+            dependencies = dependencies.parse_dependency()
+            if dependencies and update:
+                self.setup_table()
+                self.console.print('Installing dependencies:')
+                self.c_install(dependencies, recursion=True)
+            if compacted > 0:
+                self.console.print(f'Additionally [green]{compacted}[/green] addons are up-to-date.')
+        else:
+            self.console.print('Apparently there are no addons installed by CurseBreaker (or you provided incorrect add'
+                               'on name).\nCommand [green]import[/green] might be used to detect already installed addo'
+                               'ns.', highlight=False)
         if len(exceptions) > 0:
             self.handle_exception(exceptions, False)
 

@@ -456,15 +456,16 @@ class Core:
         for _, _, files in os.walk('WTF/', topdown=True, followlinks=True):
             files = [f for f in files if not f[0] == '.']
             filecount += len(files)
-        with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|', auto_refresh=False,
-                      console=console) as progress:
-            task = progress.add_task('', total=filecount)
-            while not progress.finished:
-                for root, _, files in os.walk('WTF/', topdown=True, followlinks=True):
-                    files = [f for f in files if not f[0] == '.']
-                    for f in files:
-                        zipf.write(Path(root, f))
-                        progress.update(task, advance=1, refresh=True)
+        if filecount > 0:
+            with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|', auto_refresh=False,
+                          console=console) as progress:
+                task = progress.add_task('', total=filecount)
+                while not progress.finished:
+                    for root, _, files in os.walk('WTF/', topdown=True, followlinks=True):
+                        files = [f for f in files if not f[0] == '.']
+                        for f in files:
+                            zipf.write(Path(root, f))
+                            progress.update(task, advance=1, refresh=True)
         zipf.close()
 
     def find_orphans(self):
