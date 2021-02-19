@@ -608,7 +608,7 @@ class Core:
     @retry(custom_error='Failed to parse Townlong Yak API data')
     def bulk_townlongyak_check(self):
         if not self.townlongyakCache:
-            self.townlongyakCache = requests.get('https://hub.dev.wowup.io/addons/author/foxlit',
+            self.townlongyakCache = requests.get('https://hub.wowup.io/addons/author/foxlit',
                                                  headers=HEADERS, timeout=5).json()
 
     def detect_accounts(self):
