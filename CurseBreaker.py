@@ -72,7 +72,7 @@ class TUI:
             pause(self.headless)
             sys.exit(1)
         # Detect Classic client
-        if os.path.basename(os.getcwd()) == '_classic_':
+        if os.path.basename(os.getcwd()) in {'_classic_', '_classic_beta_', '_classic_ptr_'}:
             self.core.clientType = 'wow_classic'
             set_terminal_title(f'CurseBreaker v{__version__} - Classic')
         # Check if client have write access
@@ -95,7 +95,7 @@ class TUI:
             sys.exit(1)
         self.setup_table()
         # CurseForge URI Support
-        if len(sys.argv) == 2 and any(x in sys.argv[1] for x in ['twitch://', 'curseforge://']):
+        if len(sys.argv) == 2 and any(x in sys.argv[1] for x in {'twitch://', 'curseforge://'}):
             try:
                 self.c_install(sys.argv[1].strip())
             except Exception as e:

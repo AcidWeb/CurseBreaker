@@ -38,7 +38,7 @@ class GitHubAddon:
         latestclassic = None
         for release in self.payload['assets']:
             if release['name'] and '-nolib' not in release['name'] \
-                    and release['content_type'] in ['application/x-zip-compressed', 'application/zip']:
+                    and release['content_type'] in {'application/x-zip-compressed', 'application/zip'}:
                 if not latest and not release['name'].endswith('-classic.zip'):
                     latest = release['browser_download_url']
                 elif not latestclassic and release['name'].endswith('-classic.zip'):
