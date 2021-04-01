@@ -23,6 +23,7 @@ from rich.rule import Rule
 from rich.table import Table
 from rich.panel import Panel
 from rich.console import Console
+from rich.control import Control
 from rich.progress import Progress, BarColumn
 from rich.traceback import Traceback, install
 from multiprocessing import freeze_support
@@ -777,7 +778,7 @@ class TUI:
                     for aura in statusplater[1]:
                         self.console.print(f'[link={aura[1]}]{aura[0]}[/link]', highlight=False)
             else:
-                self.console.control('\033[A')
+                self.console.control(Control.move(x=0, y=-1))
                 if len(statuswa[0]) > 0:
                     self.console.print(f'\n[green]The number of outdated WeakAuras:[/green] '
                                        f'{len(statuswa[0])}', highlight=False)
