@@ -15,7 +15,8 @@ class GitHubAddon:
         else:
             self.payload = self.payload.json()
             for release in self.payload:
-                if release['assets'] and len(release['assets']) > 0 and not release['draft']:
+                if release['assets'] and len(release['assets']) > 0\
+                        and not release['draft'] and not release['prerelease']:
                     self.payload = release
                     break
             else:
