@@ -22,7 +22,7 @@ from rich.progress import Progress, BarColumn
 from xml.dom.minidom import parse, parseString
 from . import retry, HEADERS, __version__
 from .Tukui import TukuiAddon
-from .GitHub import GitHubAddon
+from .GitHub import GitHubAddon, GitHubAddonRaw
 from .GitLab import GitLabAddon
 from .CurseForge import CurseForgeAddon
 from .WoWInterface import WoWInterfaceAddon
@@ -234,7 +234,7 @@ class Core:
                 return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'Classic')
         elif url.lower() == 'shadow&light:dev':
             if self.clientType == 'wow_retail':
-                return GitLabAddon('ElvUI Shadow & Light', '45', 'shadow-and-light/shadow-and-light', 'dev')
+                return GitHubAddonRaw('Shadow-and-Light/shadow-and-light', 'dev', ['ElvUI_SLE'])
             else:
                 raise RuntimeError('Incorrect client version.')
         else:

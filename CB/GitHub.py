@@ -1,5 +1,6 @@
 import os
 import io
+import shutil
 import zipfile
 import requests
 from . import retry, HEADERS
@@ -66,3 +67,43 @@ class GitHubAddon:
 
     def install(self, path):
         self.archive.extractall(path)
+
+
+class GitHubAddonRaw:
+    @retry()
+    def __init__(self, project, branch, targetdirs):
+        self.payload = requests.get(f'https://api.github.com/repos/{project}/branches/{branch}',
+                                    headers=HEADERS, timeout=5)
+        if self.payload.status_code == 404:
+            raise RuntimeError(f'{project}\nTarget branch don\'t exist.')
+        else:
+            self.payload = self.payload.json()
+        self.name = None
+        self.shorthPath = project.split('/')[1]
+        self.downloadUrl = f'https://github.com/{project}/archive/refs/heads/{branch}.zip'
+        self.changelogUrl = f'https://github.com/{project}/commits/{branch}'
+        self.currentVersion = self.payload['commit']['sha'][:7]
+        self.branch = branch
+        self.uiVersion = None
+        self.archive = None
+        self.dependencies = None
+        self.directories = targetdirs
+        self.author = []
+
+        if project == 'Shadow-and-Light/shadow-and-light':
+            self.name = 'ElvUI Shadow & Light'
+            self.author = ['Repooc', 'DarthPredator']
+        else:
+            raise RuntimeError(f'{project}\nThis source is unsupported.')
+
+    @retry()
+    def get_addon(self):
+        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS, timeout=5).content))
+
+    def install(self, path):
+        self.archive.extractall(path)
+        for directory in self.directories:
+            shutil.rmtree(path / directory, ignore_errors=True)
+            # FIXME - Python bug #32689 - Fixed in 3.9
+            shutil.move(str(path / f'{self.shorthPath}-{self.branch}' / directory), str(path))
+        shutil.rmtree(path / f'{self.shorthPath}-{self.branch}')
