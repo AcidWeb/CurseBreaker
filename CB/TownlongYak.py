@@ -31,10 +31,11 @@ class TownlongYakAddon:
         for release in self.payload['releases']:
             if release['game_type'] == self.clientType and not release['prerelease']:
                 self.downloadUrl = release['download_url']
-                self.currentVersion = release['name'].replace(f'{self.project}-', '').\
-                    replace(f'{self.name.lower()}-', '')
-                self.changelogUrl = f'https://www.townlong-yak.com/addons/{self.project}' \
-                                    f'/release/{self.currentVersion.replace("-", "")}'
+                self.currentVersion = release['toc_version']
+                self.changelogUrl = f'https://www.townlong-yak.com/addons/{self.project}/release/' \
+                                    f'{self.currentVersion.replace(" ", "").lower()}'
+                if self.changelogUrl[-1].isalpha():
+                    self.changelogUrl = self.changelogUrl[:-1]
                 break
         else:
             raise RuntimeError(f'{self.name}.\nFailed to find release for your client version.')
