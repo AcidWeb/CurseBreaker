@@ -2,7 +2,7 @@ import string
 import random
 from rich.terminal_theme import TerminalTheme
 
-__version__ = '3.17.7'
+__version__ = '3.17.8'
 __license__ = 'GPLv3'
 __copyright__ = '2019-2021, Paweł Jastrzębski <pawelj@iosphe.re>'
 __docformat__ = 'restructuredtext en'

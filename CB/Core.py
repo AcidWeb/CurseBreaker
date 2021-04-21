@@ -229,7 +229,7 @@ class Core:
                 return TukuiAddon('1', self.tukuiCache)
         elif url.lower() == 'tukui:dev':
             if self.clientType == 'wow_retail':
-                return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'master')
+                return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'Retail')
             else:
                 return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'Classic')
         elif url.lower() == 'shadow&light:dev':
