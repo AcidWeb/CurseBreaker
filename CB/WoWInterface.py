@@ -13,8 +13,11 @@ class WoWInterfaceAddon:
         if project in checkcache:
             self.payload = checkcache[project]
         else:
-            self.payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{project}.json',
-                                        headers=HEADERS, timeout=5).json()
+            try:
+                self.payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{project}.json',
+                                            headers=HEADERS, timeout=5).json()
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+                raise RuntimeError(f'{url}\nWoWInterface API failed to respond.')
             if 'ERROR' in self.payload:
                 raise RuntimeError(f'{url}\nThis might be a temporary error or this project is not supported '
                                    f'by WoWInterface API.')

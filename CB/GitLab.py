@@ -8,8 +8,11 @@ from . import retry, HEADERS
 class GitLabAddon:
     @retry()
     def __init__(self, name, projectid, path, branch):
-        self.payload = requests.get(f'https://git.tukui.org/api/v4/projects/{projectid}/repository/branches/{branch}',
-                                    headers=HEADERS, timeout=5)
+        try:
+            self.payload = requests.get(f'https://git.tukui.org/api/v4/projects/{projectid}/repository/branches/'
+                                        f'{branch}', headers=HEADERS, timeout=5)
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            raise RuntimeError(f'{name}\nTukui GitLab API failed to respond.')
         if self.payload.status_code == 404:
             raise RuntimeError(name)
         else:

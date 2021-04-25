@@ -488,10 +488,6 @@ class TUI:
 
     def c_update(self, args, addline=False, update=True, force=False, provider=False, reversecompact=False):
         compact = not self.core.config['CompactMode'] if reversecompact else self.core.config['CompactMode']
-        if len(self.core.cfCache) > 0 or len(self.core.wowiCache) > 0:
-            self.core.cfCache = {}
-            self.core.wowiCache = {}
-            self.core.checksumCache = {}
         if args:
             addons = self.parse_args(args)
             compacted = -1
@@ -505,7 +501,10 @@ class TUI:
                           auto_refresh=False, console=None if self.headless else self.console) as progress:
                 task = progress.add_task('', total=len(addons))
                 if not args:
-                    self.core.bulk_check(addons)
+                    try:
+                        self.core.bulk_check(addons)
+                    except RuntimeError:
+                        pass
                     self.core.bulk_check_checksum(addons, progress)
                 while not progress.finished:
                     for addon in addons:
@@ -724,7 +723,10 @@ class TUI:
         if args.startswith('dependencies'):
             addons = sorted(list(filter(lambda k: k['URL'].startswith('https://www.curseforge.com/wow/addons/'),
                                         self.core.config['Addons'])), key=lambda k: k['Name'].lower())
-            self.core.bulk_check(addons)
+            try:
+                self.core.bulk_check(addons)
+            except RuntimeError:
+                pass
             for addon in addons:
                 dependencies = DependenciesParser(self.core)
                 name, _, _, _, _, _, _, _, _, _, deps, _ = self.core.update_addon(addon['URL'], False, False)

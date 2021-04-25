@@ -10,8 +10,11 @@ class TukuiAddon:
     @retry()
     def __init__(self, url, checkcache, special=None):
         if special:
-            self.payload = requests.get(f'https://www.tukui.org/api.php?ui={special}',
-                                        headers=HEADERS, timeout=5).json()
+            try:
+                self.payload = requests.get(f'https://www.tukui.org/api.php?ui={special}',
+                                            headers=HEADERS, timeout=5).json()
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+                raise RuntimeError(f'{url}\nTukui API failed to respond.')
         else:
             project = re.findall(r'\d+', url)[0]
             for addon in checkcache:

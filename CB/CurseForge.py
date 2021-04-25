@@ -13,8 +13,11 @@ class CurseForgeAddon:
         if project in checkcache:
             self.payload = checkcache[project]
         else:
-            self.payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/{project}',
-                                        headers=HEADERS, timeout=5)
+            try:
+                self.payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/{project}',
+                                            headers=HEADERS, timeout=5)
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+                raise RuntimeError(f'{url}\nCurseForge API failed to respond.')
             if self.payload.status_code == 404 or self.payload.status_code == 500:
                 raise RuntimeError(f'{url}\nThis might be a temporary issue with CurseForge API or the project was '
                                    f'removed/renamed. In this case, uninstall it (and reinstall if it still exists) '

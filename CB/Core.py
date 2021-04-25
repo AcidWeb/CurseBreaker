@@ -368,6 +368,7 @@ class Core:
         self.checksumCache[result[0]] = result[1]
 
     def bulk_check_checksum(self, addons, pbar):
+        self.checksumCache = {}
         with Pool(processes=min(60, os.cpu_count() or 1)) as pool:
             workers = []
             for addon in addons:

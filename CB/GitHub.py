@@ -10,7 +10,10 @@ class GitHubAddon:
     @retry()
     def __init__(self, url, clienttype):
         project = url.replace('https://github.com/', '')
-        self.payload = requests.get(f'https://api.github.com/repos/{project}/releases', headers=HEADERS, timeout=5)
+        try:
+            self.payload = requests.get(f'https://api.github.com/repos/{project}/releases', headers=HEADERS, timeout=5)
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            raise RuntimeError(f'{project}\nGitHub API failed to respond.')
         if self.payload.status_code == 404:
             raise RuntimeError(url)
         else:
@@ -72,8 +75,11 @@ class GitHubAddon:
 class GitHubAddonRaw:
     @retry()
     def __init__(self, project, branch, targetdirs):
-        self.payload = requests.get(f'https://api.github.com/repos/{project}/branches/{branch}',
-                                    headers=HEADERS, timeout=5)
+        try:
+            self.payload = requests.get(f'https://api.github.com/repos/{project}/branches/{branch}',
+                                        headers=HEADERS, timeout=5)
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            raise RuntimeError(f'{project}\nGitHub API failed to respond.')
         if self.payload.status_code == 404:
             raise RuntimeError(f'{project}\nTarget branch don\'t exist.')
         else:
