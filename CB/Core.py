@@ -3,7 +3,6 @@ import re
 import io
 import sys
 import json
-import html
 import gzip
 import time
 import glob
@@ -18,6 +17,7 @@ from pathlib import Path
 from collections import Counter
 from checksumdir import dirhash
 from multiprocessing import Pool
+from urllib.parse import quote_plus
 from rich.progress import Progress, BarColumn
 from xml.dom.minidom import parse, parseString
 from . import retry, HEADERS, __version__
@@ -498,7 +498,7 @@ class Core:
     def search(self, query):
         results = []
         payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/search?gameId=1&pageSize=10&searchFilter='
-                               f'{html.escape(query.strip())}', headers=HEADERS, timeout=5).json()
+                               f'{quote_plus(query.strip())}', headers=HEADERS, timeout=5).json()
         for result in payload:
             results.append(result['websiteUrl'])
         return results

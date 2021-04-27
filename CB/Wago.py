@@ -6,6 +6,7 @@ from io import StringIO
 from lupa import LuaRuntime
 from pathlib import Path
 from markdown import Markdown
+from urllib.parse import quote_plus
 from . import retry, HEADERS
 
 
@@ -119,7 +120,8 @@ class WagoUpdater:
     def check_updates(self, addon):
         output = [[], []]
         if len(addon.list) > 0:
-            payload = requests.get(f'https://data.wago.io/api/check/{addon.api}?ids={",".join(addon.list.keys())}',
+            payload = requests.get(f'https://data.wago.io/api/check/{addon.api}?ids='
+                                   f'{",".join(quote_plus(item) for item in addon.list.keys())}',
                                    headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']},
                                    timeout=5).json()
             if 'error' in payload or 'msg' in payload:
@@ -149,7 +151,7 @@ class WagoUpdater:
 
     @retry('Failed to parse Wago data.')
     def update_entry(self, entry, addon):
-        raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={entry["slug"]}',
+        raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}',
                            headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']}, timeout=5).text
         slug = f'    ["{entry["slug"]}"] = {{\n      name = [=[{entry["name"]}]=],\n      author = [=[' \
                f'{entry["username"]}]=],\n      encoded = [=[{raw}]=],\n      wagoVersion = [=[' \
