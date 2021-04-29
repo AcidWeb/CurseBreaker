@@ -615,127 +615,158 @@ class TUI:
             self.console.print('This feature is available only on Windows.')
 
     def c_toggle(self, args):
-        args = args.strip()
-        if args.startswith('channel'):
-            args = args[8:]
-            if args:
-                status = self.core.dev_toggle(args)
-                if status is None:
-                    self.console.print('[bold red]This addon doesn\'t exist or it is not installed yet.[/bold red]')
-                elif status == -1:
-                    self.console.print('[bold red]This feature can be only used with CurseForge addons.[/bold red]')
-                elif status == 0:
-                    self.console.print(
-                        'All CurseForge addons are now switched' if args == 'global' else 'Addon switched',
-                        'to the [yellow]beta[/yellow] channel.')
-                elif status == 1:
-                    self.console.print(
-                        'All CurseForge addons are now switched' if args == 'global' else 'Addon switched',
-                        'to the [red]alpha[/red] channel.')
-                elif status == 2:
-                    self.console.print(
-                        'All CurseForge addons are now switched' if args == 'global' else 'Addon switched',
-                        'to the [green]stable[/green] channel.')
-            else:
-                self.console.print('[green]Usage:[/green]\n\tThis command accepts an addon name (or "global") as an'
-                                   ' argument.', highlight=False)
-        elif args.startswith('pinning'):
-            args = args[8:]
-            if args:
-                status = self.core.block_toggle(args)
-                if status is None:
-                    self.console.print('[bold red]This addon does not exist or it is not installed yet.[/bold red]')
-                elif status:
-                    self.console.print('Updates for this addon are now [red]suppressed[/red].')
+        if args:
+            args = args.strip()
+            if args.startswith('channel'):
+                args = args[8:]
+                if args:
+                    status = self.core.dev_toggle(args)
+                    if status is None:
+                        self.console.print('[bold red]This addon doesn\'t exist or it is not installed yet.[/bold red]')
+                    elif status == -1:
+                        self.console.print('[bold red]This feature can be only used with CurseForge addons.[/bold red]')
+                    elif status == 0:
+                        self.console.print(
+                            'All CurseForge addons are now switched' if args == 'global' else 'Addon switched',
+                            'to the [yellow]beta[/yellow] channel.')
+                    elif status == 1:
+                        self.console.print(
+                            'All CurseForge addons are now switched' if args == 'global' else 'Addon switched',
+                            'to the [red]alpha[/red] channel.')
+                    elif status == 2:
+                        self.console.print(
+                            'All CurseForge addons are now switched' if args == 'global' else 'Addon switched',
+                            'to the [green]stable[/green] channel.')
                 else:
-                    self.console.print('Updates for this addon are [green]no longer suppressed[/green].')
-            else:
-                self.console.print('[green]Usage:[/green]\n\tThis command accepts an addon name as an argument.')
-        elif args.startswith('wago'):
-            args = args[5:]
-            if args:
-                if args == self.core.config['WAUsername']:
-                    self.console.print(f'Wago version check is now: [green]ENABLED[/green]\nEntries created by '
-                                       f'[bold white]{self.core.config["WAUsername"]}[/bold white] are now included.')
-                    self.core.config['WAUsername'] = ''
+                    self.console.print('[green]Usage:[/green]\n\tThis command accepts an addon name (or "global") as an'
+                                       ' argument.', highlight=False)
+            elif args.startswith('pinning'):
+                args = args[8:]
+                if args:
+                    status = self.core.block_toggle(args)
+                    if status is None:
+                        self.console.print('[bold red]This addon does not exist or it is not installed yet.[/bold red]')
+                    elif status:
+                        self.console.print('Updates for this addon are now [red]suppressed[/red].')
+                    else:
+                        self.console.print('Updates for this addon are [green]no longer suppressed[/green].')
                 else:
-                    self.core.config['WAUsername'] = args.strip()
-                    self.console.print(f'Wago version check is now: [green]ENABLED[/green]\nEntries created by '
-                                       f'[bold white]{self.core.config["WAUsername"]}[/bold white] are now ignored.')
-            else:
-                if self.core.config['WAUsername'] == 'DISABLED':
-                    self.core.config['WAUsername'] = ''
-                    self.console.print('Wago version check is now: [green]ENABLED[/green]')
+                    self.console.print('[green]Usage:[/green]\n\tThis command accepts an addon name as an argument.')
+            elif args.startswith('wago'):
+                args = args[5:]
+                if args:
+                    if args == self.core.config['WAUsername']:
+                        self.console.print(f'Wago version check is now: [green]ENABLED[/green]\nEntries created by '
+                                           f'[bold white]{self.core.config["WAUsername"]}[/bold white] are now '
+                                           f'included.')
+                        self.core.config['WAUsername'] = ''
+                    else:
+                        self.core.config['WAUsername'] = args.strip()
+                        self.console.print(f'Wago version check is now: [green]ENABLED[/green]\nEntries created by '
+                                           f'[bold white]{self.core.config["WAUsername"]}[/bold white] are now '
+                                           f'ignored.')
                 else:
-                    self.core.config['WAUsername'] = 'DISABLED'
-                    shutil.rmtree(Path('Interface/AddOns/WeakAurasCompanion'), ignore_errors=True)
-                    self.console.print('Wago version check is now: [red]DISABLED[/red]')
-            self.core.save_config()
-        elif args.startswith('authors'):
-            status = self.core.generic_toggle('ShowAuthors')
-            self.console.print('The authors listing is on now:',
-                               '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
-        elif args.startswith('autoupdate'):
-            status = self.core.generic_toggle('AutoUpdate')
-            self.console.print('The automatic addon update on startup is now:',
-                               '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
-        elif args.startswith('backup'):
-            status = self.core.generic_toggle('Backup', 'Enabled')
-            self.console.print('Backup of WTF directory is now:',
-                               '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
-        elif args.startswith('compact_mode'):
-            status = self.core.generic_toggle('CompactMode')
-            self.console.print('Table compact mode is now:',
-                               '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
+                    if self.core.config['WAUsername'] == 'DISABLED':
+                        self.core.config['WAUsername'] = ''
+                        self.console.print('Wago version check is now: [green]ENABLED[/green]')
+                    else:
+                        self.core.config['WAUsername'] = 'DISABLED'
+                        shutil.rmtree(Path('Interface/AddOns/WeakAurasCompanion'), ignore_errors=True)
+                        self.console.print('Wago version check is now: [red]DISABLED[/red]')
+                self.core.save_config()
+            elif args.startswith('authors'):
+                status = self.core.generic_toggle('ShowAuthors')
+                self.console.print('The authors listing is on now:',
+                                   '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
+            elif args.startswith('autoupdate'):
+                status = self.core.generic_toggle('AutoUpdate')
+                self.console.print('The automatic addon update on startup is now:',
+                                   '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
+            elif args.startswith('backup'):
+                status = self.core.generic_toggle('Backup', 'Enabled')
+                self.console.print('Backup of WTF directory is now:',
+                                   '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
+            elif args.startswith('compact_mode'):
+                status = self.core.generic_toggle('CompactMode')
+                self.console.print('Table compact mode is now:',
+                                   '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
+            else:
+                self.console.print('Unknown option.')
+        else:
+            self.console.print('[green]Usage:[/green]\n\t[green]toggle authors[/green]\n\t\tEnables/disables the displa'
+                               'y of addon author names in the table.\n\t[green]toggle autoupdate[/green]\n\t\tEnables/'
+                               'disables the automatic addon update on startup.\n\t[green]toggle backup[/green]\n\t\tEn'
+                               'ables/disables automatic daily backup of WTF directory.\n\t[green]toggle channel [Name]'
+                               '[/green]\n\t\tCommand accepts an addon name (or "global") as argument.\n\t\tPrioritizes'
+                               ' alpha/beta versions for the provided addon.\n\t[green]toggle compact_mode [/green]\n\t'
+                               '\tEnables/disables compact table mode that hides entries of up-to-date addons.\n\t[gree'
+                               'n]toggle pinning [Name][/green]\n\t\tCommand accepts an addon name as argument.\n\t\tBl'
+                               'ocks/unblocks updating of the provided addon.\n\t[green]toggle wago [Username][/green]'
+                               '\n\t\tEnables/disables automatic Wago updates.\n\t\tIf a username is provided check wil'
+                               'l start to ignore the specified author.', highlight=False)
 
     def c_set(self, args):
-        args = args.strip()
-        if args.startswith('wago_api'):
-            args = args[9:]
-            if args:
-                self.console.print('Wago API key is now set.')
-                self.core.config['WAAPIKey'] = args.strip()
-                self.core.save_config()
-            elif self.core.config['WAAPIKey'] != '':
-                self.console.print('Wago API key is now removed.')
-                self.core.config['WAAPIKey'] = ''
-                self.core.save_config()
-            else:
-                self.console.print('[green]Usage:[/green]\n\tThis command accepts API key as an argument.')
-        elif args.startswith('wago_wow_account'):
-            args = args[17:]
-            if args:
-                args = args.strip()
-                if os.path.isfile(Path(f'WTF/Account/{args}/SavedVariables/WeakAuras.lua')) or \
-                        os.path.isfile(Path(f'WTF/Account/{args}/SavedVariables/Plater.lua')):
-                    self.console.print(f'WoW account name set to: [bold white]{args}[/bold white]')
-                    self.core.config['WAAccountName'] = args
+        if args:
+            args = args.strip()
+            if args.startswith('wago_api'):
+                args = args[9:]
+                if args:
+                    self.console.print('Wago API key is now set.')
+                    self.core.config['WAAPIKey'] = args.strip()
+                    self.core.save_config()
+                elif self.core.config['WAAPIKey'] != '':
+                    self.console.print('Wago API key is now removed.')
+                    self.core.config['WAAPIKey'] = ''
                     self.core.save_config()
                 else:
-                    self.console.print('Incorrect WoW account name.')
+                    self.console.print('[green]Usage:[/green]\n\tThis command accepts API key as an argument.')
+            elif args.startswith('wago_wow_account'):
+                args = args[17:]
+                if args:
+                    args = args.strip()
+                    if os.path.isfile(Path(f'WTF/Account/{args}/SavedVariables/WeakAuras.lua')) or \
+                            os.path.isfile(Path(f'WTF/Account/{args}/SavedVariables/Plater.lua')):
+                        self.console.print(f'WoW account name set to: [bold white]{args}[/bold white]')
+                        self.core.config['WAAccountName'] = args
+                        self.core.save_config()
+                    else:
+                        self.console.print('Incorrect WoW account name.')
+                else:
+                    self.console.print('[green]Usage:[/green]\n\tThis command accepts the WoW account name as an'
+                                       ' argument.')
             else:
-                self.console.print('[green]Usage:[/green]\n\tThis command accepts the WoW account name as an argument.')
+                self.console.print('Unknown option.')
         else:
-            self.console.print('Unknown option.')
+            self.console.print('[green]Usage:[/green]\n\t[green]set wago_api [API key][/green]\n\t\tSets Wago API key r'
+                               'equired to access private entries.\n\t\tIt can be procured here: [link=https://wago.io/'
+                               'account]https://wago.io/account[/link]\n\t[green]set wago_wow_account [Account name][/g'
+                               'reen]\n\t\tSets WoW account used by Wago updater.\n\t\tNeeded only if compatibile addon'
+                               's are used on more than one WoW account.', highlight=False)
 
     def c_show(self, args):
-        args = args.strip()
-        if args.startswith('dependencies'):
-            addons = sorted(list(filter(lambda k: k['URL'].startswith('https://www.curseforge.com/wow/addons/'),
-                                        self.core.config['Addons'])), key=lambda k: k['Name'].lower())
-            try:
-                self.core.bulk_check(addons)
-            except RuntimeError:
-                pass
-            for addon in addons:
-                dependencies = DependenciesParser(self.core)
-                name, _, _, _, _, _, _, _, _, _, deps, _ = self.core.update_addon(addon['URL'], False, False)
-                dependencies.add_dependency(deps)
-                deps = dependencies.parse_dependency(output=True)
-                if len(deps) > 0:
-                    self.console.print(f'[green]{name}[/green]\n{", ".join(deps)}')
+        if args:
+            args = args.strip()
+            if args.startswith('dependencies'):
+                addons = sorted(list(filter(lambda k: k['URL'].startswith('https://www.curseforge.com/wow/addons/'),
+                                            self.core.config['Addons'])), key=lambda k: k['Name'].lower())
+                try:
+                    self.core.bulk_check(addons)
+                except RuntimeError:
+                    pass
+                for addon in addons:
+                    dependencies = DependenciesParser(self.core)
+                    name, _, _, _, _, _, _, _, _, _, deps, _ = self.core.update_addon(addon['URL'], False, False)
+                    dependencies.add_dependency(deps)
+                    deps = dependencies.parse_dependency(output=True)
+                    if len(deps) > 0:
+                        self.console.print(f'[green]{name}[/green]\n{", ".join(deps)}')
+            else:
+                self.console.print('Unknown option.')
+        else:
+            self.console.print('[green]Usage:[/green]\n\t[green]show dependencies[/green]\n\t\tDisplay a list of depend'
+                               'encies of all installed addons.', highlight=False)
 
-    def c_wago_update(self, _, verbose=True):
+    def c_wago_update(self, _, verbose=True, flush=True):
         if os.path.isdir(Path('Interface/AddOns/WeakAuras')) or os.path.isdir(Path('Interface/AddOns/Plater')):
             accounts = self.core.detect_accounts()
             if self.core.config['WAAccountName'] != '' and self.core.config['WAAccountName'] not in accounts:
