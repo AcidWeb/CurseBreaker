@@ -780,7 +780,8 @@ class TUI:
                     for aura in statusplater[1]:
                         self.console.print(f'[link={aura[1]}]{aura[0]}[/link]', highlight=False)
             else:
-                self.console.control(Control.move(x=0, y=-1))
+                if not self.headless:
+                    self.console.control(Control.move(x=0, y=-1))
                 if len(statuswa[0]) > 0:
                     self.console.print(f'\n[green]The number of outdated WeakAuras:[/green] '
                                        f'{len(statuswa[0])}', highlight=False)
