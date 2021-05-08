@@ -30,7 +30,7 @@ class BaseParser:
         self.ignored = {}
         self.uids = {}
         self.ids = {}
-        self.data = {'slugs': [], 'uids': [], 'ids': []}
+        self.data = {'slugs': [], 'uids': [], 'ids': [], 'stash': []}
 
 
 class WeakAuraParser(BaseParser):
@@ -104,6 +104,7 @@ class WagoUpdater:
         self.username = config['WAUsername']
         self.accountName = config['WAAccountName']
         self.apiKey = config['WAAPIKey']
+        self.stash = config['WAStash']
         self.retailTOC = masterconfig['RetailTOC']
         self.classicTOC = masterconfig['ClassicTOC']
         self.bbParser = bbcode.Parser()
@@ -138,6 +139,26 @@ class WagoUpdater:
                         output[1].append([entry['name'], entry['url']])
             output[0] = sorted(output[0], key=lambda v: v[0])
             output[1] = sorted(output[1], key=lambda v: v[0])
+        return output
+
+    @retry('Failed to parse Wago data.')
+    def check_stash(self, addon):
+        output = []
+        if len(self.stash) > 0:
+            payload = requests.get(f'https://data.wago.io/api/check/{addon.api}?ids='
+                                   f'{",".join(quote_plus(item) for item in self.stash)}',
+                                   headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']},
+                                   timeout=5).json()
+            for entry in payload:
+                output.append(entry['name'])
+                raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}',
+                                   headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']},
+                                   timeout=5).text
+                stash = f'    ["{entry["slug"]}"] = {{\n      name = [=[{entry["name"]}]=],\n      author = [=[' \
+                        f'{entry["username"]}]=],\n      encoded = [=[{raw}]=],\n      wagoVersion = [=[' \
+                        f'{entry["version"]}]=],\n      wagoSemver = [=[{entry["versionString"]}]=],\n'
+                addon.data['stash'].append(stash)
+            output.sort()
         return output
 
     def parse_changelog(self, entry):
@@ -180,7 +201,10 @@ class WagoUpdater:
             out.write('  },\n  ids = {\n')
             for ids in wadata['ids']:
                 out.write(ids)
-            out.write('  },\n  stash = {\n  },\n  Plater = {\n    slugs = {\n')
+            out.write('  },\n  stash = {\n')
+            for stash in wadata['stash']:
+                out.write(stash + '    },\n')
+            out.write('  },\n  Plater = {\n    slugs = {\n')
             for slug in platerdata['slugs']:
                 out.write('  ' + slug.replace('      ', '        ') + '      },\n')
             out.write('    },\n    uids = {\n    },\n    ids = {\n')
@@ -230,6 +254,7 @@ class WagoUpdater:
         else:
             plater = BaseParser()
         statuswa = self.check_updates(wa)
+        statusstash = self.check_stash(wa)
         statusplater = self.check_updates(plater)
         self.install_data(wa.data, plater.data)
-        return statuswa, statusplater
+        return statuswa, statusplater, statusstash

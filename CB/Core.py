@@ -67,6 +67,7 @@ class Core:
                     raise RuntimeError
         else:
             self.config = {'Addons': [],
+                           'WAStash': [],
                            'IgnoreClientVersion': {},
                            'IgnoreDependencies': {},
                            'Backup': {'Enabled': True, 'Number': 7},
@@ -128,7 +129,8 @@ class Core:
                         ['3.7.0', 'CompactMode', False],
                         ['3.10.0', 'AutoUpdate', True],
                         ['3.12.0', 'ShowAuthors', True],
-                        ['3.16.0', 'IgnoreDependencies', {}]]:
+                        ['3.16.0', 'IgnoreDependencies', {}],
+                        ['3.18.0', 'WAStash', []]]:
                 if add[1] not in self.config.keys():
                     self.config[add[1]] = add[2]
             for delete in [['1.3.0', 'URLCache'],
@@ -505,18 +507,36 @@ class Core:
 
     def create_reg(self):
         with open('CurseBreaker.reg', 'w') as outfile:
-            outfile.write('Windows Registry Editor Version 5.00\n\n[HKEY_CLASSES_ROOT\.ccip\Shell\Open\Command]\n@="\\"'
-                          + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\\" \\"%1\\""\n[HKEY_CURRENT_USER'
-                          '\Software\Classes\\twitch]\n"URL Protocol"="\\"\\""\n@="\\"URL:CurseBreaker Protocol\\""\n[H'
-                          'KEY_CURRENT_USER\Software\Classes\\twitch\DefaultIcon]\n@="\\"CurseBreaker.exe,1\\""\n[HKEY_'
-                          'CURRENT_USER\Software\Classes\\twitch\shell]\n[HKEY_CURRENT_USER\Software\Classes\\twitch\sh'
-                          'ell\open]\n[HKEY_CURRENT_USER\Software\Classes\\twitch\shell\open\command]\n@="\\"'
-                          + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""\n[HKEY_CURRENT_USER'
-                          '\Software\Classes\\curseforge]\n"URL Protocol"="\\"\\""\n@="\\"URL:CurseBreaker Protocol\\"'
-                          '"\n[HKEY_CURRENT_USER\Software\Classes\\curseforge\DefaultIcon]\n@="\\"CurseBreaker.exe,1\\'
-                          '""\n[HKEY_CURRENT_USER\Software\Classes\\curseforge\shell]\n[HKEY_CURRENT_USER\Software\Cla'
-                          'sses\\curseforge\shell\open]\n[HKEY_CURRENT_USER\Software\Classes\\curseforge\shell\open\co'
-                          'mmand]\n@="\\"' + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""')
+            outfile.write('Windows Registry Editor Version 5.00\n\n'
+                          '[HKEY_CLASSES_ROOT\.ccip\Shell\Open\Command]\n'
+                          '@="\\"' + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\\twitch]\n'
+                          '"URL Protocol"="\\"\\""\n'
+                          '@="\\"URL:CurseBreaker Protocol\\""\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\\twitch\DefaultIcon]\n'
+                          '@="\\"CurseBreaker.exe,1\\""\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\\twitch\shell]\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\\twitch\shell\open]\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\\twitch\shell\open\command]\n'
+                          '@="\\"' + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\curseforge]\n'
+                          '"URL Protocol"="\\"\\""\n'
+                          '@="\\"URL:CurseBreaker Protocol\\""\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\curseforge\DefaultIcon]\n'
+                          '@="\\"CurseBreaker.exe,1\\""\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\curseforge\shell]\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\curseforge\shell\open]\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\curseforge\shell\open\command]\n'
+                          '@="\\"' + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\weakauras-companion]\n'
+                          '"URL Protocol"="\\"\\""\n'
+                          '@="\\"URL:CurseBreaker Protocol\\""\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\weakauras-companion\DefaultIcon]\n'
+                          '@="\\"CurseBreaker.exe,1\\""\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\weakauras-companion\shell]\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\weakauras-companion\shell\open]\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\weakauras-companion\shell\open\command]\n'
+                          '@="\\"' + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""')
 
     @retry()
     def parse_cf_id(self, url, bulk=False, reverse=False):

@@ -21,7 +21,7 @@ Both _Retail_ and _Classic_ clients are supported. The client version is detecte
 By default **CurseBreaker** will create backups of entire `WTF` directory.
 
 ## TIPS & TRICKS
-- On Windows command `uri_integration` can be used to enable integration with the CurseForge page.
+- On Windows command `uri_integration` can be used to enable integration with the CurseForge and Wago page.
 - Most of the commands support the space-separated list of addons.
 - `install` command have optional `-i` flag that can be used to disable client version check.
 - TUI will look a little better if the application is started by something else than the default Windows command prompt. Preview version of [Windows Terminal](https://aka.ms/terminal-preview) is recommended.

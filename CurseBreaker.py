@@ -103,6 +103,17 @@ class TUI:
                 self.handle_exception(e)
             timeout(self.headless)
             sys.exit(0)
+        # Wago URI Support
+        if len(sys.argv) == 2 and sys.argv[1].startswith('weakauras-companion://wago/push/'):
+            try:
+                self.core.config['WAStash'].append(sys.argv[1].strip().replace('weakauras-companion://wago/push/', ''))
+                self.core.config['WAStash'] = list(set(self.core.config['WAStash']))
+                self.core.save_config()
+                self.c_wago_update(_, flush=False)
+            except Exception as e:
+                self.handle_exception(e)
+            timeout(self.headless)
+            sys.exit(0)
         if len(sys.argv) == 2 and '.ccip' in sys.argv[1]:
             try:
                 path = sys.argv[1].strip()
@@ -784,6 +795,9 @@ class TUI:
             elif len(accounts) == 1 and self.core.config['WAAccountName'] == '':
                 self.core.config['WAAccountName'] = accounts[0]
                 self.core.save_config()
+            if flush and len(self.core.config['WAStash']) > 0:
+                self.core.config['WAStash'] = []
+                self.core.save_config()
             wago = WagoUpdater(self.core.config, self.core.masterConfig)
             if self.core.masterConfig['WagoVersion'] != self.core.config['WACompanionVersion']:
                 self.core.config['WACompanionVersion'] = self.core.masterConfig['WagoVersion']
@@ -792,9 +806,14 @@ class TUI:
             else:
                 force = False
             wago.install_companion(self.core.clientType, force)
-            statuswa, statusplater = wago.update()
+            statuswa, statusplater, statusstash = wago.update()
             if verbose:
-                if len(statuswa[0]) > 0 or len(statuswa[1]) > 0:
+                if len(statusstash) > 0:
+                    self.console.print('[green]WeakAuras ready to install:[/green]')
+                    for aura in statusstash:
+                        self.console.print(aura)
+                    self.console.print('\nReload the interface in the WoW client to access them.')
+                elif len(statuswa[0]) > 0 or len(statuswa[1]) > 0:
                     self.console.print('[green]Outdated WeakAuras:[/green]')
                     for aura in statuswa[0]:
                         self.console.print(f'[link={aura[1]}]{aura[0]}[/link]', highlight=False)
@@ -905,17 +924,17 @@ class TUI:
                            '[green]set wago_wow_account [Account name][/green]\n\tSets WoW account used by Wago updater'
                            '.\n\tNeeded only if compatibile addons are used on more than one WoW account.\n'
                            '[green]show dependencies[/green]\n\tDisplay a list of dependencies of all installed addons.'
-                           '\n[green]uri_integration[/green]\n\tEnables integration with CurseForge page.\n\t[i]"Instal'
-                           'l"[/i] button will now start this application.\n'
-                           '\n[bold green]Supported URL:[/bold green]\n\thttps://www.curseforge.com/wow/addons/\[addon_'
-                           'name] [bold white]|[/bold white] cf:\[addon_name]\n\thttps://www.wowinterface.com/downloads'
-                           '/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\thttps://www.tukui.org/addons.'
-                           'php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]\n\thttps://www.tukui.org/class'
-                           'ic-addons.php?id=\[addon_id] [bold white]|[/bold white] tuc:\[addon_id]\n\thttps://www.town'
-                           'long-yak.com/addons/\[addon_name] [bold white]|[/bold white] ty:\[addon_name]\n\thttps://gi'
-                           'thub.com/\[username]/\[repository_name] [bold white]|[/bold white] gh:\[username]/\[reposit'
-                           'ory_name]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui [bold white]|[/bold white]'
-                           ' Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
+                           '\n[green]uri_integration[/green]\n\tEnables integration with CurseForge and Wago page.\n\t['
+                           'i]"Install"[/i] and [i]"Send to WeakAura Companion App"[/i] buttons will now start this app'
+                           'lication.\n\n[bold green]Supported URL:[/bold green]\n\thttps://www.curseforge.com/wow/addo'
+                           'ns/\[addon_name] [bold white]|[/bold white] cf:\[addon_name]\n\thttps://www.wowinterface.co'
+                           'm/downloads/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\thttps://www.tukui.'
+                           'org/addons.php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]\n\thttps://www.tuku'
+                           'i.org/classic-addons.php?id=\[addon_id] [bold white]|[/bold white] tuc:\[addon_id]\n\thttps'
+                           '://www.townlong-yak.com/addons/\[addon_name] [bold white]|[/bold white] ty:\[addon_name]\n'
+                           '\thttps://github.com/\[username]/\[repository_name] [bold white]|[/bold white] gh:\[usernam'
+                           'e]/\[repository_name]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui [bold white]|['
+                           '/bold white] Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
 
     def c_exit(self, _):
         sys.exit(0)
