@@ -105,8 +105,7 @@ class WagoUpdater:
         self.accountName = config['WAAccountName']
         self.apiKey = config['WAAPIKey']
         self.stash = config['WAStash']
-        self.retailTOC = masterconfig['RetailTOC']
-        self.classicTOC = masterconfig['ClassicTOC']
+        self.masterConfig = masterconfig
         self.bbParser = bbcode.Parser()
         Markdown.output_formats['plain'] = markdown_unmark_element
         self.mdParser = Markdown(output_format='plain')
@@ -212,14 +211,19 @@ class WagoUpdater:
                 out.write('  ' + ids)
             out.write('    },\n    stash = {\n    }\n  }\n}')
 
-    def install_companion(self, client_type, force):
+    def install_companion(self, force):
         if not os.path.isdir(Path('Interface/AddOns/WeakAurasCompanion')) or force:
             Path('Interface/AddOns/WeakAurasCompanion').mkdir(exist_ok=True)
-            with open(Path('Interface/AddOns/WeakAurasCompanion/WeakAurasCompanion.toc'), 'w', newline='\n') as out:
-                out.write(f'## Interface: {self.classicTOC if client_type == "wow_classic" else self.retailTOC}\n## Tit'
-                          f'le: WeakAuras Companion\n## Author: The WeakAuras Team\n## Version: 1.1.1\n## Notes: Keep y'
-                          f'our WeakAuas updated!\n## X-Category: Interface Enhancements\n## DefaultState: Enabled\n## '
-                          f'LoadOnDemand: 0\n## OptionalDeps: WeakAuras, Plater\n\ndata.lua\ninit.lua')
+            tocmatrix = (('', self.masterConfig['RetailTOC']),
+                         ('-Classic', self.masterConfig['ClassicTOC']),
+                         ('-BCC', self.masterConfig['BurningCrusadeTOC']))
+            for client in tocmatrix:
+                with open(Path(f'Interface/AddOns/WeakAurasCompanion/WeakAurasCompanion{client[0]}.toc'),
+                          'w', newline='\n') as out:
+                    out.write(f'## Interface: {client[1]}\n## Title: WeakAuras Companion\n## Author: The WeakAuras Team'
+                              f'\n## Version: 1.1.1\n## Notes: Keep your WeakAuas updated!\n## X-Category: Interface En'
+                              f'hancements\n## DefaultState: Enabled\n## LoadOnDemand: 0\n## OptionalDeps: WeakAuras, P'
+                              f'later\n\ndata.lua\ninit.lua')
             with open(Path('Interface/AddOns/WeakAurasCompanion/init.lua'), 'w', newline='\n') as out:
                 out.write('-- file generated automatically\nlocal buildTimeTarget = 20190123023201\nlocal waBuildTime ='
                           ' tonumber(WeakAuras and WeakAuras.buildTime or 0)\nif waBuildTime and waBuildTime > buildTim'

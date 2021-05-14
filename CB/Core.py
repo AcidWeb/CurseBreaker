@@ -34,7 +34,7 @@ class Core:
         self.path = Path('Interface/AddOns')
         self.configPath = Path('WTF/CurseBreaker.json')
         self.cachePath = Path('WTF/CurseBreaker.cache')
-        self.clientType = 'wow_retail'
+        self.clientType = None
         self.config = None
         self.masterConfig = None
         self.cfIDs = None
@@ -187,17 +187,25 @@ class Core:
                 raise RuntimeError(f'{url}\nThe addon is unavailable. You can\'t manage it with this application.')
         if url.startswith('https://www.curseforge.com/wow/addons/'):
             return CurseForgeAddon(url, self.parse_cf_id(url), self.cfCache,
-                                   'wow' if url in self.config['IgnoreClientVersion'].keys() else self.clientType,
-                                   self.check_if_dev(url))
+                                   self.clientType,
+                                   self.check_if_dev(url),
+                                   True if url in self.config['IgnoreClientVersion'].keys() else False)
         elif url.startswith('https://www.wowinterface.com/downloads/'):
             return WoWInterfaceAddon(url, self.wowiCache)
         elif url.startswith('https://www.tukui.org/addons.php?id='):
-            if self.clientType == 'wow_classic':
+            if self.clientType != 'wow_retail':
                 raise RuntimeError('Incorrect client version.')
             self.bulk_tukui_check()
             return TukuiAddon(url, self.tukuiCache)
         elif url.startswith('https://www.tukui.org/classic-addons.php?id='):
-            if self.clientType == 'wow_retail':
+            if self.clientType != 'wow_classic':
+                raise RuntimeError('Incorrect client version.')
+            elif url.endswith('1') or url.endswith('2'):
+                raise RuntimeError('ElvUI and Tukui cannot be installed this way.')
+            self.bulk_tukui_check()
+            return TukuiAddon(url, self.tukuiCache)
+        elif url.startswith('https://www.tukui.org/classic-tbc-addons.php?id='):
+            if self.clientType != 'wow_burning_crusade':
                 raise RuntimeError('Incorrect client version.')
             elif url.endswith('1') or url.endswith('2'):
                 raise RuntimeError('ElvUI and Tukui cannot be installed this way.')
@@ -207,10 +215,18 @@ class Core:
             return GitHubAddon(url, self.clientType)
         elif url.startswith('https://www.townlong-yak.com/addons/'):
             self.bulk_townlongyak_check()
-            if url in self.config['IgnoreClientVersion'].keys() or self.clientType == 'wow_retail':
+            if self.clientType == 'wow_retail':
                 clienttype = 'retail'
+            elif self.clientType == 'wow_burning_crusade':
+                if url in self.config['IgnoreClientVersion'].keys():
+                    clienttype = 'classic'
+                else:
+                    clienttype = 'burningcrusade'
             else:
-                clienttype = 'classic'
+                if url in self.config['IgnoreClientVersion'].keys():
+                    clienttype = 'retail'
+                else:
+                    clienttype = 'classic'
             return TownlongYakAddon(url, self.townlongyakCache, clienttype)
         elif url.lower() == 'elvui':
             if self.clientType == 'wow_retail':
@@ -221,6 +237,8 @@ class Core:
         elif url.lower() == 'elvui:dev':
             if self.clientType == 'wow_retail':
                 return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'development')
+            elif self.clientType == 'wow_burning_crusade':
+                return GitLabAddon('ElvUI', '1452', 'elvui/elvui-tbc', 'development')
             else:
                 return GitLabAddon('ElvUI', '492', 'elvui/elvui-classic', 'development')
         elif url.lower() == 'tukui':
@@ -232,6 +250,8 @@ class Core:
         elif url.lower() == 'tukui:dev':
             if self.clientType == 'wow_retail':
                 return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'Retail')
+            elif self.clientType == 'wow_burning_crusade':
+                return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'Classic-TBC')
             else:
                 return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'Classic')
         elif url.lower() == 'shadow&light:dev':
@@ -248,14 +268,15 @@ class Core:
         elif url.startswith('https://www.wowinterface.com/downloads/'):
             return 'WoWI', url
         elif url.startswith('https://www.tukui.org/addons.php?id=') or \
-                url.startswith('https://www.tukui.org/classic-addons.php?id='):
+                url.startswith('https://www.tukui.org/classic-addons.php?id=') or \
+                url.startswith('https://www.tukui.org/classic-tbc-addons.php?id='):
             return 'Tukui', url
         elif url.lower().startswith('elvui'):
             return 'Tukui', 'https://www.tukui.org/download.php?ui=elvui'
         elif url.lower().startswith('tukui'):
             return 'Tukui', 'https://www.tukui.org/download.php?ui=tukui'
         elif url.lower() == 'shadow&light:dev':
-            return 'Tukui', 'https://www.curseforge.com/wow/addons/elvui-shadow-light'
+            return 'GitHub', 'https://github.com/Shadow-and-Light/shadow-and-light'
         elif url.startswith('https://github.com/'):
             return 'GitHub', url
         elif url.startswith('https://www.townlong-yak.com/addons/'):
@@ -278,6 +299,8 @@ class Core:
             url = f'https://www.tukui.org/addons.php?id={url[3:]}'
         elif url.startswith('tuc:'):
             url = f'https://www.tukui.org/classic-addons.php?id={url[4:]}'
+        elif url.startswith('tubc:'):
+            url = f'https://www.tukui.org/classic-tbc-addons.php?id={url[5:]}'
         elif url.startswith('gh:'):
             url = f'https://github.com/{url[3:]}'
         elif url.startswith('ty:'):
@@ -622,8 +645,13 @@ class Core:
     @retry(custom_error='Failed to parse Tukui API data')
     def bulk_tukui_check(self):
         if not self.tukuiCache:
-            self.tukuiCache = requests.get(f'https://www.tukui.org/api.php?'
-                                           f'{"addons" if self.clientType == "wow_retail" else "classic-addons"}',
+            if self.clientType == 'wow_classic':
+                endpoint = 'classic-addons'
+            elif self.clientType == 'wow_burning_crusade':
+                endpoint = 'classic-tbc-addons'
+            else:
+                endpoint = 'addons'
+            self.tukuiCache = requests.get(f'https://www.tukui.org/api.php?{endpoint}',
                                            headers=HEADERS, timeout=5).json()
 
     @retry(custom_error='Failed to parse Townlong Yak API data')
@@ -743,6 +771,8 @@ class Core:
                 url = f'tu:{addon["URL"].split("?id=")[-1]}'
             elif addon['URL'].startswith('https://www.tukui.org/classic-addons.php?id='):
                 url = f'tuc:{addon["URL"].split("?id=")[-1]}'
+            elif addon['URL'].startswith('https://www.tukui.org/classic-tbc-addons.php?id='):
+                url = f'tubc:{addon["URL"].split("?id=")[-1]}'
             elif addon['URL'].startswith('https://github.com/'):
                 url = f'gh:{addon["URL"].replace("https://github.com/", "")}'
             elif addon['URL'].startswith('https://www.townlong-yak.com/addons/'):

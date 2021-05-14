@@ -72,10 +72,23 @@ class TUI:
                                'this WoW installation was started at least once.[/bold red]\n')
             pause(self.headless)
             sys.exit(1)
-        # Detect Classic client
-        if os.path.basename(os.getcwd()) in {'_classic_', '_classic_beta_', '_classic_ptr_'}:
+        # Detect client flavor
+        if 'CURSEBREAKER_FLAVOR' in os.environ:
+            flavor = os.environ.get('CURSEBREAKER_FLAVOR')
+        else:
+            flavor = os.path.basename(os.getcwd())
+        if flavor in {'_retail_', '_ptr_'}:
+            self.core.clientType = 'wow_retail'
+        elif flavor in {'_classic_', '_classic_ptr_'}:
+            self.core.clientType = 'wow_burning_crusade'
+            set_terminal_title(f'CurseBreaker v{__version__} - Burning Crusade')
+        elif flavor in {'_classic_era_'}:
             self.core.clientType = 'wow_classic'
             set_terminal_title(f'CurseBreaker v{__version__} - Classic')
+        else:
+            self.console.print('[bold red]This client release is currently unsupported by CurseBreaker.[/bold red]\n')
+            pause(self.headless)
+            sys.exit(1)
         # Check if client have write access
         try:
             with open('PermissionTest', 'w') as _:
@@ -402,7 +415,8 @@ class TUI:
         else:
             authors = ''
         if uiversion and uiversion not in [self.core.masterConfig['RetailVersion'],
-                                           self.core.masterConfig['ClassicVersion']]:
+                                           self.core.masterConfig['ClassicVersion'],
+                                           self.core.masterConfig['BurningCrusadeVersion']]:
             uiversion = ' [bold yellow][!][/bold yellow]'
         else:
             uiversion = ''
@@ -464,10 +478,12 @@ class TUI:
                                'nloads/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\thttps://www.tukui.o'
                                'rg/addons.php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]\n\thttps://www.t'
                                'ukui.org/classic-addons.php?id=\[addon_id] [bold white]|[/bold white] tuc:\[addon_id]\n'
-                               '\thttps://www.townlong-yak.com/addons/\[addon_name] [bold white]|[/bold white] ty:\[add'
-                               'on_name]\n\thttps://github.com/\[username]/\[repository_name] [bold white]|[/bold white'
-                               '] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTu'
-                               'kui [bold white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
+                               '\thttps://www.tukui.org/classic-tbc-addons?id=\[addon_id] [bold white]|[/bold white] tu'
+                               'bc:\[addon_id]\n\thttps://www.townlong-yak.com/addons/\[addon_name] [bold white]|[/bold'
+                               ' white] ty:\[addon_name]\n\thttps://github.com/\[username]/\[repository_name] [bold whi'
+                               'te]|[/bold white] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white]'
+                               ' ElvUI:Dev\n\tTukui [bold white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev',
+                               highlight=False)
 
     def c_uninstall(self, args):
         if args:
@@ -805,7 +821,7 @@ class TUI:
                 force = True
             else:
                 force = False
-            wago.install_companion(self.core.clientType, force)
+            wago.install_companion(force)
             statuswa, statusplater, statusstash = wago.update()
             if verbose:
                 if len(statusstash) > 0:
@@ -931,10 +947,11 @@ class TUI:
                            'm/downloads/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\thttps://www.tukui.'
                            'org/addons.php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]\n\thttps://www.tuku'
                            'i.org/classic-addons.php?id=\[addon_id] [bold white]|[/bold white] tuc:\[addon_id]\n\thttps'
-                           '://www.townlong-yak.com/addons/\[addon_name] [bold white]|[/bold white] ty:\[addon_name]\n'
-                           '\thttps://github.com/\[username]/\[repository_name] [bold white]|[/bold white] gh:\[usernam'
-                           'e]/\[repository_name]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui [bold white]|['
-                           '/bold white] Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
+                           '://www.tukui.org/classic-tbc-addons?id=\[addon_id] [bold white]|[/bold white] tubc:\[addon_'
+                           'id]\n\thttps://www.townlong-yak.com/addons/\[addon_name] [bold white]|[/bold white] ty:\[ad'
+                           'don_name]\n\thttps://github.com/\[username]/\[repository_name] [bold white]|[/bold white] g'
+                           'h:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui [bo'
+                           'ld white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
 
     def c_exit(self, _):
         sys.exit(0)

@@ -9,7 +9,7 @@ from json import JSONDecodeError
 
 class CurseForgeAddon:
     @retry()
-    def __init__(self, url, project, checkcache, clienttype, allowdev):
+    def __init__(self, url, project, checkcache, clienttype, allowdev, ignoreclienttype):
         if project in checkcache:
             self.payload = checkcache[project]
         else:
@@ -34,6 +34,7 @@ class CurseForgeAddon:
         if not len(self.payload['latestFiles']) > 0:
             raise RuntimeError(f'{self.name}.\nThe project doesn\'t have any releases.')
         self.clientType = clienttype
+        self.ignoreClientType = ignoreclienttype
         self.allowDev = allowdev
         self.downloadUrl = None
         self.changelogUrl = None
@@ -52,13 +53,17 @@ class CurseForgeAddon:
     def get_current_version(self):
         files = sorted(self.payload['latestFiles'], key=itemgetter('id'), reverse=True)
         release = [[1], [2], [3]]
+        if self.ignoreClientType:
+            targetflavor = None
+        else:
+            targetflavor = self.clientType
         if self.allowDev == 1:
             release = [[2, 1]]
         elif self.allowDev == 2:
             release = [[3, 2, 1]]
         for status in release:
             for f in files:
-                if (self.clientType == 'wow' or f['gameVersionFlavor'] == self.clientType) and \
+                if (not targetflavor or f['gameVersionFlavor'] == targetflavor) and\
                         f['releaseType'] in status and '-nolib' not in f['displayName'] and not f['isAlternate']:
                     self.downloadUrl = f['downloadUrl']
                     self.changelogUrl = f'{self.payload["websiteUrl"]}/files/{f["id"]}'
