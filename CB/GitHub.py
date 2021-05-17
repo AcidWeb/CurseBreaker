@@ -34,29 +34,67 @@ class GitHubAddon:
         self.changelogUrl = self.payload['html_url']
         self.archive = None
         self.dependencies = None
+        self.metadata = None
         self.directories = []
         self.author = [project.split('/')[0]]
+        self.parse_metadata()
         self.get_latest_package()
 
-    def get_latest_package(self):
-        latest = None
-        latestclassic = None
+    def parse_metadata(self):
         for release in self.payload['assets']:
-            if release['name'] and '-nolib' not in release['name'] \
-                    and release['content_type'] in {'application/x-zip-compressed', 'application/zip'}:
-                if not latest and not release['name'].endswith('-classic.zip') and \
-                        not release['name'].endswith('-bc.zip'):
-                    latest = release['browser_download_url']
-                elif not latestclassic and release['name'].endswith('-classic.zip') and \
-                        not release['name'].endswith('-bc.zip'):
-                    latestclassic = release['browser_download_url']
-        if (self.clientType == 'wow_retail' and latest) or (self.clientType == 'wow_classic' and latest
-                                                            and not latestclassic):
-            self.downloadUrl = latest
-        elif self.clientType == 'wow_classic' and latestclassic:
-            self.downloadUrl = latestclassic
+            if release['name'] and release['name'] == 'release.json':
+                self.metadata = requests.get(release['browser_download_url'], headers=HEADERS, timeout=5).json()
+                break
+
+    def get_latest_package(self):
+        if self.metadata:
+            targetfile = None
+            if self.clientType == 'wow_classic':
+                targetflavor = 'classic'
+            elif self.clientType == 'wow_burning_crusade':
+                targetflavor = 'bcc'
+            else:
+                targetflavor = 'mainline'
+            for release in self.metadata['releases']:
+                if not release['nolib']:
+                    for flavor in release['metadata']:
+                        if flavor['flavor'] == targetflavor:
+                            targetfile = release['filename']
+                            break
+                    if targetfile:
+                        break
+            if not targetfile:
+                raise RuntimeError(f'{self.name}.\nFailed to find release for your client version.')
+            for release in self.payload['assets']:
+                if release['name'] and release['name'] == targetfile:
+                    self.downloadUrl = release['browser_download_url']
+                    break
+            if not self.downloadUrl:
+                raise RuntimeError(f'{self.name}.\nFailed to find release for your client version.')
         else:
-            raise RuntimeError(f'{self.name}.\nFailed to find release for your client version.')
+            latest = None
+            latestclassic = None
+            latestbc = None
+            for release in self.payload['assets']:
+                if release['name'] and '-nolib' not in release['name'] \
+                        and release['content_type'] in {'application/x-zip-compressed', 'application/zip'}:
+                    if not latest and not release['name'].endswith('-classic.zip') and \
+                            not release['name'].endswith('-bc.zip'):
+                        latest = release['browser_download_url']
+                    elif not latestclassic and release['name'].endswith('-classic.zip'):
+                        latestclassic = release['browser_download_url']
+                    elif not latestbc and release['name'].endswith('-bc.zip'):
+                        latestbc = release['browser_download_url']
+            if (self.clientType == 'wow_retail' and latest) \
+                    or (self.clientType == 'wow_classic' and latest and not latestclassic) \
+                    or (self.clientType == 'wow_burning_crusade' and latest and not latestbc):
+                self.downloadUrl = latest
+            elif self.clientType == 'wow_classic' and latestclassic:
+                self.downloadUrl = latestclassic
+            elif self.clientType == 'wow_burning_crusade' and latestbc:
+                self.downloadUrl = latestbc
+            else:
+                raise RuntimeError(f'{self.name}.\nFailed to find release for your client version.')
 
     @retry()
     def get_addon(self):
