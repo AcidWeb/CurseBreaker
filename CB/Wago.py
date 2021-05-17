@@ -153,9 +153,10 @@ class WagoUpdater:
                 raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}',
                                    headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']},
                                    timeout=5).text
-                stash = f'    ["{entry["slug"]}"] = {{\n      name = [=[{entry["name"]}]=],\n      author = [=[' \
-                        f'{entry["username"]}]=],\n      encoded = [=[{raw}]=],\n      wagoVersion = [=[' \
-                        f'{entry["version"]}]=],\n      wagoSemver = [=[{entry["versionString"]}]=],\n'
+                stash = f'        ["{entry["slug"]}"] = {{\n          name = [=[{entry["name"]}]=],\n          ' \
+                        f'author = [=[{entry["username"]}]=],\n          encoded = [=[{raw}]=],\n          ' \
+                        f'wagoVersion = [=[{entry["version"]}]=],\n          ' \
+                        f'wagoSemver = [=[{entry["versionString"]}]=],\n        }},\n'
                 addon.data['stash'].append(stash)
             output.sort()
         return output
@@ -173,43 +174,53 @@ class WagoUpdater:
     def update_entry(self, entry, addon):
         raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}',
                            headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']}, timeout=5).text
-        slug = f'    ["{entry["slug"]}"] = {{\n      name = [=[{entry["name"]}]=],\n      author = [=[' \
-               f'{entry["username"]}]=],\n      encoded = [=[{raw}]=],\n      wagoVersion = [=[' \
-               f'{entry["version"]}]=],\n      wagoSemver = [=[{entry["versionString"]}]=],\n      ' \
-               f'versionNote = [=[{self.parse_changelog(entry)}]=],\n'
+        slug = f'        ["{entry["slug"]}"] = {{\n          name = [=[{entry["name"]}]=],\n          author = [=[' \
+               f'{entry["username"]}]=],\n          encoded = [=[{raw}]=],\n          wagoVersion = [=[' \
+               f'{entry["version"]}]=],\n          wagoSemver = [=[{entry["versionString"]}]=],\n          ' \
+               f'versionNote = [=[{self.parse_changelog(entry)}]=],\n        }},\n'
         uids = ''
         ids = ''
         for u in addon.uids:
             if addon.uids[u] == entry["slug"]:
-                uids = uids + f'    ["{self.clean_string(u)}"] = [=[{entry["slug"]}]=],\n'
+                uids = uids + f'        ["{self.clean_string(u)}"] = [=[{entry["slug"]}]=],\n'
         for i in addon.ids:
             if addon.ids[i] == entry["slug"]:
-                ids = ids + f'    ["{self.clean_string(i)}"] = [=[{entry["slug"]}]=],\n'
+                ids = ids + f'        ["{self.clean_string(i)}"] = [=[{entry["slug"]}]=],\n'
         addon.data['slugs'].append(slug)
         addon.data['uids'].append(uids)
         addon.data['ids'].append(ids)
 
     def install_data(self, wadata, platerdata):
         with open(Path('Interface/AddOns/WeakAurasCompanion/data.lua'), 'w', newline='\n', encoding='utf-8') as out:
-            out.write('-- file generated automatically\nWeakAurasCompanion = {\n  slugs = {\n')
-            for slug in wadata['slugs']:
-                out.write(slug + '    },\n')
-            out.write('  },\n  uids = {\n')
-            for uid in wadata['uids']:
-                out.write(uid)
-            out.write('  },\n  ids = {\n')
-            for ids in wadata['ids']:
-                out.write(ids)
-            out.write('  },\n  stash = {\n')
-            for stash in wadata['stash']:
-                out.write(stash + '    },\n')
-            out.write('  },\n  Plater = {\n    slugs = {\n')
-            for slug in platerdata['slugs']:
-                out.write('  ' + slug.replace('      ', '        ') + '      },\n')
-            out.write('    },\n    uids = {\n    },\n    ids = {\n')
-            for ids in platerdata['ids']:
-                out.write('  ' + ids)
-            out.write('    },\n    stash = {\n    }\n  }\n}')
+            out.write(('-- file generated automatically\n'
+                       'WeakAurasCompanion = {\n'
+                       '  WeakAuras = {\n'
+                       '    slugs = {\n'
+                       f'{"".join(str(x) for x in wadata["slugs"])}'
+                       '    },\n'
+                       '    uids = {\n'
+                       f'{"".join(str(x) for x in wadata["uids"])}'
+                       '    },\n'
+                       '    ids = {\n'
+                       f'{"".join(str(x) for x in wadata["ids"])}'
+                       '    },\n'
+                       '    stash = {\n'
+                       f'{"".join(str(x) for x in wadata["stash"])}'
+                       '    },\n'
+                       '  },\n'
+                       '  Plater = {\n'
+                       '    slugs = {\n'
+                       f'{"".join(str(x) for x in platerdata["slugs"])}'
+                       '    },\n'
+                       '    uids = {\n'
+                       '    },\n'
+                       '    ids = {\n'
+                       f'{"".join(str(x) for x in platerdata["ids"])}'
+                       '    },\n'
+                       '    stash = {\n'
+                       '    },\n'
+                       '  },\n'
+                       '}'))
 
     def install_companion(self, force):
         if not os.path.isdir(Path('Interface/AddOns/WeakAurasCompanion')) or force:
@@ -220,31 +231,81 @@ class WagoUpdater:
             for client in tocmatrix:
                 with open(Path(f'Interface/AddOns/WeakAurasCompanion/WeakAurasCompanion{client[0]}.toc'),
                           'w', newline='\n') as out:
-                    out.write(f'## Interface: {client[1]}\n## Title: WeakAuras Companion\n## Author: The WeakAuras Team'
-                              f'\n## Version: 1.1.1\n## Notes: Keep your WeakAuas updated!\n## X-Category: Interface En'
-                              f'hancements\n## DefaultState: Enabled\n## LoadOnDemand: 0\n## OptionalDeps: WeakAuras, P'
-                              f'later\n\ndata.lua\ninit.lua')
+                    out.write((f'## Interface: {client[1]}\n'
+                               '## Title: WeakAuras Companion\n'
+                               '## Author: The WeakAuras Team\n'
+                               '## Version: 1.1.0\n'
+                               '## Notes: Keep your WeakAuras updated!\n'
+                               '## X-Category: Interface Enhancements\n'
+                               '## DefaultState: Enabled\n'
+                               '## LoadOnDemand: 0\n'
+                               '## OptionalDeps: WeakAuras, Plater\n'
+                               '## SavedVariables: timestamp\n\n'                   
+                               'data.lua\n'
+                               'init.lua'))
             with open(Path('Interface/AddOns/WeakAurasCompanion/init.lua'), 'w', newline='\n') as out:
-                out.write('-- file generated automatically\nlocal buildTimeTarget = 20190123023201\nlocal waBuildTime ='
-                          ' tonumber(WeakAuras and WeakAuras.buildTime or 0)\nif waBuildTime and waBuildTime > buildTim'
-                          'eTarget then\n  local loadedFrame = CreateFrame("FRAME")\n  loadedFrame:RegisterEvent("ADDON'
-                          '_LOADED")\n  loadedFrame:SetScript("OnEvent", function(_, _, addonName)\n    if addonName =='
-                          ' "WeakAurasCompanion" then\n      local count = WeakAuras.CountWagoUpdates()\n      if count'
-                          ' and count > 0 then\n        WeakAuras.prettyPrint(WeakAuras.L["There are %i updates to your'
-                          ' auras ready to be installed!"]:format(count))\n      end\n      if WeakAuras.ImportHistory '
-                          'then\n        for id, data in pairs(WeakAurasSaved.displays) do\n          if data.uid and n'
-                          'ot WeakAurasSaved.history[data.uid] then\n            local slug = WeakAurasCompanion.uids[d'
-                          'ata.uid]\n            if slug then\n              local wagoData = WeakAurasCompanion.slugs['
-                          'slug]\n              if wagoData and wagoData.encoded then\n                WeakAuras.Import'
-                          'History(wagoData.encoded)\n              end\n            end\n          end\n        end\n '
-                          '     end\n      local emptyStash = true\n      for _ in pairs(WeakAurasCompanion.stash) do\n'
-                          '        emptyStash = false\n      end\n      if not emptyStash and WeakAuras.StashShow then'
-                          '\n        C_Timer.After(5, function() WeakAuras.StashShow() end)\n      end\n    end\n  end)'
-                          '\nend\n\nif Plater and Plater.CheckWagoUpdates then\n    Plater.CheckWagoUpdates()\nend')
+                out.write(('-- file generated automatically\n'
+                           'local loadedFrame = CreateFrame("FRAME")\n'
+                           'loadedFrame:RegisterEvent("ADDON_LOADED")\n'
+                           'loadedFrame:SetScript("OnEvent", function(_, _, addonName)\n'
+                           '  if addonName == "WeakAurasCompanion" then\n'
+                           '    timestamp = GetTime()\n'
+                           '    if WeakAuras then\n'
+                           '      local WeakAurasData = WeakAurasCompanion.WeakAuras\n'
+                           '      -- previous version compatibility\n'
+                           '      WeakAurasCompanion.slugs = WeakAurasData.slugs\n'
+                           '      WeakAurasCompanion.uids = WeakAurasData.uids\n'
+                           '      WeakAurasCompanion.ids = WeakAurasData.ids\n'
+                           '      WeakAurasCompanion.stash = WeakAurasData.stash\n'
+                           '      local count = WeakAuras.CountWagoUpdates()\n'
+                           '      if count and count > 0 then\n'
+                           '        WeakAuras.prettyPrint(WeakAuras.L["There are %i updates to your auras ready to be i'
+                           'nstalled!"]:format(count))\n'
+                           '      end\n'
+                           '      if WeakAuras.ImportHistory then\n'
+                           '        for id, data in pairs(WeakAurasSaved.displays) do\n'
+                           '          if data.uid and not WeakAurasSaved.history[data.uid] then\n'
+                           '            local slug = WeakAurasData.uids[data.uid]\n'
+                           '            if slug then\n'
+                           '              local wagoData = WeakAurasData.slugs[slug]\n'
+                           '              if wagoData and wagoData.encoded then\n'
+                           '                WeakAuras.ImportHistory(wagoData.encoded)\n'
+                           '              end\n'
+                           '            end\n'
+                           '          end\n'
+                           '        end\n'
+                           '      end\n'
+                           '      if WeakAurasData.stash then\n'
+                           '        local emptyStash = true\n'
+                           '        for _ in pairs(WeakAurasData.stash) do\n'
+                           '          emptyStash = false\n'
+                           '        end\n'
+                           '        if not emptyStash then\n'
+                           '          WeakAuras.prettyPrint(WeakAuras.L["You have new auras ready to be installed!"])\n'
+                           '        end\n'
+                           '      end\n'
+                           '    end\n'
+                           '    if Plater and Plater.CheckWagoUpdates then\n'
+                           '      Plater.CheckWagoUpdates()\n'
+                           '    end\n'
+                           '  end\n'
+                           'end)'))
             with open(Path('Interface/AddOns/WeakAurasCompanion/data.lua'), 'w', newline='\n') as out:
-                out.write('-- file generated automatically\nWeakAurasCompanion = {\n  slugs = {\n  },\n  uids = {\n  },'
-                          '\n  ids = {\n  },\n  stash = {\n  },\n  Plater = {\n    slugs = {\n    },\n    uids = {\n   '
-                          ' },\n    ids = {\n    },\n    stash = {\n    },\n  },\n}')
+                out.write(('-- file generated automatically\n'
+                           'WeakAurasCompanion = {\n'
+                           '  WeakAuras = {\n'
+                           '    slugs = {},\n'
+                           '    uids = {},\n'
+                           '    ids = {},\n'
+                           '    stash = {},\n'
+                           '  },\n'
+                           '  Plater = {\n'
+                           '    slugs = {},\n'
+                           '    uids = {},\n'
+                           '    ids = {},\n'
+                           '    stash = {},\n'
+                           '  },\n'
+                           '}'))
 
     def update(self):
         if os.path.isdir(Path('Interface/AddOns/WeakAuras')) and os.path.isfile(
