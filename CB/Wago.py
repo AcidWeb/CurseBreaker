@@ -123,7 +123,7 @@ class WagoUpdater:
             payload = requests.get(f'https://data.wago.io/api/check/{addon.api}?ids='
                                    f'{",".join(quote_plus(item) for item in addon.list.keys())}',
                                    headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']},
-                                   timeout=5).json()
+                                   timeout=15).json()
             if 'error' in payload or 'msg' in payload:
                 raise RuntimeError
             for entry in payload:
@@ -147,12 +147,12 @@ class WagoUpdater:
             payload = requests.get(f'https://data.wago.io/api/check/{addon.api}?ids='
                                    f'{",".join(quote_plus(item) for item in self.stash)}',
                                    headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']},
-                                   timeout=5).json()
+                                   timeout=15).json()
             for entry in payload:
                 output.append(entry['name'])
                 raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}',
                                    headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']},
-                                   timeout=5).text
+                                   timeout=15).text
                 stash = f'        ["{entry["slug"]}"] = {{\n          name = [=[{entry["name"]}]=],\n          ' \
                         f'author = [=[{entry["username"]}]=],\n          encoded = [=[{raw}]=],\n          ' \
                         f'wagoVersion = [=[{entry["version"]}]=],\n          ' \
@@ -173,7 +173,7 @@ class WagoUpdater:
     @retry('Failed to parse Wago data.')
     def update_entry(self, entry, addon):
         raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}',
-                           headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']}, timeout=5).text
+                           headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']}, timeout=15).text
         slug = f'        ["{entry["slug"]}"] = {{\n          name = [=[{entry["name"]}]=],\n          author = [=[' \
                f'{entry["username"]}]=],\n          encoded = [=[{raw}]=],\n          wagoVersion = [=[' \
                f'{entry["version"]}]=],\n          wagoSemver = [=[{entry["versionString"]}]=],\n          ' \
