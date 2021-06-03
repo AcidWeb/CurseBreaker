@@ -478,11 +478,11 @@ class TUI:
                                'nloads/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\thttps://www.tukui.o'
                                'rg/addons.php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]\n\thttps://www.t'
                                'ukui.org/classic-addons.php?id=\[addon_id] [bold white]|[/bold white] tuc:\[addon_id]\n'
-                               '\thttps://www.tukui.org/classic-tbc-addons?id=\[addon_id] [bold white]|[/bold white] tu'
-                               'bc:\[addon_id]\n\thttps://www.townlong-yak.com/addons/\[addon_name] [bold white]|[/bold'
-                               ' white] ty:\[addon_name]\n\thttps://github.com/\[username]/\[repository_name] [bold whi'
-                               'te]|[/bold white] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white]'
-                               ' ElvUI:Dev\n\tTukui [bold white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev',
+                               '\thttps://www.tukui.org/classic-tbc-addons.php?id=\[addon_id] [bold white]|[/bold white'
+                               '] tubc:\[addon_id]\n\thttps://www.townlong-yak.com/addons/\[addon_name] [bold white]|[/'
+                               'bold white] ty:\[addon_name]\n\thttps://github.com/\[username]/\[repository_name] [bold'
+                               ' white]|[/bold white] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold wh'
+                               'ite] ElvUI:Dev\n\tTukui [bold white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev',
                                highlight=False)
 
     def c_uninstall(self, args):
@@ -947,11 +947,11 @@ class TUI:
                            'm/downloads/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\thttps://www.tukui.'
                            'org/addons.php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]\n\thttps://www.tuku'
                            'i.org/classic-addons.php?id=\[addon_id] [bold white]|[/bold white] tuc:\[addon_id]\n\thttps'
-                           '://www.tukui.org/classic-tbc-addons?id=\[addon_id] [bold white]|[/bold white] tubc:\[addon_'
-                           'id]\n\thttps://www.townlong-yak.com/addons/\[addon_name] [bold white]|[/bold white] ty:\[ad'
-                           'don_name]\n\thttps://github.com/\[username]/\[repository_name] [bold white]|[/bold white] g'
-                           'h:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui [bo'
-                           'ld white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
+                           '://www.tukui.org/classic-tbc-addons.php?id=\[addon_id] [bold white]|[/bold white] tubc:\[ad'
+                           'don_id]\n\thttps://www.townlong-yak.com/addons/\[addon_name] [bold white]|[/bold white] ty:'
+                           '\[addon_name]\n\thttps://github.com/\[username]/\[repository_name] [bold white]|[/bold whit'
+                           'e] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui'
+                           ' [bold white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
 
     def c_exit(self, _):
         sys.exit(0)
