@@ -200,14 +200,14 @@ class Core:
         elif url.startswith('https://www.tukui.org/classic-addons.php?id='):
             if self.clientType != 'wow_classic':
                 raise RuntimeError('Incorrect client version.')
-            elif url.endswith('1') or url.endswith('2'):
+            elif url.endswith('=1') or url.endswith('=2'):
                 raise RuntimeError('ElvUI and Tukui cannot be installed this way.')
             self.bulk_tukui_check()
             return TukuiAddon(url, self.tukuiCache)
         elif url.startswith('https://www.tukui.org/classic-tbc-addons.php?id='):
             if self.clientType != 'wow_burning_crusade':
                 raise RuntimeError('Incorrect client version.')
-            elif url.endswith('1') or url.endswith('2'):
+            elif url.endswith('=1') or url.endswith('=2'):
                 raise RuntimeError('ElvUI and Tukui cannot be installed this way.')
             self.bulk_tukui_check()
             return TukuiAddon(url, self.tukuiCache)
