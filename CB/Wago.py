@@ -116,7 +116,7 @@ class WagoUpdater:
     def clean_string(self, s):
         return s.replace('"', '\\"')
 
-    @retry('Failed to parse Wago data.')
+    @retry('Failed to parse Wago data. Wago might be down or provided API key is incorrect.')
     def check_updates(self, addon):
         output = [[], []]
         if len(addon.list) > 0:
@@ -140,7 +140,7 @@ class WagoUpdater:
             output[1] = sorted(output[1], key=lambda v: v[0])
         return output
 
-    @retry('Failed to parse Wago data.')
+    @retry('Failed to parse Wago data. Wago might be down or provided API key is incorrect.')
     def check_stash(self, addon):
         output = []
         if len(self.stash) > 0:
@@ -170,7 +170,7 @@ class WagoUpdater:
         else:
             return ''
 
-    @retry('Failed to parse Wago data.')
+    @retry('Failed to parse Wago data. Wago might be down or provided API key is incorrect.')
     def update_entry(self, entry, addon):
         raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}',
                            headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']}, timeout=15).text

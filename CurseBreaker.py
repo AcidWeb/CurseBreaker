@@ -863,7 +863,7 @@ class TUI:
             self.console.print('[green]Top results of your search:[/green]')
             for url in results:
                 if self.core.check_if_installed(url):
-                    self.console.print(f'[link={url}]{url}[/link] [yellow]\[Installed][/yellow]', highlight=False)
+                    self.console.print(f'[link={url}]{url}[/link] [yellow][Installed][/yellow]', highlight=False)
                 else:
                     self.console.print(f'[link={url}]{url}[/link]', highlight=False)
         else:
