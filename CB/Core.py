@@ -23,7 +23,6 @@ from xml.dom.minidom import parse, parseString
 from . import retry, HEADERS, __version__
 from .Tukui import TukuiAddon
 from .GitHub import GitHubAddon, GitHubAddonRaw
-from .GitLab import GitLabAddon
 from .CurseForge import CurseForgeAddon
 from .WoWInterface import WoWInterfaceAddon
 from .TownlongYak import TownlongYakAddon
@@ -236,11 +235,11 @@ class Core:
                 return TukuiAddon('2', self.tukuiCache)
         elif url.lower() == 'elvui:dev':
             if self.clientType == 'wow_retail':
-                return GitLabAddon('ElvUI', '60', 'elvui/elvui', 'development')
+                return GitHubAddonRaw('tukui-org/ElvUI', 'development', ['ElvUI', 'ElvUI_OptionsUI'])
             elif self.clientType == 'wow_burning_crusade':
-                return GitLabAddon('ElvUI', '1452', 'elvui/elvui-tbc', 'development')
+                return GitHubAddonRaw('tukui-org/ElvUI-TBC', 'development', ['ElvUI', 'ElvUI_OptionsUI'])
             else:
-                return GitLabAddon('ElvUI', '492', 'elvui/elvui-classic', 'development')
+                return GitHubAddonRaw('tukui-org/ElvUI-Classic', 'development', ['ElvUI', 'ElvUI_OptionsUI'])
         elif url.lower() == 'tukui':
             if self.clientType == 'wow_retail':
                 return TukuiAddon('Tukui', self.tukuiCache, 'tukui')
@@ -248,12 +247,10 @@ class Core:
                 self.bulk_tukui_check()
                 return TukuiAddon('1', self.tukuiCache)
         elif url.lower() == 'tukui:dev':
-            if self.clientType == 'wow_retail':
-                return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'Retail')
-            elif self.clientType == 'wow_burning_crusade':
-                return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'Classic-TBC')
+            if self.clientType == 'wow_retail' or self.clientType == 'wow_burning_crusade':
+                return GitHubAddonRaw('tukui-org/Tukui', 'Live', ['Tukui'])
             else:
-                return GitLabAddon('Tukui', '77', 'Tukz/Tukui', 'Classic')
+                return GitHubAddonRaw('tukui-org/Tukui', 'Live-Classic-Era', ['Tukui'])
         elif url.lower() == 'shadow&light:dev':
             if self.clientType == 'wow_retail':
                 return GitHubAddonRaw('Shadow-and-Light/shadow-and-light', 'dev', ['ElvUI_SLE'])

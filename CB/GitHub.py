@@ -6,6 +6,7 @@ import requests
 from . import retry, HEADERS
 
 
+# noinspection PyTypeChecker
 class GitHubAddon:
     @retry()
     def __init__(self, url, clienttype):
@@ -136,7 +137,13 @@ class GitHubAddonRaw:
         self.directories = targetdirs
         self.author = []
 
-        if project == 'Shadow-and-Light/shadow-and-light':
+        if project.startswith('tukui-org/ElvUI'):
+            self.name = 'ElvUI'
+            self.author = ['Elv']
+        elif project == 'tukui-org/Tukui':
+            self.name = 'TukUI'
+            self.author = ['Tukz']
+        elif project == 'Shadow-and-Light/shadow-and-light':
             self.name = 'ElvUI Shadow & Light'
             self.author = ['Repooc', 'DarthPredator']
         else:
