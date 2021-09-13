@@ -82,7 +82,7 @@ class TUI:
         elif flavor in {'_classic_', '_classic_ptr_'}:
             self.core.clientType = 'wow_burning_crusade'
             set_terminal_title(f'CurseBreaker v{__version__} - Burning Crusade')
-        elif flavor in {'_classic_era_'}:
+        elif flavor in {'_classic_era_', '_classic_era_ptr_'}:
             self.core.clientType = 'wow_classic'
             set_terminal_title(f'CurseBreaker v{__version__} - Classic')
         else:
