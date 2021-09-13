@@ -310,11 +310,11 @@ class TUI:
         return keypress
 
     def print_header(self):
-        clear()
         if self.headless:
             self.console.print(f'[bold green]CurseBreaker[/bold green] [bold red]v{__version__}[/bold red] | '
                                f'[yellow]{datetime.now()}[/yellow]', highlight=False)
         else:
+            clear()
             self.console.print(Rule(f'[bold green]CurseBreaker[/bold green] [bold red]v{__version__}[/bold red]'))
             self.console.print('')
 
