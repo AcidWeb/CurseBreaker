@@ -234,12 +234,7 @@ class Core:
                 self.bulk_tukui_check()
                 return TukuiAddon('2', self.tukuiCache)
         elif url.lower() == 'elvui:dev':
-            if self.clientType == 'wow_retail':
-                return GitHubAddonRaw('tukui-org/ElvUI', 'development', ['ElvUI', 'ElvUI_OptionsUI'])
-            elif self.clientType == 'wow_burning_crusade':
-                return GitHubAddonRaw('tukui-org/ElvUI-TBC', 'development', ['ElvUI', 'ElvUI_OptionsUI'])
-            else:
-                return GitHubAddonRaw('tukui-org/ElvUI-Classic', 'development', ['ElvUI', 'ElvUI_OptionsUI'])
+            return GitHubAddonRaw('tukui-org/ElvUI', 'development', ['ElvUI', 'ElvUI_OptionsUI'])
         elif url.lower() == 'tukui':
             if self.clientType == 'wow_retail':
                 return TukuiAddon('Tukui', self.tukuiCache, 'tukui')

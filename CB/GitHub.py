@@ -137,7 +137,7 @@ class GitHubAddonRaw:
         self.directories = targetdirs
         self.author = []
 
-        if project.startswith('tukui-org/ElvUI'):
+        if project == 'tukui-org/ElvUI':
             self.name = 'ElvUI'
             self.author = ['Elv']
         elif project == 'tukui-org/Tukui':
