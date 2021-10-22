@@ -228,8 +228,10 @@ class TUI:
                         os.remove(sys.executable + '.old')
                     except PermissionError:
                         pass
-                payload = requests.get('https://api.github.com/repos/AcidWeb/CurseBreaker/releases/latest',
-                                       headers=HEADERS, timeout=5).json()
+                try:
+                    payload = requests.get('https://api.github.com/repos/AcidWeb/CurseBreaker/releases/latest', headers=HEADERS, timeout=5).json()
+                except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+                    return
                 if 'name' in payload and 'body' in payload and 'assets' in payload:
                     remoteversion = payload['name']
                     changelog = payload['body']
