@@ -677,7 +677,7 @@ class Core:
         miss = []
         for directory in addon_dirs:
             if os.path.isdir(self.path / directory) and not os.path.islink(self.path / directory) and \
-                    not os.path.isdir(self.path / directory / '.git') and not directory.startswith('Blizzard_'):
+                    not os.path.isdir(self.path / directory / '.git') and not directory.startswith('Blizzard_') and directory not in ignored:
                 if directory in self.dirIndex['single']['cf']:
                     if len(self.dirIndex['single']['cf'][directory]) > 1:
                         partial_hit.append(self.dirIndex['single']['cf'][directory])
@@ -689,7 +689,7 @@ class Core:
                     if directory == 'ElvUI' or directory == 'Tukui':
                         if not self.check_if_installed(directory):
                             hit.append(directory)
-                    elif directory not in ignored:
+                    else:
                         miss.append(directory)
         hit = list(set(hit))
         partial_hit.sort()
