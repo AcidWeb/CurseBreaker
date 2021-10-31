@@ -39,7 +39,7 @@ from CB.Wago import WagoUpdater
 if platform.system() == 'Windows':
     from ctypes import windll, wintypes
 
-# FIXME - Python bug #39010 - Fixed in 3.8.6/3.9
+# FIXME - Python bug #39010
 import asyncio
 import selectors
 asyncio.set_event_loop(asyncio.SelectorEventLoop(selectors.SelectSelector()))

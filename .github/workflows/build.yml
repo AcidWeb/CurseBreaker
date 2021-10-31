@@ -13,7 +13,7 @@ jobs:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
       with:
-        python-version: 3.8
+        python-version: 3.9
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools wheel
@@ -21,7 +21,7 @@ jobs:
         pip install certifi
         git clone https://github.com/pyinstaller/pyinstaller.git
         cd pyinstaller
-        git checkout tags/v4.5.1
+        git checkout tags/v4.6
         cd bootloader
         python waf all
         cd ..
