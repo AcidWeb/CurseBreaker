@@ -3,13 +3,12 @@ import io
 import zipfile
 import requests
 from . import retry, HEADERS
-from operator import itemgetter
 from json import JSONDecodeError
 
 
 class CurseForgeAddon:
     @retry()
-    def __init__(self, url, project, checkcache, clienttype, allowdev, ignoreclienttype):
+    def __init__(self, url, project, checkcache, clienttype, allowdev):
         if project in checkcache:
             self.payload = checkcache[project]
         else:
@@ -31,10 +30,9 @@ class CurseForgeAddon:
                 except (StopIteration, JSONDecodeError):
                     raise RuntimeError(f'{url}\nThis might be a temporary issue with CurseForge API.')
         self.name = self.payload['name'].strip().strip('\u200b')
-        if not len(self.payload['latestFiles']) > 0:
+        if not len(self.payload['gameVersionLatestFiles']) > 0:
             raise RuntimeError(f'{self.name}.\nThe project doesn\'t have any releases.')
         self.clientType = clienttype
-        self.ignoreClientType = ignoreclienttype
         self.allowDev = allowdev
         self.downloadUrl = None
         self.changelogUrl = None
@@ -51,34 +49,44 @@ class CurseForgeAddon:
                 self.author.append(author['name'])
 
     def get_current_version(self):
-        files = sorted(self.payload['latestFiles'], key=itemgetter('id'), reverse=True)
-        release = [[1], [2], [3]]
-        if self.ignoreClientType:
-            targetflavor = None
-        else:
-            targetflavor = self.clientType
+        latestfiles = {1: 0, 2: 0, 3: 0}
+        for f in self.payload['gameVersionLatestFiles']:
+            if 'gameVersionTypeId' in f and f['gameVersionTypeId'] == self.clientType and f['projectFileId'] > latestfiles[f['fileType']]:
+                latestfiles[f['fileType']] = f['projectFileId']
+
+        targetrelease = 0
         if self.allowDev == 1:
-            release = [[2, 1]]
+            latestfiles.pop(3, None)
+            targetrelease = latestfiles[max(latestfiles, key=latestfiles.get)]
         elif self.allowDev == 2:
-            release = [[3, 2, 1]]
-        for status in release:
-            for f in files:
-                if (not targetflavor or f['gameVersionFlavor'] == targetflavor) and\
-                        f['releaseType'] in status and '-nolib' not in f['displayName'] and not f['isAlternate']:
-                    self.downloadUrl = f['downloadUrl']
-                    self.changelogUrl = f'{self.payload["websiteUrl"]}/files/{f["id"]}'
-                    self.currentVersion = f['displayName']
-                    if len(f['gameVersion']) > 0:
-                        self.uiVersion = max(f['gameVersion'])
-                    if len(f['dependencies']) > 0:
-                        self.dependencies = []
-                        for d in f['dependencies']:
-                            if d['type'] == 3:
-                                self.dependencies.append(d['addonId'])
-                        if len(self.dependencies) == 0:
-                            self.dependencies = None
-                    break
-            if self.downloadUrl and self.currentVersion:
+            targetrelease = latestfiles[max(latestfiles, key=latestfiles.get)]
+        else:
+            if latestfiles[1] > 0:
+                targetrelease = latestfiles[1]
+            elif latestfiles[2] > 0:
+                targetrelease = latestfiles[2]
+            elif latestfiles[3] > 0:
+                targetrelease = latestfiles[3]
+        if targetrelease == 0:
+            raise RuntimeError(f'{self.name}.\nFailed to find release for your client version.')
+
+        for f in self.payload['latestFiles']:
+            if f['id'] == targetrelease:
+                self.downloadUrl = f['downloadUrl']
+                self.changelogUrl = f'{self.payload["websiteUrl"]}/files/{f["id"]}'
+                self.currentVersion = f['displayName']
+                if len(f['sortableGameVersion']) > 0:
+                    for v in f['sortableGameVersion']:
+                        if v['gameVersionTypeId'] == self.clientType:
+                            self.uiVersion = v['gameVersion']
+                            break
+                if len(f['dependencies']) > 0:
+                    self.dependencies = []
+                    for d in f['dependencies']:
+                        if d['type'] == 3:
+                            self.dependencies.append(d['addonId'])
+                    if len(self.dependencies) == 0:
+                        self.dependencies = None
                 break
         else:
             raise RuntimeError(f'{self.name}.\nFailed to find release for your client version.')

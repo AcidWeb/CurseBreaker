@@ -186,9 +186,9 @@ class Core:
                 raise RuntimeError(f'{url}\nThe addon is unavailable. You can\'t manage it with this application.')
         if url.startswith('https://www.curseforge.com/wow/addons/'):
             return CurseForgeAddon(url, self.parse_cf_id(url), self.cfCache,
-                                   self.clientType,
-                                   self.check_if_dev(url),
-                                   True if url in self.config['IgnoreClientVersion'].keys() else False)
+                                   self.masterConfig['Flavors']['wow_retail'] if url in self.config['IgnoreClientVersion'].keys()
+                                   else self.masterConfig['Flavors'][self.clientType],
+                                   self.check_if_dev(url))
         elif url.startswith('https://www.wowinterface.com/downloads/'):
             return WoWInterfaceAddon(url, self.wowiCache)
         elif url.startswith('https://www.tukui.org/addons.php?id='):
