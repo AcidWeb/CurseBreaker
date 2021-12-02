@@ -383,7 +383,8 @@ class TUI:
                        'pinning': WordCompleter(addons, ignore_case=True, sentence=True),
                        'wago': None},
             'set': {'wago_api': None,
-                    'wago_wow_account': WordCompleter(accounts, ignore_case=True, sentence=True)},
+                    'wago_wow_account': WordCompleter(accounts, ignore_case=True, sentence=True),
+                    'gh_api': None},
             'show': {'dependencies': None},
             'uri_integration': None,
             'help': None,
@@ -749,6 +750,18 @@ class TUI:
                     self.core.save_config()
                 else:
                     self.console.print('[green]Usage:[/green]\n\tThis command accepts API key as an argument.')
+            elif args.startswith('gh_api'):
+                args = args[7:]
+                if args:
+                    self.console.print('GitHub API key is now set.')
+                    self.core.config['GHAPIKey'] = args.strip()
+                    self.core.save_config()
+                elif self.core.config['GHAPIKey'] != '':
+                    self.console.print('GitHub API key is now removed.')
+                    self.core.config['GHAPIKey'] = ''
+                    self.core.save_config()
+                else:
+                    self.console.print('[green]Usage:[/green]\n\tThis command accepts API key as an argument.')
             elif args.startswith('wago_wow_account'):
                 args = args[17:]
                 if args:
@@ -770,7 +783,8 @@ class TUI:
                                'equired to access private entries.\n\t\tIt can be procured here: [link=https://wago.io/'
                                'account]https://wago.io/account[/link]\n\t[green]set wago_wow_account [Account name][/g'
                                'reen]\n\t\tSets WoW account used by Wago updater.\n\t\tNeeded only if compatibile addon'
-                               's are used on more than one WoW account.', highlight=False)
+                               's are used on more than one WoW account.\n\t[green]set gh_api [API key][/green]\n\t\tSe'
+                               'ts GitHub API key. Might be needed to get around API rate limits.', highlight=False)
 
     def c_show(self, args):
         if args:
@@ -940,7 +954,9 @@ class TUI:
                            'es.\n\tIt can be procured here:'
                            ' [link=https://wago.io/account]https://wago.io/account[/link]\n'
                            '[green]set wago_wow_account [Account name][/green]\n\tSets WoW account used by Wago updater'
-                           '.\n\tNeeded only if compatibile addons are used on more than one WoW account.\n'
+                           '.\n\tNeeded only if compatibile addons are used on more than one WoW account.\n[green]set g'
+                           'h_api [API key][/green]\n\tSets GitHub API key. Might be needed to get around API rate limi'
+                           'ts.\n'
                            '[green]show dependencies[/green]\n\tDisplay a list of dependencies of all installed addons.'
                            '\n[green]uri_integration[/green]\n\tEnables integration with CurseForge and Wago page.\n\t['
                            'i]"Install"[/i] and [i]"Send to WeakAura Companion App"[/i] buttons will now start this app'

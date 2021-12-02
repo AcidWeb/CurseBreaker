@@ -9,10 +9,13 @@ from . import retry, HEADERS
 # noinspection PyTypeChecker
 class GitHubAddon:
     @retry()
-    def __init__(self, url, clienttype):
+    def __init__(self, url, clienttype, apikey):
         project = url.replace('https://github.com/', '')
+        self.headers = HEADERS
+        if apikey != '':
+            self.headers['Authorization'] = f'token {apikey}'
         try:
-            self.payload = requests.get(f'https://api.github.com/repos/{project}/releases', headers=HEADERS, timeout=5)
+            self.payload = requests.get(f'https://api.github.com/repos/{project}/releases', headers=self.headers, timeout=5)
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             raise RuntimeError(f'{project}\nGitHub API failed to respond.')
         if self.payload.status_code == 404:
@@ -44,7 +47,7 @@ class GitHubAddon:
     def parse_metadata(self):
         for release in self.payload['assets']:
             if release['name'] and release['name'] == 'release.json':
-                self.metadata = requests.get(release['browser_download_url'], headers=HEADERS, timeout=5).json()
+                self.metadata = requests.get(release['browser_download_url'], headers=self.headers, timeout=5).json()
                 break
 
     def get_latest_package(self):
@@ -99,7 +102,7 @@ class GitHubAddon:
 
     @retry()
     def get_addon(self):
-        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS, timeout=5).content))
+        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=self.headers, timeout=5).content))
         for file in self.archive.namelist():
             if file.lower().endswith('.toc') and '/' not in file:
                 raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
@@ -115,10 +118,13 @@ class GitHubAddon:
 
 class GitHubAddonRaw:
     @retry()
-    def __init__(self, project, branch, targetdirs):
+    def __init__(self, project, branch, targetdirs, apikey):
+        self.headers = HEADERS
+        if apikey != '':
+            self.headers['Authorization'] = f'token {apikey}'
         try:
             self.payload = requests.get(f'https://api.github.com/repos/{project}/branches/{branch}',
-                                        headers=HEADERS, timeout=5)
+                                        headers=self.headers, timeout=5)
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             raise RuntimeError(f'{project}\nGitHub API failed to respond.')
         if self.payload.status_code == 404:
@@ -151,7 +157,7 @@ class GitHubAddonRaw:
 
     @retry()
     def get_addon(self):
-        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS, timeout=5).content))
+        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=self.headers, timeout=5).content))
 
     def install(self, path):
         self.archive.extractall(path)

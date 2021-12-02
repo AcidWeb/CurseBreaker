@@ -75,6 +75,7 @@ class Core:
                            'WAUsername': '',
                            'WAAccountName': '',
                            'WAAPIKey': '',
+                           'GHAPIKey': '',
                            'WACompanionVersion': 0,
                            'CFCacheTimestamp': 0,
                            'CompactMode': False,
@@ -129,7 +130,8 @@ class Core:
                         ['3.10.0', 'AutoUpdate', True],
                         ['3.12.0', 'ShowAuthors', True],
                         ['3.16.0', 'IgnoreDependencies', {}],
-                        ['3.18.0', 'WAStash', []]]:
+                        ['3.18.0', 'WAStash', []],
+                        ['3.20.0', 'GHAPIKey', '']]:
                 if add[1] not in self.config.keys():
                     self.config[add[1]] = add[2]
             for delete in [['1.3.0', 'URLCache'],
@@ -211,7 +213,7 @@ class Core:
             self.bulk_tukui_check()
             return TukuiAddon(url, self.tukuiCache)
         elif url.startswith('https://github.com/'):
-            return GitHubAddon(url, self.clientType)
+            return GitHubAddon(url, self.clientType, self.config['GHAPIKey'])
         elif url.startswith('https://www.townlong-yak.com/addons/'):
             self.bulk_townlongyak_check()
             if self.clientType == 'wow_retail':
@@ -234,7 +236,7 @@ class Core:
                 self.bulk_tukui_check()
                 return TukuiAddon('2', self.tukuiCache)
         elif url.lower() == 'elvui:dev':
-            return GitHubAddonRaw('tukui-org/ElvUI', 'development', ['ElvUI', 'ElvUI_OptionsUI'])
+            return GitHubAddonRaw('tukui-org/ElvUI', 'development', ['ElvUI', 'ElvUI_OptionsUI'], self.config['GHAPIKey'])
         elif url.lower() == 'tukui':
             if self.clientType == 'wow_retail':
                 return TukuiAddon('Tukui', self.tukuiCache, 'tukui')
@@ -243,12 +245,12 @@ class Core:
                 return TukuiAddon('1', self.tukuiCache)
         elif url.lower() == 'tukui:dev':
             if self.clientType == 'wow_retail' or self.clientType == 'wow_burning_crusade':
-                return GitHubAddonRaw('tukui-org/Tukui', 'Live', ['Tukui'])
+                return GitHubAddonRaw('tukui-org/Tukui', 'Live', ['Tukui'], self.config['GHAPIKey'])
             else:
-                return GitHubAddonRaw('tukui-org/Tukui', 'Live-Classic-Era', ['Tukui'])
+                return GitHubAddonRaw('tukui-org/Tukui', 'Live-Classic-Era', ['Tukui'], self.config['GHAPIKey'])
         elif url.lower() == 'shadow&light:dev':
             if self.clientType == 'wow_retail':
-                return GitHubAddonRaw('Shadow-and-Light/shadow-and-light', 'dev', ['ElvUI_SLE'])
+                return GitHubAddonRaw('Shadow-and-Light/shadow-and-light', 'dev', ['ElvUI_SLE'], self.config['GHAPIKey'])
             else:
                 raise RuntimeError('Incorrect client version.')
         else:
