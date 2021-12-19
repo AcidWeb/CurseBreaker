@@ -22,7 +22,7 @@ from rich.text import Text
 from rich.rule import Rule
 from rich.table import Table
 from rich.panel import Panel
-from rich.console import Console
+from rich.console import Console, detect_legacy_windows
 from rich.control import Control
 from rich.progress import Progress, BarColumn
 from rich.traceback import Traceback, install
@@ -333,7 +333,7 @@ class TUI:
                 window = windll.kernel32.GetConsoleWindow()
                 if window:
                     windll.user32.ShowWindow(window, 0)
-        elif 'WINDIR' in os.environ and 'WT_SESSION' not in os.environ and 'ALACRITTY_LOG' not in os.environ:
+        elif detect_legacy_windows():
             set_terminal_size(100, 50)
             windll.kernel32.SetConsoleScreenBufferSize(windll.kernel32.GetStdHandle(-11), wintypes._COORD(100, 200))
             self.console = Console(width=97)
