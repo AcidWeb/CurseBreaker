@@ -160,8 +160,9 @@ class GitHubAddonRaw:
         self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=self.headers, timeout=5).content))
 
     def install(self, path):
-        self.archive.extractall(path)
         for directory in self.directories:
             shutil.rmtree(path / directory, ignore_errors=True)
-            shutil.move(path / f'{self.shorthPath}-{self.branch}' / directory, path)
-        shutil.rmtree(path / f'{self.shorthPath}-{self.branch}')
+        for file in self.archive.infolist():
+            file.filename = file.filename.replace(f'{self.shorthPath}-{self.branch}/', '')
+            if any(f in file.filename for f in self.directories):
+                self.archive.extract(file, path)
