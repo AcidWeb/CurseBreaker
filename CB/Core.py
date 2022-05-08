@@ -25,7 +25,6 @@ from .Tukui import TukuiAddon
 from .GitHub import GitHubAddon, GitHubAddonRaw
 from .CurseForge import CurseForgeAddon
 from .WoWInterface import WoWInterfaceAddon
-from .TownlongYak import TownlongYakAddon
 
 
 class Core:
@@ -41,7 +40,6 @@ class Core:
         self.cfCache = {}
         self.wowiCache = {}
         self.tukuiCache = None
-        self.townlongyakCache = None
         self.checksumCache = {}
         self.scraper = cloudscraper.create_scraper()
 
@@ -214,21 +212,10 @@ class Core:
             return TukuiAddon(url, self.tukuiCache)
         elif url.startswith('https://github.com/'):
             return GitHubAddon(url, self.clientType, self.config['GHAPIKey'])
+        # TODO: Depreciation
         elif url.startswith('https://www.townlong-yak.com/addons/'):
-            self.bulk_townlongyak_check()
-            if self.clientType == 'wow_retail':
-                clienttype = 'retail'
-            elif self.clientType == 'wow_burning_crusade':
-                if url in self.config['IgnoreClientVersion'].keys():
-                    clienttype = 'classic'
-                else:
-                    clienttype = 'burningcrusade'
-            else:
-                if url in self.config['IgnoreClientVersion'].keys():
-                    clienttype = 'retail'
-                else:
-                    clienttype = 'classic'
-            return TownlongYakAddon(url, self.townlongyakCache, clienttype)
+            raise RuntimeError(f'{url}\nTownlong Yak is no longer supported by this application.'
+                               f'\nPlease uninstall this addon and install it from different source.')
         elif url.lower() == 'elvui':
             if self.clientType == 'wow_retail':
                 return TukuiAddon('ElvUI', self.tukuiCache, 'elvui')
@@ -273,8 +260,6 @@ class Core:
             return 'GitHub', 'https://github.com/Shadow-and-Light/shadow-and-light'
         elif url.startswith('https://github.com/'):
             return 'GitHub', url
-        elif url.startswith('https://www.townlong-yak.com/addons/'):
-            return 'Townlong Yak', url
         else:
             return '?', None
 
@@ -297,8 +282,6 @@ class Core:
             url = f'https://www.tukui.org/classic-tbc-addons.php?id={url[5:]}'
         elif url.startswith('gh:'):
             url = f'https://github.com/{url[3:]}'
-        elif url.startswith('ty:'):
-            url = f'https://www.townlong-yak.com/addons/{url[3:]}'
         if url.endswith('/'):
             url = url[:-1]
         addon = self.check_if_installed(url)
@@ -648,12 +631,6 @@ class Core:
             self.tukuiCache = requests.get(f'https://www.tukui.org/api.php?{endpoint}',
                                            headers=HEADERS, timeout=5).json()
 
-    @retry(custom_error='Failed to parse Townlong Yak API data')
-    def bulk_townlongyak_check(self):
-        if not self.townlongyakCache:
-            self.townlongyakCache = requests.get('https://hub.wowup.io/addons/author/foxlit',
-                                                 headers=HEADERS, timeout=5).json()
-
     def detect_accounts(self):
         if os.path.isdir(Path('WTF/Account')):
             accounts = os.listdir(Path('WTF/Account'))
@@ -769,8 +746,6 @@ class Core:
                 url = f'tubc:{addon["URL"].split("?id=")[-1]}'
             elif addon['URL'].startswith('https://github.com/'):
                 url = f'gh:{addon["URL"].replace("https://github.com/", "")}'
-            elif addon['URL'].startswith('https://www.townlong-yak.com/addons/'):
-                url = f'ty:{addon["URL"].replace("https://www.townlong-yak.com/addons/", "")}'
             else:
                 url = addon['URL'].lower()
             addons.append(url)

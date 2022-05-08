@@ -32,7 +32,6 @@ By default **CurseBreaker** will create backups of entire `WTF` directory.
 - CurseForge: `https://www.curseforge.com/wow/addons/[addon_name]`, `cf:[addon_name]`
 - WoWInterface: `https://www.wowinterface.com/downloads/[addon_name]`, `wowi:[addon_id]`
 - Tukui: `ElvUI`, `Tukui`, `https://www.tukui.org/addons.php?id=[addon_id]`, `https://www.tukui.org/classic-addons.php?id=[addon_id]`, `https://www.tukui.org/classic-tbc-addons.php?id=[addon_id]`, `tu:[addon_id]`, `tuc:[addon_id]` , `tubc:[addon_id]`
-- Townlong Yak: `https://www.townlong-yak.com/addons/[addon_name]`, `ty:[addon_name]`
 - GitHub: `ElvUI:Dev`, `Tukui:Dev`, `Shadow&Light:Dev`
 - GitHub Releases: `https://github.com/[username]/[repository_name]`, `gh:[username]/[repository_name]`
 - Wago: **CurseBreaker** can update auras and Plater profiles/scripts like WeakAuras Companion.

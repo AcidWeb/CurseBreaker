@@ -482,10 +482,9 @@ class TUI:
                                'rg/addons.php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]\n\thttps://www.t'
                                'ukui.org/classic-addons.php?id=\[addon_id] [bold white]|[/bold white] tuc:\[addon_id]\n'
                                '\thttps://www.tukui.org/classic-tbc-addons.php?id=\[addon_id] [bold white]|[/bold white'
-                               '] tubc:\[addon_id]\n\thttps://www.townlong-yak.com/addons/\[addon_name] [bold white]|[/'
-                               'bold white] ty:\[addon_name]\n\thttps://github.com/\[username]/\[repository_name] [bold'
-                               ' white]|[/bold white] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold wh'
-                               'ite] ElvUI:Dev\n\tTukui [bold white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev',
+                               '] tubc:\[addon_id]\n\thttps://github.com/\[username]/\[repository_name] [bold white]|[/'
+                               'bold white] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white] ElvUI'
+                               ':Dev\n\tTukui [bold white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev',
                                highlight=False)
 
     def c_uninstall(self, args):
@@ -966,10 +965,9 @@ class TUI:
                            'org/addons.php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]\n\thttps://www.tuku'
                            'i.org/classic-addons.php?id=\[addon_id] [bold white]|[/bold white] tuc:\[addon_id]\n\thttps'
                            '://www.tukui.org/classic-tbc-addons.php?id=\[addon_id] [bold white]|[/bold white] tubc:\[ad'
-                           'don_id]\n\thttps://www.townlong-yak.com/addons/\[addon_name] [bold white]|[/bold white] ty:'
-                           '\[addon_name]\n\thttps://github.com/\[username]/\[repository_name] [bold white]|[/bold whit'
-                           'e] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui'
-                           ' [bold white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
+                           'don_id]\n\thttps://github.com/\[username]/\[repository_name] [bold white]|[/bold white] gh:'
+                           '\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui [bold'
+                           ' white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
 
     def c_exit(self, _):
         sys.exit(0)
