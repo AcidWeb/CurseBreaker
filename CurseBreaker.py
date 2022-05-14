@@ -446,6 +446,13 @@ class TUI:
             addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
             exceptions = []
             if len(addons) > 0:
+                if self.core.clientType != 'wow_retail':
+                    for addon in addons:
+                        if addon.startswith('https://www.wowinterface.com/downloads/') or addon.startswith('wowi:'):
+                            self.console.print('[yellow][WARNING][/yellow] WoWInterface support for non-retail clients '
+                                               'is limited. If the selected project offers multiple downloads this appl'
+                                               'ication will always install the retail version of the addon.')
+                            break
                 with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|',
                               auto_refresh=False, console=self.console) as progress:
                     task = progress.add_task('', total=len(addons))
