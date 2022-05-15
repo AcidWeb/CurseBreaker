@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import bbcode
 import requests
 from io import StringIO
@@ -99,15 +100,15 @@ class PlaterParser(BaseParser):
 
 
 class WagoUpdater:
-    # noinspection PyTypeChecker,PyUnresolvedReferences
-    def __init__(self, config, masterconfig):
+    def __init__(self, config, clienttoc):
         self.username = config['WAUsername']
         self.accountName = config['WAAccountName']
         self.apiKey = config['WAAPIKey']
         self.stash = config['WAStash']
-        self.masterConfig = masterconfig
+        self.clientTOC = clienttoc
         self.bbParser = bbcode.Parser()
         Markdown.output_formats['plain'] = markdown_unmark_element
+        # noinspection PyTypeChecker
         self.mdParser = Markdown(output_format='plain')
         self.mdParser.stripTopLevelTags = False
         if self.username == 'DISABLED':
@@ -141,10 +142,10 @@ class WagoUpdater:
         return output
 
     @retry('Failed to parse Wago data. Wago might be down or provided API key is incorrect.')
-    def check_stash(self, addon):
+    def check_stash(self, wa, plater):
         output = []
         if len(self.stash) > 0:
-            payload = requests.get(f'https://data.wago.io/api/check/{addon.api}?ids='
+            payload = requests.get(f'https://data.wago.io/api/check/?ids='
                                    f'{",".join(quote_plus(item) for item in self.stash)}',
                                    headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']},
                                    timeout=15).json()
@@ -153,11 +154,15 @@ class WagoUpdater:
                 raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}',
                                    headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']},
                                    timeout=15).text
-                stash = f'        ["{entry["slug"]}"] = {{\n          name = [=[{entry["name"]}]=],\n          ' \
-                        f'author = [=[{entry["username"]}]=],\n          encoded = [=[{raw}]=],\n          ' \
-                        f'wagoVersion = [=[{entry["version"]}]=],\n          ' \
-                        f'wagoSemver = [=[{entry["versionString"]}]=],\n        }},\n'
-                addon.data['stash'].append(stash)
+                stash = f'        ["{entry["slug"]}"] = {{\n          name = [=[{entry["name"]}]=],\n          author' \
+                        f' = [=[{entry["username"]}]=],\n          encoded = [=[{raw}]=],\n          wagoVersion = [=' \
+                        f'[{entry["version"]}]=],\n          wagoSemver = [=[{entry["versionString"]}]=],\n          ' \
+                        f'source = [=[Wago]=],\n          logo = [=[]=],\n          versionNote = [=[]=],\n        }}' \
+                        f',\n'
+                if entry['type'] == 'WEAKAURA':
+                    wa.data['stash'].append(stash)
+                elif entry['type'] == 'PLATER':
+                    plater.data['stash'].append(stash)
             output.sort()
         return output
 
@@ -176,8 +181,9 @@ class WagoUpdater:
                            headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']}, timeout=15).text
         slug = f'        ["{entry["slug"]}"] = {{\n          name = [=[{entry["name"]}]=],\n          author = [=[' \
                f'{entry["username"]}]=],\n          encoded = [=[{raw}]=],\n          wagoVersion = [=[' \
-               f'{entry["version"]}]=],\n          wagoSemver = [=[{entry["versionString"]}]=],\n          ' \
-               f'versionNote = [=[{self.parse_changelog(entry)}]=],\n        }},\n'
+               f'{entry["version"]}]=],\n          wagoSemver = [=[{entry["versionString"]}]=],\n          source = [' \
+               f'=[Wago]=],\n          logo = [=[]=],\n          versionNote = [=[{self.parse_changelog(entry)}]=],\n' \
+               f'        }},\n'
         uids = ''
         ids = ''
         for u in addon.uids:
@@ -207,6 +213,8 @@ class WagoUpdater:
                        '    stash = {\n'
                        f'{"".join(str(x) for x in wadata["stash"])}'
                        '    },\n'
+                       '    stopmotionFiles = {\n'
+                       '    },\n'
                        '  },\n'
                        '  Plater = {\n'
                        '    slugs = {\n'
@@ -218,31 +226,29 @@ class WagoUpdater:
                        f'{"".join(str(x) for x in platerdata["ids"])}'
                        '    },\n'
                        '    stash = {\n'
+                       f'{"".join(str(x) for x in platerdata["stash"])}'
                        '    },\n'
                        '  },\n'
                        '}'))
 
     def install_companion(self, force):
         if not os.path.isdir(Path('Interface/AddOns/WeakAurasCompanion')) or force:
+            shutil.rmtree(Path('Interface/AddOns/WeakAurasCompanion'), ignore_errors=True)
             Path('Interface/AddOns/WeakAurasCompanion').mkdir(exist_ok=True)
-            tocmatrix = (('', self.masterConfig['RetailTOC']),
-                         ('-Classic', self.masterConfig['ClassicTOC']),
-                         ('-BCC', self.masterConfig['BurningCrusadeTOC']))
-            for client in tocmatrix:
-                with open(Path(f'Interface/AddOns/WeakAurasCompanion/WeakAurasCompanion{client[0]}.toc'),
-                          'w', newline='\n') as out:
-                    out.write((f'## Interface: {client[1]}\n'
-                               '## Title: WeakAuras Companion\n'
-                               '## Author: The WeakAuras Team\n'
-                               '## Version: 1.1.0\n'
-                               '## Notes: Keep your WeakAuras updated!\n'
-                               '## X-Category: Interface Enhancements\n'
-                               '## DefaultState: Enabled\n'
-                               '## LoadOnDemand: 0\n'
-                               '## OptionalDeps: WeakAuras, Plater\n'
-                               '## SavedVariables: timestamp\n\n'                   
-                               'data.lua\n'
-                               'init.lua'))
+            with open(Path(f'Interface/AddOns/WeakAurasCompanion/WeakAurasCompanion.toc'),
+                      'w', newline='\n') as out:
+                out.write((f'## Interface: {self.clientTOC}\n'
+                           '## Title: WeakAuras Companion\n'
+                           '## Author: The WeakAuras Team\n'
+                           '## Version: 1.1.0\n'
+                           '## Notes: Keep your WeakAuras updated!\n'
+                           '## X-Category: Interface Enhancements\n'
+                           '## DefaultState: Enabled\n'
+                           '## LoadOnDemand: 0\n'
+                           '## OptionalDeps: WeakAuras, Plater\n'
+                           '## SavedVariables: timestamp\n\n'                   
+                           'data.lua\n'
+                           'init.lua'))
             with open(Path('Interface/AddOns/WeakAurasCompanion/init.lua'), 'w', newline='\n') as out:
                 out.write(('-- file generated automatically\n'
                            'local loadedFrame = CreateFrame("FRAME")\n'
@@ -250,38 +256,44 @@ class WagoUpdater:
                            'loadedFrame:SetScript("OnEvent", function(_, _, addonName)\n'
                            '  if addonName == "WeakAurasCompanion" then\n'
                            '    timestamp = GetTime()\n'
-                           '    if WeakAuras then\n'
+                           '    if WeakAuras and WeakAurasCompanion then\n'
                            '      local WeakAurasData = WeakAurasCompanion.WeakAuras\n'
-                           '      -- previous version compatibility\n'
-                           '      WeakAurasCompanion.slugs = WeakAurasData.slugs\n'
-                           '      WeakAurasCompanion.uids = WeakAurasData.uids\n'
-                           '      WeakAurasCompanion.ids = WeakAurasData.ids\n'
-                           '      WeakAurasCompanion.stash = WeakAurasData.stash\n'
-                           '      local count = WeakAuras.CountWagoUpdates()\n'
-                           '      if count and count > 0 then\n'
-                           '        WeakAuras.prettyPrint(WeakAuras.L["There are %i updates to your auras ready to be i'
-                           'nstalled!"]:format(count))\n'
-                           '      end\n'
-                           '      if WeakAuras.ImportHistory then\n'
-                           '        for id, data in pairs(WeakAurasSaved.displays) do\n'
-                           '          if data.uid and not WeakAurasSaved.history[data.uid] then\n'
-                           '            local slug = WeakAurasData.uids[data.uid]\n'
-                           '            if slug then\n'
-                           '              local wagoData = WeakAurasData.slugs[slug]\n'
-                           '              if wagoData and wagoData.encoded then\n'
-                           '                WeakAuras.ImportHistory(wagoData.encoded)\n'
+                           '      if WeakAurasData then\n'
+                           '        local count = WeakAuras.CountWagoUpdates()\n'
+                           '        if count and count > 0 then\n'
+                           '          WeakAuras.prettyPrint(WeakAuras.L["There are %i updates to your auras ready to be'
+                           ' installed!"]:format(count))\n'
+                           '        end\n'
+                           '        if WeakAuras.ImportHistory then\n'
+                           '          for id, data in pairs(WeakAurasSaved.displays) do\n'
+                           '            if data.uid and not WeakAurasSaved.history[data.uid] then\n'
+                           '              local slug = WeakAurasData.uids[data.uid]\n'
+                           '              if slug then\n'
+                           '                local wagoData = WeakAurasData.slugs[slug]\n'
+                           '                if wagoData and wagoData.encoded then\n'
+                           '                  WeakAuras.ImportHistory(wagoData.encoded)\n'
+                           '                end\n'
                            '              end\n'
                            '            end\n'
                            '          end\n'
                            '        end\n'
-                           '      end\n'
-                           '      if WeakAurasData.stash then\n'
-                           '        local emptyStash = true\n'
-                           '        for _ in pairs(WeakAurasData.stash) do\n'
-                           '          emptyStash = false\n'
+                           '       if WeakAurasData.stash then\n'
+                           '          local emptyStash = true\n'
+                           '          for _ in pairs(WeakAurasData.stash) do\n'
+                           '            emptyStash = false\n'
+                           '          end\n'
+                           '          if not emptyStash then\n'
+                           '            WeakAuras.prettyPrint(WeakAuras.L["You have new auras ready to be installed!"])'
+                           '\n'
+                           '          end\n'
                            '        end\n'
-                           '        if not emptyStash then\n'
-                           '          WeakAuras.prettyPrint(WeakAuras.L["You have new auras ready to be installed!"])\n'
+                           '        WeakAuras.StopMotion.texture_types["WeakAuras Companion"] = WeakAuras.StopMotion.te'
+                           'xture_types["WeakAuras Companion"] or {}\n'
+                           '        local CompanionTextures = WeakAuras.StopMotion.texture_types["WeakAuras Companion"]'
+                           '\n'
+                           '        for fileName, name in pairs(WeakAurasData.stopmotionFiles) do\n'
+                           '          CompanionTextures["Interface\\\\AddOns\\\\WeakAurasCompanion\\\\animations\\\\" .'
+                           '. fileName] = name\n'
                            '        end\n'
                            '      end\n'
                            '    end\n'
@@ -298,6 +310,7 @@ class WagoUpdater:
                            '    uids = {},\n'
                            '    ids = {},\n'
                            '    stash = {},\n'
+                           '    stopmotionFiles = {},\n'
                            '  },\n'
                            '  Plater = {\n'
                            '    slugs = {},\n'
@@ -319,7 +332,7 @@ class WagoUpdater:
         else:
             plater = BaseParser()
         statuswa = self.check_updates(wa)
-        statusstash = self.check_stash(wa)
         statusplater = self.check_updates(plater)
+        statusstash = self.check_stash(wa, plater)
         self.install_data(wa.data, plater.data)
         return statuswa, statusplater, statusstash
