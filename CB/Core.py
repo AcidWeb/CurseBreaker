@@ -36,6 +36,7 @@ class Core:
         self.config = None
         self.masterConfig = None
         self.cfIDs = None
+        self.CBCompanionVersion = 1
         self.dirIndex = None
         self.cfCache = {}
         self.wowiCache = {}
@@ -74,8 +75,8 @@ class Core:
                            'WAAccountName': '',
                            'WAAPIKey': '',
                            'GHAPIKey': '',
-                           'WACompanionVersion': 0,
                            'CFCacheTimestamp': 0,
+                           'CBCompanionVersion': 0,
                            'CompactMode': False,
                            'AutoUpdate': True,
                            'ShowAuthors': True}
@@ -92,6 +93,9 @@ class Core:
         if 'Version' not in self.config.keys() or self.config['Version'] != __version__:
             urlupdate = {'elvui-classic': 'elvui', 'elvui-classic:dev': 'elvui:dev', 'tukui-classic': 'tukui',
                          'sle:dev': 'shadow&light:dev', 'elvui:beta': 'elvui:dev'}
+            # 4.0.0
+            if 'WACompanionVersion' in self.config and os.path.isdir(Path('Interface/AddOns/WeakAurasCompanion')):
+                shutil.rmtree(Path('Interface/AddOns/WeakAurasCompanion'), ignore_errors=True)
             for addon in self.config['Addons']:
                 # 1.1.0
                 if 'Checksums' not in addon.keys():
@@ -130,10 +134,12 @@ class Core:
                         ['3.16.0', 'IgnoreDependencies', {}],
                         ['3.18.0', 'WAStash', []],
                         ['3.20.0', 'GHAPIKey', '']]:
+                        ['4.0.0', 'CBCompanionVersion', 0]]:
                 if add[1] not in self.config.keys():
                     self.config[add[1]] = add[2]
             for delete in [['1.3.0', 'URLCache'],
                            ['3.0.1', 'CurseCache']]:
+                           ['4.0.0', 'WACompanionVersion']]:
                 if delete[1] in self.config.keys():
                     self.config.pop(delete[1], None)
             self.config['Version'] = __version__

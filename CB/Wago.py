@@ -103,7 +103,6 @@ class WagoUpdater:
     def __init__(self, config, clienttoc):
         self.username = config['WAUsername']
         self.accountName = config['WAAccountName']
-        self.apiKey = config['WAAPIKey']
         self.stash = config['WAStash']
         self.clientTOC = clienttoc
         self.bbParser = bbcode.Parser()
@@ -111,8 +110,11 @@ class WagoUpdater:
         # noinspection PyTypeChecker
         self.mdParser = Markdown(output_format='plain')
         self.mdParser.stripTopLevelTags = False
+        self.headers = HEADERS
         if self.username == 'DISABLED':
             self.username = ''
+        if config['WAAPIKey'] != '':
+            self.headers = dict({'api-key': config['WAAPIKey']}, **HEADERS)
 
     def clean_string(self, s):
         return s.replace('"', '\\"')
@@ -122,8 +124,7 @@ class WagoUpdater:
         output = [[], []]
         if len(addon.list) > 0:
             payload = requests.get(f'https://data.wago.io/api/check/{addon.api}?ids='
-                                   f'{",".join(quote_plus(item) for item in addon.list.keys())}',
-                                   headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']},
+                                   f'{",".join(quote_plus(item) for item in addon.list.keys())}', headers=self.headers,
                                    timeout=15).json()
             if 'error' in payload or 'msg' in payload:
                 raise RuntimeError
@@ -147,13 +148,11 @@ class WagoUpdater:
         if len(self.stash) > 0:
             payload = requests.get(f'https://data.wago.io/api/check/?ids='
                                    f'{",".join(quote_plus(item) for item in self.stash)}',
-                                   headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']},
-                                   timeout=15).json()
+                                   headers=self.headers, timeout=15).json()
             for entry in payload:
                 output.append(entry['name'])
                 raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}',
-                                   headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']},
-                                   timeout=15).text
+                                   headers=self.headers, timeout=15).text
                 stash = f'        ["{entry["slug"]}"] = {{\n          name = [=[{entry["name"]}]=],\n          author' \
                         f' = [=[{entry["username"]}]=],\n          encoded = [=[{raw}]=],\n          wagoVersion = [=' \
                         f'[{entry["version"]}]=],\n          wagoSemver = [=[{entry["versionString"]}]=],\n          ' \
@@ -177,8 +176,8 @@ class WagoUpdater:
 
     @retry('Failed to parse Wago data. Wago might be down or provided API key is incorrect.')
     def update_entry(self, entry, addon):
-        raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}',
-                           headers={'api-key': self.apiKey, 'User-Agent': HEADERS['User-Agent']}, timeout=15).text
+        raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}', headers=self.headers,
+                           timeout=15).text
         slug = f'        ["{entry["slug"]}"] = {{\n          name = [=[{entry["name"]}]=],\n          author = [=[' \
                f'{entry["username"]}]=],\n          encoded = [=[{raw}]=],\n          wagoVersion = [=[' \
                f'{entry["version"]}]=],\n          wagoSemver = [=[{entry["versionString"]}]=],\n          source = [' \
@@ -197,18 +196,15 @@ class WagoUpdater:
         addon.data['ids'].append(ids)
 
     def install_data(self, wadata, platerdata):
-        with open(Path('Interface/AddOns/WeakAurasCompanion/data.lua'), 'w', newline='\n', encoding='utf-8') as out:
-            out.write(('-- file generated automatically\n'
-                       'WeakAurasCompanion = {\n'
+        with open(Path('Interface/AddOns/CurseBreakerCompanion/Data.lua'), 'w', newline='\n', encoding='utf-8') as out:
+            out.write(('CurseBreakerCompanion = {\n'
                        '  WeakAuras = {\n'
                        '    slugs = {\n'
                        f'{"".join(str(x) for x in wadata["slugs"])}'
                        '    },\n'
                        '    uids = {\n'
-                       f'{"".join(str(x) for x in wadata["uids"])}'
                        '    },\n'
                        '    ids = {\n'
-                       f'{"".join(str(x) for x in wadata["ids"])}'
                        '    },\n'
                        '    stash = {\n'
                        f'{"".join(str(x) for x in wadata["stash"])}'
@@ -223,88 +219,44 @@ class WagoUpdater:
                        '    uids = {\n'
                        '    },\n'
                        '    ids = {\n'
-                       f'{"".join(str(x) for x in platerdata["ids"])}'
                        '    },\n'
                        '    stash = {\n'
                        f'{"".join(str(x) for x in platerdata["stash"])}'
+                       '    },\n'
+                       '    stopmotionFiles = {\n'
                        '    },\n'
                        '  },\n'
                        '}'))
 
     def install_companion(self, force):
-        if not os.path.isdir(Path('Interface/AddOns/WeakAurasCompanion')) or force:
-            shutil.rmtree(Path('Interface/AddOns/WeakAurasCompanion'), ignore_errors=True)
-            Path('Interface/AddOns/WeakAurasCompanion').mkdir(exist_ok=True)
-            with open(Path(f'Interface/AddOns/WeakAurasCompanion/WeakAurasCompanion.toc'),
+        if not os.path.isdir(Path('Interface/AddOns/CurseBreakerCompanion')) or force:
+            shutil.rmtree(Path('Interface/AddOns/CurseBreakerCompanion'), ignore_errors=True)
+            Path('Interface/AddOns/CurseBreakerCompanion').mkdir(exist_ok=True)
+            with open(Path(f'Interface/AddOns/CurseBreakerCompanion/CurseBreakerCompanion.toc'),
                       'w', newline='\n') as out:
                 out.write((f'## Interface: {self.clientTOC}\n'
-                           '## Title: WeakAuras Companion\n'
-                           '## Author: The WeakAuras Team\n'
-                           '## Version: 1.1.0\n'
-                           '## Notes: Keep your WeakAuras updated!\n'
-                           '## X-Category: Interface Enhancements\n'
-                           '## DefaultState: Enabled\n'
-                           '## LoadOnDemand: 0\n'
-                           '## OptionalDeps: WeakAuras, Plater\n'
-                           '## SavedVariables: timestamp\n\n'                   
-                           'data.lua\n'
-                           'init.lua'))
-            with open(Path('Interface/AddOns/WeakAurasCompanion/init.lua'), 'w', newline='\n') as out:
-                out.write(('-- file generated automatically\n'
-                           'local loadedFrame = CreateFrame("FRAME")\n'
+                           '## Title: CurseBreaker Companion\n'
+                           '## Notes: CurseBreaker -> WoW integration.\n'
+                           '## Version: 1.0.0\n'
+                           '## Author: AcidWeb\n'
+                           '## OptionalDeps: WeakAuras, Plater\n\n'                  
+                           'Data.lua\n'
+                           'Init.lua'))
+            with open(Path('Interface/AddOns/CurseBreakerCompanion/Init.lua'), 'w', newline='\n') as out:
+                out.write(('local loadedFrame = CreateFrame("FRAME")\n'
                            'loadedFrame:RegisterEvent("ADDON_LOADED")\n'
                            'loadedFrame:SetScript("OnEvent", function(_, _, addonName)\n'
-                           '  if addonName == "WeakAurasCompanion" then\n'
-                           '    timestamp = GetTime()\n'
-                           '    if WeakAuras and WeakAurasCompanion then\n'
-                           '      local WeakAurasData = WeakAurasCompanion.WeakAuras\n'
-                           '      if WeakAurasData then\n'
-                           '        local count = WeakAuras.CountWagoUpdates()\n'
-                           '        if count and count > 0 then\n'
-                           '          WeakAuras.prettyPrint(WeakAuras.L["There are %i updates to your auras ready to be'
-                           ' installed!"]:format(count))\n'
-                           '        end\n'
-                           '        if WeakAuras.ImportHistory then\n'
-                           '          for id, data in pairs(WeakAurasSaved.displays) do\n'
-                           '            if data.uid and not WeakAurasSaved.history[data.uid] then\n'
-                           '              local slug = WeakAurasData.uids[data.uid]\n'
-                           '              if slug then\n'
-                           '                local wagoData = WeakAurasData.slugs[slug]\n'
-                           '                if wagoData and wagoData.encoded then\n'
-                           '                  WeakAuras.ImportHistory(wagoData.encoded)\n'
-                           '                end\n'
-                           '              end\n'
-                           '            end\n'
-                           '          end\n'
-                           '        end\n'
-                           '       if WeakAurasData.stash then\n'
-                           '          local emptyStash = true\n'
-                           '          for _ in pairs(WeakAurasData.stash) do\n'
-                           '            emptyStash = false\n'
-                           '          end\n'
-                           '          if not emptyStash then\n'
-                           '            WeakAuras.prettyPrint(WeakAuras.L["You have new auras ready to be installed!"])'
-                           '\n'
-                           '          end\n'
-                           '        end\n'
-                           '        WeakAuras.StopMotion.texture_types["WeakAuras Companion"] = WeakAuras.StopMotion.te'
-                           'xture_types["WeakAuras Companion"] or {}\n'
-                           '        local CompanionTextures = WeakAuras.StopMotion.texture_types["WeakAuras Companion"]'
-                           '\n'
-                           '        for fileName, name in pairs(WeakAurasData.stopmotionFiles) do\n'
-                           '          CompanionTextures["Interface\\\\AddOns\\\\WeakAurasCompanion\\\\animations\\\\" .'
-                           '. fileName] = name\n'
-                           '        end\n'
-                           '      end\n'
-                           '    end\n'
-                           '    if Plater and Plater.CheckWagoUpdates then\n'
-                           '      Plater.CheckWagoUpdates()\n'
-                           '    end\n'
+                           '  if addonName == "CurseBreakerCompanion" then\n\n'
+                           '    if WeakAuras and WeakAuras.AddCompanionData then\n'
+                           '      WeakAuras.AddCompanionData(CurseBreakerCompanion.WeakAuras)\n'
+                           '    end\n\n'
+                           '    if Plater and Plater.AddCompanionData then\n'
+                           '      Plater.AddCompanionData(CurseBreakerCompanion.Plater)\n'
+                           '    end\n\n'
                            '  end\n'
                            'end)'))
-            with open(Path('Interface/AddOns/WeakAurasCompanion/data.lua'), 'w', newline='\n') as out:
-                out.write(('-- file generated automatically\n'
-                           'WeakAurasCompanion = {\n'
+            with open(Path('Interface/AddOns/CurseBreakerCompanion/Data.lua'), 'w', newline='\n') as out:
+                out.write(('CurseBreakerCompanion = {\n'
                            '  WeakAuras = {\n'
                            '    slugs = {},\n'
                            '    uids = {},\n'
@@ -317,6 +269,7 @@ class WagoUpdater:
                            '    uids = {},\n'
                            '    ids = {},\n'
                            '    stash = {},\n'
+                           '    stopmotionFiles = {},\n'
                            '  },\n'
                            '}'))
 

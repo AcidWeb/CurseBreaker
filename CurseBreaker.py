@@ -837,8 +837,8 @@ class TUI:
                 self.core.config['WAStash'] = []
                 self.core.save_config()
             wago = WagoUpdater(self.core.config, self.core.masterConfig)
-            if self.core.masterConfig['WagoVersion'] != self.core.config['WACompanionVersion']:
-                self.core.config['WACompanionVersion'] = self.core.masterConfig['WagoVersion']
+            if self.core.CBCompanionVersion > self.core.config['CBCompanionVersion']:
+                self.core.config['CBCompanionVersion'] = self.core.CBCompanionVersion
                 self.core.save_config()
                 force = True
             else:
