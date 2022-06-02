@@ -1,14 +1,9 @@
 .idea/
 __pycache__/
 Interface/
-build/
-dist/
 WTF/
 WTF-Backup/
 /Wow.exe
-/CurseBreaker.spec
 /CurseBreaker.reg
-/Setup.bat
-/Pipfile
-/Pipfile.lock
+/Build.sh
 /.env
