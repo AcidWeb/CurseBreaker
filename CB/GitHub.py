@@ -18,7 +18,10 @@ class GitHubAddon:
                                         auth=APIAuth('token', self.apiKey), timeout=5)
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             raise RuntimeError(f'{project}\nGitHub API failed to respond.')
-        if self.payload.status_code == 404:
+        if self.payload.status_code == 403:
+            raise RuntimeError(f'{project}\nGitHub API rate limit exceeded. Try later or provide personal access '
+                               f'token.')
+        elif self.payload.status_code == 404:
             raise RuntimeError(url)
         else:
             self.payload = self.payload.json()
@@ -55,8 +58,7 @@ class GitHubAddon:
     def parse_metadata(self):
         for release in self.payloads[self.releaseDepth]['assets']:
             if release['name'] and release['name'] == 'release.json':
-                self.metadata = requests.get(release['browser_download_url'], headers=HEADERS,
-                                             auth=APIAuth('token', self.apiKey), timeout=5).json()
+                self.metadata = requests.get(release['browser_download_url'], headers=HEADERS, timeout=5).json()
                 break
         else:
             self.metadata = None
@@ -64,9 +66,9 @@ class GitHubAddon:
     def get_latest_package(self):
         if self.metadata:
             targetfile = None
-            if self.clientType == 'wow_classic':
+            if self.clientType == 'classic':
                 targetflavor = 'classic'
-            elif self.clientType == 'wow_burning_crusade':
+            elif self.clientType == 'bc':
                 targetflavor = 'bcc'
             else:
                 targetflavor = 'mainline'
@@ -75,6 +77,9 @@ class GitHubAddon:
                     for flavor in release['metadata']:
                         if flavor['flavor'] == targetflavor:
                             targetfile = release['filename']
+                            if 'name' in release:
+                                self.name = release['name']
+                                self.currentVersion = release['version']
                             break
                     if targetfile:
                         break
@@ -96,19 +101,19 @@ class GitHubAddon:
                 if release['name'] and '-nolib' not in release['name'] \
                         and release['content_type'] in {'application/x-zip-compressed', 'application/zip'}:
                     if not latest and not release['name'].endswith('-classic.zip') and \
-                            not release['name'].endswith('-bc.zip'):
+                            not release['name'].endswith('-bc.zip') and not release['name'].endswith('-bcc.zip'):
                         latest = release['browser_download_url']
                     elif not latestclassic and release['name'].endswith('-classic.zip'):
                         latestclassic = release['browser_download_url']
-                    elif not latestbc and release['name'].endswith('-bc.zip'):
+                    elif not latestbc and (release['name'].endswith('-bc.zip') or release['name'].endswith('-bcc.zip')):
                         latestbc = release['browser_download_url']
-            if (self.clientType == 'wow_retail' and latest) \
-                    or (self.clientType == 'wow_classic' and latest and not latestclassic) \
-                    or (self.clientType == 'wow_burning_crusade' and latest and not latestbc):
+            if (self.clientType == 'retail' and latest) \
+                    or (self.clientType == 'classic' and latest and not latestclassic) \
+                    or (self.clientType == 'bc' and latest and not latestbc):
                 self.downloadUrl = latest
-            elif self.clientType == 'wow_classic' and latestclassic:
+            elif self.clientType == 'classic' and latestclassic:
                 self.downloadUrl = latestclassic
-            elif self.clientType == 'wow_burning_crusade' and latestbc:
+            elif self.clientType == 'bc' and latestbc:
                 self.downloadUrl = latestbc
             else:
                 self.releaseDepth += 1
@@ -116,8 +121,7 @@ class GitHubAddon:
 
     @retry()
     def get_addon(self):
-        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS,
-                                                               auth=APIAuth('token', self.apiKey), timeout=5).content))
+        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS, timeout=5).content))
         for file in self.archive.namelist():
             if file.lower().endswith('.toc') and '/' not in file:
                 raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
@@ -140,7 +144,10 @@ class GitHubAddonRaw:
                                         headers=HEADERS, auth=APIAuth('token', self.apiKey), timeout=5)
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             raise RuntimeError(f'{project}\nGitHub API failed to respond.')
-        if self.payload.status_code == 404:
+        if self.payload.status_code == 403:
+            raise RuntimeError(f'{project}\nGitHub API rate limit exceeded. Try later or provide personal access '
+                               f'token.')
+        elif self.payload.status_code == 404:
             raise RuntimeError(f'{project}\nTarget branch don\'t exist.')
         else:
             self.payload = self.payload.json()
@@ -169,8 +176,7 @@ class GitHubAddonRaw:
 
     @retry()
     def get_addon(self):
-        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS,
-                                                               auth=APIAuth('token', self.apiKey), timeout=5).content))
+        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS, timeout=5).content))
 
     def install(self, path):
         for directory in self.directories:
