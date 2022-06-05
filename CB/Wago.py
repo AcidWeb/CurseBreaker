@@ -29,9 +29,7 @@ class BaseParser:
         self.urlParser = re.compile('/([a-zA-Z0-9_-]+)/(\d+)')
         self.list = {}
         self.ignored = {}
-        self.uids = {}
-        self.ids = {}
-        self.data = {'slugs': [], 'uids': [], 'ids': [], 'stash': []}
+        self.data = {'slugs': [], 'stash': []}
 
 
 class WeakAuraParser(BaseParser):
@@ -50,8 +48,6 @@ class WeakAuraParser(BaseParser):
             if wadata['displays'][wa]['url']:
                 search = self.urlParser.search(wadata['displays'][wa]['url'])
                 if search is not None and search.group(1) and search.group(2):
-                    self.uids[wadata['displays'][wa]['uid']] = search.group(1)
-                    self.ids[wadata['displays'][wa]['id']] = search.group(1)
                     if not wadata['displays'][wa]['parent'] and not wadata['displays'][wa]['ignoreWagoUpdate']:
                         if wadata['displays'][wa]['skipWagoUpdate']:
                             self.ignored[search.group(1)] = int(wadata['displays'][wa]['skipWagoUpdate'])
@@ -70,7 +66,6 @@ class PlaterParser(BaseParser):
             if data[script]['url']:
                 search = self.urlParser.search(data[script]['url'])
                 if search is not None and search.group(1) and search.group(2):
-                    self.ids[data[script]['Name']] = search.group(1)
                     if not data[script]['ignoreWagoUpdate']:
                         if data[script]['skipWagoUpdate']:
                             self.ignored[search.group(1)] = int(data[script]['skipWagoUpdate'])
@@ -92,7 +87,6 @@ class PlaterParser(BaseParser):
             if data:
                 search = self.urlParser.search(data)
                 if search is not None and search.group(1) and search.group(2):
-                    self.ids[profile] = search.group(1)
                     if not platerdata['profiles'][profile]['ignoreWagoUpdate']:
                         if platerdata['profiles'][profile]['skipWagoUpdate']:
                             self.ignored[search.group(1)] = int(platerdata['profiles'][profile]['skipWagoUpdate'])
@@ -183,17 +177,7 @@ class WagoUpdater:
                f'{entry["version"]}]=],\n          wagoSemver = [=[{entry["versionString"]}]=],\n          source = [' \
                f'=[Wago]=],\n          logo = [=[]=],\n          versionNote = [=[{self.parse_changelog(entry)}]=],\n' \
                f'        }},\n'
-        uids = ''
-        ids = ''
-        for u in addon.uids:
-            if addon.uids[u] == entry["slug"]:
-                uids = uids + f'        ["{self.clean_string(u)}"] = [=[{entry["slug"]}]=],\n'
-        for i in addon.ids:
-            if addon.ids[i] == entry["slug"]:
-                ids = ids + f'        ["{self.clean_string(i)}"] = [=[{entry["slug"]}]=],\n'
         addon.data['slugs'].append(slug)
-        addon.data['uids'].append(uids)
-        addon.data['ids'].append(ids)
 
     def install_data(self, wadata, platerdata):
         with open(Path('Interface/AddOns/CurseBreakerCompanion/Data.lua'), 'w', newline='\n', encoding='utf-8') as out:
@@ -202,28 +186,16 @@ class WagoUpdater:
                        '    slugs = {\n'
                        f'{"".join(str(x) for x in wadata["slugs"])}'
                        '    },\n'
-                       '    uids = {\n'
-                       '    },\n'
-                       '    ids = {\n'
-                       '    },\n'
                        '    stash = {\n'
                        f'{"".join(str(x) for x in wadata["stash"])}'
-                       '    },\n'
-                       '    stopmotionFiles = {\n'
                        '    },\n'
                        '  },\n'
                        '  Plater = {\n'
                        '    slugs = {\n'
                        f'{"".join(str(x) for x in platerdata["slugs"])}'
                        '    },\n'
-                       '    uids = {\n'
-                       '    },\n'
-                       '    ids = {\n'
-                       '    },\n'
                        '    stash = {\n'
                        f'{"".join(str(x) for x in platerdata["stash"])}'
-                       '    },\n'
-                       '    stopmotionFiles = {\n'
                        '    },\n'
                        '  },\n'
                        '}'))
@@ -245,31 +217,26 @@ class WagoUpdater:
             with open(Path('Interface/AddOns/CurseBreakerCompanion/Init.lua'), 'w', newline='\n') as out:
                 out.write(('local loadedFrame = CreateFrame("FRAME")\n'
                            'loadedFrame:RegisterEvent("ADDON_LOADED")\n'
-                           'loadedFrame:SetScript("OnEvent", function(_, _, addonName)\n'
-                           '  if addonName == "CurseBreakerCompanion" then\n\n'
+                           'loadedFrame:SetScript("OnEvent", function(self, _, addonName)\n'
+                           '  if addonName == "CurseBreakerCompanion" then\n'
                            '    if WeakAuras and WeakAuras.AddCompanionData then\n'
                            '      WeakAuras.AddCompanionData(CurseBreakerCompanion.WeakAuras)\n'
-                           '    end\n\n'
+                           '    end\n'
                            '    if Plater and Plater.AddCompanionData then\n'
                            '      Plater.AddCompanionData(CurseBreakerCompanion.Plater)\n'
-                           '    end\n\n'
+                           '    end\n'
+                           '    self:UnregisterEvent("ADDON_LOADED")\n'
                            '  end\n'
                            'end)'))
             with open(Path('Interface/AddOns/CurseBreakerCompanion/Data.lua'), 'w', newline='\n') as out:
                 out.write(('CurseBreakerCompanion = {\n'
                            '  WeakAuras = {\n'
                            '    slugs = {},\n'
-                           '    uids = {},\n'
-                           '    ids = {},\n'
                            '    stash = {},\n'
-                           '    stopmotionFiles = {},\n'
                            '  },\n'
                            '  Plater = {\n'
                            '    slugs = {},\n'
-                           '    uids = {},\n'
-                           '    ids = {},\n'
                            '    stash = {},\n'
-                           '    stopmotionFiles = {},\n'
                            '  },\n'
                            '}'))
 
