@@ -1,10 +1,9 @@
-import string
-import random
+import requests
 from rich.terminal_theme import TerminalTheme
 
-__version__ = '3.20.0'
+__version__ = '4.0.0'
 __license__ = 'GPLv3'
-__copyright__ = '2019-2021, Paweł Jastrzębski <pawelj@iosphe.re>'
+__copyright__ = '2019-2022, Paweł Jastrzębski <pawelj@iosphe.re>'
 __docformat__ = 'restructuredtext en'
 
 
@@ -35,7 +34,18 @@ def retry(custom_error=False):
     return wraps
 
 
-HEADERS = {'User-Agent': f'CB-{"".join(random.choices(string.ascii_uppercase + string.digits, k=10))}/{__version__}'}
+class APIAuth(requests.auth.AuthBase):
+    def __init__(self, header, token):
+        self.header = header
+        self.token = token
+
+    def __call__(self, r):
+        if self.token != '':
+            r.headers['Authorization'] = f'{self.header} {self.token}'
+        return r
+
+
+HEADERS = {'User-Agent': f'CurseBreaker/{__version__}'}
 HEADLESS_TERMINAL_THEME = TerminalTheme(
     (0, 0, 0),
     (255, 255, 255),

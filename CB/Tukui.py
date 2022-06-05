@@ -28,7 +28,6 @@ class TukuiAddon:
         self.currentVersion = self.payload['version']
         self.uiVersion = self.payload['patch']
         self.archive = None
-        self.dependencies = None
         self.directories = []
         self.author = [self.payload['author']]
 

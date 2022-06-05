@@ -29,7 +29,6 @@ class WoWInterfaceAddon:
         self.currentVersion = self.payload['UIVersion']
         self.uiVersion = None
         self.archive = None
-        self.dependencies = None
         self.directories = []
         self.author = [self.payload['UIAuthorName']]
 

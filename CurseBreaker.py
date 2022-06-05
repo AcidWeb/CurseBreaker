@@ -5,8 +5,8 @@ import sys
 import time
 import gzip
 import glob
+import json
 import shutil
-import pickle
 import zipfile
 import requests
 import platform
@@ -32,17 +32,12 @@ from prompt_toolkit.shortcuts import confirm
 from prompt_toolkit.completion import WordCompleter, NestedCompleter
 from distutils.version import StrictVersion
 from CB import HEADERS, HEADLESS_TERMINAL_THEME, __version__
-from CB.Core import Core, DependenciesParser
+from CB.Core import Core
 from CB.Compat import pause, timeout, clear, set_terminal_title, set_terminal_size, KBHit
 from CB.Wago import WagoUpdater
 
 if platform.system() == 'Windows':
     from ctypes import windll, wintypes
-
-# FIXME - Python bug #39010
-import asyncio
-import selectors
-asyncio.set_event_loop(asyncio.SelectorEventLoop(selectors.SelectSelector()))
 
 
 class TUI:
@@ -78,12 +73,12 @@ class TUI:
         else:
             flavor = os.path.basename(os.getcwd())
         if flavor in {'_retail_', '_ptr_'}:
-            self.core.clientType = 'wow_retail'
+            self.core.clientType = 'retail'
         elif flavor in {'_classic_', '_classic_ptr_'}:
-            self.core.clientType = 'wow_burning_crusade'
+            self.core.clientType = 'bc'
             set_terminal_title(f'CurseBreaker v{__version__} - Burning Crusade')
         elif flavor in {'_classic_era_', '_classic_era_ptr_'}:
-            self.core.clientType = 'wow_classic'
+            self.core.clientType = 'classic'
             set_terminal_title(f'CurseBreaker v{__version__} - Classic')
         else:
             self.console.print('[bold red]This client release is currently unsupported by CurseBreaker.[/bold red]\n')
@@ -108,8 +103,8 @@ class TUI:
             pause(self.headless)
             sys.exit(1)
         self.setup_table()
-        # CurseForge URI Support
-        if len(sys.argv) == 2 and any(x in sys.argv[1] for x in {'twitch://', 'curseforge://'}):
+        # Wago Addons URI Support
+        if len(sys.argv) == 2 and sys.argv[1].startswith('wago-app://addons/'):
             try:
                 self.c_install(sys.argv[1].strip())
             except Exception as e:
@@ -123,16 +118,6 @@ class TUI:
                 self.core.config['WAStash'] = list(set(self.core.config['WAStash']))
                 self.core.save_config()
                 self.c_wago_update(_, flush=False)
-            except Exception as e:
-                self.handle_exception(e)
-            timeout(self.headless)
-            sys.exit(0)
-        if len(sys.argv) == 2 and '.ccip' in sys.argv[1]:
-            try:
-                path = sys.argv[1].strip()
-                self.c_install(self.core.parse_cf_payload(path))
-                if os.path.exists(path):
-                    os.remove(path)
             except Exception as e:
                 self.handle_exception(e)
             timeout(self.headless)
@@ -169,7 +154,7 @@ class TUI:
                         self.core.backup_wtf(None if self.headless else self.console)
                     if self.core.config['WAUsername'] != 'DISABLED':
                         self.console.print('')
-                        with nullcontext() if self.headless else self.console.status("Processing Wago data"):
+                        with nullcontext() if self.headless else self.console.status('Processing Wago data'):
                             self.setup_table()
                             self.c_wago_update(None, False)
                 except Exception as e:
@@ -193,8 +178,10 @@ class TUI:
         self.console.print('Use command [green]help[/green] or press [green]TAB[/green] to see a list of available comm'
                            'ands.\nCommand [green]exit[/green] or pressing [green]CTRL+D[/green] will close the applica'
                            'tion.\n')
-        if len(self.core.config['Addons']) == 0:
-            self.console.print('Command [green]import[/green] might be used to detect already installed addons.\n')
+        if len(self.core.config['Addons']) > 0:
+            # TODO Add API key message
+            self.console.print('To enable Wago Addons support API key needs to be provided.\nIt can be obtained here: ['
+                               'link=X]X[/link]\nAfter that it needs to added to application configuration by using [green]set wago_addons_api[/green] command.\nCommand [green]import[/green] might be used to detect already installed addons.')
         self.motd_parser()
         if self.core.backup_check():
             self.console.print(f'[green]Backing up WTF directory:[/green]')
@@ -229,7 +216,8 @@ class TUI:
                     except PermissionError:
                         pass
                 try:
-                    payload = requests.get('https://api.github.com/repos/AcidWeb/CurseBreaker/releases/latest', headers=HEADERS, timeout=5).json()
+                    payload = requests.get('https://api.github.com/repos/AcidWeb/CurseBreaker/releases/latest',
+                                           headers=HEADERS, timeout=5).json()
                 except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
                     return
                 if 'name' in payload and 'body' in payload and 'assets' in payload:
@@ -344,21 +332,19 @@ class TUI:
         if not self.slugs:
             # noinspection PyBroadException
             try:
-                self.slugs = pickle.load(gzip.open(io.BytesIO(
-                    requests.get('https://storage.googleapis.com/cursebreaker/slugs.pickle.gz',
+                self.slugs = json.load(gzip.open(io.BytesIO(
+                    requests.get('https://storage.googleapis.com/cursebreaker/slugs-v2.json.gz',
                                  headers=HEADERS, timeout=5).content)))
             except Exception:
-                self.slugs = {'cf': [], 'wowi': [], 'tukui': []}
+                self.slugs = {'wa': [], 'wowi': []}
         addons = []
         for addon in sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower()):
             addons.append(addon['Name'])
         slugs = ['ElvUI', 'Tukui']
-        for item in self.slugs['cf']:
-            slugs.append(f'cf:{item}')
+        for item in self.slugs['wa']:
+            slugs.append(f'wa:{item}')
         for item in self.slugs['wowi']:
             slugs.append(f'wowi:{item}')
-        for item in self.slugs['ty']:
-            slugs.append(f'ty:{item}')
         slugs.extend(['ElvUI:Dev', 'Tukui:Dev', 'Shadow&Light:Dev'])
         accounts = []
         for account in self.core.detect_accounts():
@@ -382,10 +368,10 @@ class TUI:
                        'compact_mode': None,
                        'pinning': WordCompleter(addons, ignore_case=True, sentence=True),
                        'wago': None},
-            'set': {'wago_api': None,
+            'set': {'wago_addons_api': None,
+                    'wago_api': None,
                     'wago_wow_account': WordCompleter(accounts, ignore_case=True, sentence=True),
                     'gh_api': None},
-            'show': {'dependencies': None},
             'uri_integration': None,
             'help': None,
             'exit': None
@@ -417,9 +403,8 @@ class TUI:
             authors = f' [bold black]by {", ".join(authors)}[/bold black]'
         else:
             authors = ''
-        if uiversion and uiversion not in [self.core.masterConfig['RetailVersion'],
-                                           self.core.masterConfig['ClassicVersion'],
-                                           self.core.masterConfig['BurningCrusadeVersion']]:
+        if uiversion and uiversion not in \
+                [v['CurrentVersion'] for _, v in self.core.masterConfig['ClientTypes'].items()]:
             uiversion = ' [bold yellow][!][/bold yellow]'
         else:
             uiversion = ''
@@ -430,23 +415,18 @@ class TUI:
         obj.no_wrap = True
         return obj
 
-    def c_install(self, args, recursion=False):
+    def c_install(self, args):
         if args:
             optignore = False
-            optnodeps = False
             pargs = split(args.replace("'", "\\'"))
             if '-i' in pargs:
                 optignore = True
                 args = args.replace('-i', '', 1)
-            if '-d' in pargs:
-                optnodeps = True
-                args = args.replace('-d', '', 1)
-            dependencies = DependenciesParser(self.core)
             args = re.sub(r'([a-zA-Z0-9_:])([ ]+)([a-zA-Z0-9_:])', r'\1,\3', args)
             addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
             exceptions = []
             if len(addons) > 0:
-                if self.core.clientType != 'wow_retail':
+                if self.core.clientType != 'retail':
                     for addon in addons:
                         if addon.startswith('https://www.wowinterface.com/downloads/') or addon.startswith('wowi:'):
                             self.console.print('[yellow][WARNING][/yellow] WoWInterface support for non-retail clients '
@@ -459,12 +439,10 @@ class TUI:
                     while not progress.finished:
                         for addon in addons:
                             try:
-                                installed, name, version, deps = self.core.add_addon(addon, optignore, optnodeps)
+                                installed, name, version = self.core.add_addon(addon, optignore)
                                 if installed:
                                     self.table.add_row('[green]Installed[/green]', Text(name, no_wrap=True),
                                                        Text(version, no_wrap=True))
-                                    if not recursion:
-                                        dependencies.add_dependency(deps)
                                 else:
                                     self.table.add_row('[bold black]Already installed[/bold black]',
                                                        Text(name, no_wrap=True), Text(version, no_wrap=True))
@@ -472,27 +450,21 @@ class TUI:
                                 exceptions.append(e)
                             progress.update(task, advance=1, refresh=True)
                 self.console.print(self.table)
-            dependencies = dependencies.parse_dependency()
-            if dependencies:
-                self.setup_table()
-                self.console.print('Installing dependencies:')
-                self.c_install(dependencies, recursion=True)
             if len(exceptions) > 0:
                 self.handle_exception(exceptions, False)
         else:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts a space-separated list of links as an arg'
-                               'ument.[bold white]\n\tFlags:[/bold white]\n\t\t[bold white]-d[/bold white] - Disable de'
-                               'pendency parser.\n\t\t[bold white]-i[/bold white] - Disable the client version check.\n'
-                               '[bold green]Supported URL:[/bold green]\n\thttps://www.curseforge.com/wow/addons/\[addo'
-                               'n_name] [bold white]|[/bold white] cf:\[addon_name]\n\thttps://www.wowinterface.com/dow'
-                               'nloads/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\thttps://www.tukui.o'
-                               'rg/addons.php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]\n\thttps://www.t'
-                               'ukui.org/classic-addons.php?id=\[addon_id] [bold white]|[/bold white] tuc:\[addon_id]\n'
-                               '\thttps://www.tukui.org/classic-tbc-addons.php?id=\[addon_id] [bold white]|[/bold white'
-                               '] tubc:\[addon_id]\n\thttps://github.com/\[username]/\[repository_name] [bold white]|[/'
-                               'bold white] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white] ElvUI'
-                               ':Dev\n\tTukui [bold white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev',
-                               highlight=False)
+                               'ument.[bold white]\n\tFlags:[/bold white]\n\t\t[bold white]-i[/bold white] - Disable th'
+                               'e client version check.\n[bold green]Supported URL:[/bold green]\n\thttps://addons.wago'
+                               '.io/addons/\[addon_name] [bold white]|[/bold white] wa:\[addon_name]\n\thttps://www.wow'
+                               'interface.com/downloads/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\tht'
+                               'tps://www.tukui.org/addons.php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]'
+                               '\n\thttps://www.tukui.org/classic-addons.php?id=\[addon_id] [bold white]|[/bold white] '
+                               'tuc:\[addon_id]\n\thttps://www.tukui.org/classic-tbc-addons.php?id=\[addon_id] [bold wh'
+                               'ite]|[/bold white] tubc:\[addon_id]\n\thttps://github.com/\[username]/\[repository_name'
+                               '] [bold white]|[/bold white] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/'
+                               'bold white] ElvUI:Dev\n\tTukui [bold white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev'
+                               '', highlight=False)
 
     def c_uninstall(self, args):
         if args:
@@ -531,7 +503,6 @@ class TUI:
             addons = sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower())
             compacted = 0
         exceptions = []
-        dependencies = DependenciesParser(self.core)
         if len(addons) > 0:
             with Progress('{task.completed:.0f}/{task.total}', '|', BarColumn(bar_width=None), '|',
                           auto_refresh=False, console=None if self.headless else self.console) as progress:
@@ -545,10 +516,9 @@ class TUI:
                 while not progress.finished:
                     for addon in addons:
                         try:
-                            name, authors, versionnew, versionold, uiversion, modified, blocked, source, sourceurl,\
-                                changelog, deps, dstate = self.core.update_addon(
-                                    addon if isinstance(addon, str) else addon['URL'], update, force)
-                            dependencies.add_dependency(deps)
+                            name, authors, versionnew, versionold, uiversion, modified, blocked, source, sourceurl, \
+                             changelog, dstate = self.core.update_addon(
+                                addon if isinstance(addon, str) else addon['URL'], update, force)
                             if provider:
                                 source = f' [bold white]{source}[/bold white]'
                             else:
@@ -591,11 +561,6 @@ class TUI:
             if addline:
                 self.console.print('')
             self.console.print(self.table)
-            dependencies = dependencies.parse_dependency()
-            if dependencies and update:
-                self.setup_table()
-                self.console.print('Installing dependencies:')
-                self.c_install(dependencies, recursion=True)
             if compacted > 0:
                 self.console.print(f'Additionally [green]{compacted}[/green] addons are up-to-date.')
         else:
@@ -633,7 +598,8 @@ class TUI:
         orphansd, orphansf = self.core.find_orphans()
         self.console.print('[green]Directories that are not part of any installed addon:[/green]')
         for orphan in sorted(orphansd):
-            self.console.print(orphan.replace('[GIT]', '[yellow][GIT][/yellow]'), highlight=False)
+            self.console.print(orphan.replace('[GIT]', '[yellow][GIT][/yellow]')
+                               .replace('[Special]', '[red][Special][/red]'), highlight=False)
         self.console.print('\n[green]Files that are leftovers after no longer installed addons:[/green]')
         for orphan in sorted(orphansf):
             self.console.print(orphan, highlight=False)
@@ -660,18 +626,19 @@ class TUI:
                     if status is None:
                         self.console.print('[bold red]This addon doesn\'t exist or it is not installed yet.[/bold red]')
                     elif status == -1:
-                        self.console.print('[bold red]This feature can be only used with CurseForge addons.[/bold red]')
+                        self.console.print('[bold red]This feature can be only used with addons provided by Wago Addons'
+                                           '.[/bold red]')
                     elif status == 0:
                         self.console.print(
-                            'All CurseForge addons are now switched' if args == 'global' else 'Addon switched',
+                            'All Wago addons are now switched' if args == 'global' else 'Addon switched',
                             'to the [yellow]beta[/yellow] channel.')
                     elif status == 1:
                         self.console.print(
-                            'All CurseForge addons are now switched' if args == 'global' else 'Addon switched',
+                            'All Wago addons are now switched' if args == 'global' else 'Addon switched',
                             'to the [red]alpha[/red] channel.')
                     elif status == 2:
                         self.console.print(
-                            'All CurseForge addons are now switched' if args == 'global' else 'Addon switched',
+                            'All Wago addons are now switched' if args == 'global' else 'Addon switched',
                             'to the [green]stable[/green] channel.')
                 else:
                     self.console.print('[green]Usage:[/green]\n\tThis command accepts an addon name (or "global") as an'
@@ -741,10 +708,23 @@ class TUI:
                                '\n\t\tEnables/disables automatic Wago updates.\n\t\tIf a username is provided check wil'
                                'l start to ignore the specified author.', highlight=False)
 
+    # TODO wago_addons_api add URL
     def c_set(self, args):
         if args:
             args = args.strip()
-            if args.startswith('wago_api'):
+            if args.startswith('wago_addons_api'):
+                args = args[16:]
+                if args:
+                    self.console.print('Wago Addons API key is now set.')
+                    self.core.config['WAAAPIKey'] = args.strip()
+                    self.core.save_config()
+                elif self.core.config['WAAAPIKey'] != '':
+                    self.console.print('Wago Addons API key is now removed.')
+                    self.core.config['WAAAPIKey'] = ''
+                    self.core.save_config()
+                else:
+                    self.console.print('[green]Usage:[/green]\n\tThis command accepts API key as an argument.')
+            elif args.startswith('wago_api'):
                 args = args[9:]
                 if args:
                     self.console.print('Wago API key is now set.')
@@ -785,35 +765,13 @@ class TUI:
             else:
                 self.console.print('Unknown option.')
         else:
-            self.console.print('[green]Usage:[/green]\n\t[green]set wago_api [API key][/green]\n\t\tSets Wago API key r'
-                               'equired to access private entries.\n\t\tIt can be procured here: [link=https://wago.io/'
+            self.console.print('[green]Usage:[/green]\n\t[green]set wago_addons_api [API key][/green]\n\t\tSets Wago Addons API key required to use Wago Addons as addon source.\n\t\tIt can be obtained here:'
+                               ' [link=X]X[/link]\n\t[green]set wago_api [API key][/green]\n\t\tSets Wago API key r'
+                               'equired to access private entries.\n\t\tIt can be obtained here: [link=https://wago.io/'
                                'account]https://wago.io/account[/link]\n\t[green]set wago_wow_account [Account name][/g'
                                'reen]\n\t\tSets WoW account used by Wago updater.\n\t\tNeeded only if compatibile addon'
                                's are used on more than one WoW account.\n\t[green]set gh_api [API key][/green]\n\t\tSe'
                                'ts GitHub API key. Might be needed to get around API rate limits.', highlight=False)
-
-    def c_show(self, args):
-        if args:
-            args = args.strip()
-            if args.startswith('dependencies'):
-                addons = sorted(list(filter(lambda k: k['URL'].startswith('https://www.curseforge.com/wow/addons/'),
-                                            self.core.config['Addons'])), key=lambda k: k['Name'].lower())
-                try:
-                    self.core.bulk_check(addons)
-                except RuntimeError:
-                    pass
-                for addon in addons:
-                    dependencies = DependenciesParser(self.core)
-                    name, _, _, _, _, _, _, _, _, _, deps, _ = self.core.update_addon(addon['URL'], False, False)
-                    dependencies.add_dependency(deps)
-                    deps = dependencies.parse_dependency(output=True)
-                    if len(deps) > 0:
-                        self.console.print(f'[green]{name}[/green]\n{", ".join(deps)}')
-            else:
-                self.console.print('Unknown option.')
-        else:
-            self.console.print('[green]Usage:[/green]\n\t[green]show dependencies[/green]\n\t\tDisplay a list of depend'
-                               'encies of all installed addons.', highlight=False)
 
     def c_wago_update(self, _, verbose=True, flush=True):
         if os.path.isdir(Path('Interface/AddOns/WeakAuras')) or os.path.isdir(Path('Interface/AddOns/Plater')):
@@ -836,9 +794,9 @@ class TUI:
             if flush and len(self.core.config['WAStash']) > 0:
                 self.core.config['WAStash'] = []
                 self.core.save_config()
-            wago = WagoUpdater(self.core.config, self.core.masterConfig)
-            if self.core.CBCompanionVersion > self.core.config['CBCompanionVersion']:
-                self.core.config['CBCompanionVersion'] = self.core.CBCompanionVersion
+            wago = WagoUpdater(self.core.config, self.core.masterConfig['ClientTypes'][self.core.clientType]['TOC'])
+            if self.core.masterConfig['CBCompanionVersion'] > self.core.config['CBCompanionVersion']:
+                self.core.config['CBCompanionVersion'] = self.core.masterConfig['CBCompanionVersion']
                 self.core.save_config()
                 force = True
             else:
@@ -895,23 +853,20 @@ class TUI:
         self.core.backup_wtf(None if self.headless else self.console)
 
     def c_import(self, args):
-        hit, partial_hit, miss = self.core.detect_addons()
-        if args == 'install' and len(hit) > 0:
-            self.c_install(','.join(hit))
+        names, slugs, installed = self.core.detect_addons()
+        if args == 'install' and len(slugs) > 0:
+            self.c_install(','.join(slugs))
         else:
-            self.console.print(f'[green]Addons found:[/green]')
-            for addon in hit:
+            self.console.print(f'[green]New addons found:[/green]')
+            for addon in names:
                 self.console.print(addon, highlight=False)
-            self.console.print(f'\n[yellow]Possible matches:[/yellow]')
-            for addon in partial_hit:
-                self.console.print(' [bold white]or[/bold white] '.join(addon), highlight=False)
-            self.console.print(f'\n[red]Unknown directories:[/red]')
-            for addon in miss:
-                self.console.print(f'{addon}', highlight=False)
-            self.console.print(f'\nExecute [bold white]import install[/bold white] command to install all detected addo'
-                               f'ns.\nPossible matches need to be installed manually with the [bold white]install[/bold'
-                               f' white] command.\nAddons that are available only on WoWInterface and/or Tukui are not '
-                               f'detected by this process.')
+            self.console.print(f'\n[yellow]Already installed addons:[/yellow]')
+            for addon in installed:
+                self.console.print(addon, highlight=False)
+            self.console.print(f'\n[bold]This process detects only addons available on Wago Addons and ElvUI/Tukui.[/bo'
+                               f'ld]\nExecute [bold white]import install[/bold white] command to install all new detect'
+                               f'ed addons.\nAfter installation run the [bold white]orphans[/bold white] command and [b'
+                               f'old white]install[/bold white] missing addons.')
 
     def c_export(self, _):
         payload = self.core.export_addons()
@@ -919,8 +874,9 @@ class TUI:
         self.console.print(f'{payload}\n\nThe command above was copied to the clipboard.', highlight=False)
 
     def c_help(self, _):
+        # TODO Update
         self.console.print('[green]install [URL][/green]\n\tCommand accepts a space-separated list of links.\n\t[bold w'
-                           'hite]Flags:[/bold white]\n\t\t[bold white]-d[/bold white] - Disable dependency parser.\n\t'
+                           'hite]Flags:[/bold white]\n\t'
                            '\t[bold white]-i[/bold white] - Disable the client version check.\n'
                            '[green]uninstall [URL/Name][/green]\n\tCommand accepts a space-separated list of addon name'
                            's or full links.\n\t[bold white]Flags:[/bold white]\n\t\t[bold white]-k[/bold white] - Keep'
@@ -938,7 +894,7 @@ class TUI:
                            'everse the table compacting option.\n\t\t[bold white]-s[/bold white] - Display the source o'
                            'f the addons.\n'
                            '[green]orphans[/green]\n\tPrints list of orphaned directories and files.\n'
-                           '[green]search [Keyword][/green]\n\tExecutes addon search on CurseForge.\n'
+                           '[green]search [Keyword][/green]\n\tExecutes addon search on Wago Addons.\n'
                            '[green]backup[/green]\n\tCommand creates a backup of WTF directory.\n'
                            '[green]import[/green]\n\tCommand attempts to import already installed addons.\n'
                            '[green]export[/green]\n\tCommand prints list of all installed addons in a form suitable f'
@@ -956,25 +912,26 @@ class TUI:
                            's/unblocks updating of the provided addon.\n'
                            '[green]toggle wago [Username][/green]\n\tEnables/disables automatic Wago updates.\n\tIf a u'
                            'sername is provided check will start to ignore the specified author.\n'
+                           '[green]set wago_addons_api [API key][/green]\n\tSets Wago Addons API key required to use Wa'
+                           'go Addons as addon source.\n\tIt can be obtained here: [link=X]X[/link]\n'
                            '[green]set wago_api [API key][/green]\n\tSets Wago API key required to access private entri'
-                           'es.\n\tIt can be procured here:'
-                           ' [link=https://wago.io/account]https://wago.io/account[/link]\n'
+                           'es.\n\tIt can be obtained here: [link=https://wago.io/account]https://wago.io/account[/link'
+                           ']\n'
                            '[green]set wago_wow_account [Account name][/green]\n\tSets WoW account used by Wago updater'
                            '.\n\tNeeded only if compatibile addons are used on more than one WoW account.\n[green]set g'
                            'h_api [API key][/green]\n\tSets GitHub API key. Might be needed to get around API rate limi'
                            'ts.\n'
-                           '[green]show dependencies[/green]\n\tDisplay a list of dependencies of all installed addons.'
-                           '\n[green]uri_integration[/green]\n\tEnables integration with CurseForge and Wago page.\n\t['
-                           'i]"Install"[/i] and [i]"Send to WeakAura Companion App"[/i] buttons will now start this app'
-                           'lication.\n\n[bold green]Supported URL:[/bold green]\n\thttps://www.curseforge.com/wow/addo'
-                           'ns/\[addon_name] [bold white]|[/bold white] cf:\[addon_name]\n\thttps://www.wowinterface.co'
-                           'm/downloads/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\thttps://www.tukui.'
-                           'org/addons.php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]\n\thttps://www.tuku'
-                           'i.org/classic-addons.php?id=\[addon_id] [bold white]|[/bold white] tuc:\[addon_id]\n\thttps'
-                           '://www.tukui.org/classic-tbc-addons.php?id=\[addon_id] [bold white]|[/bold white] tubc:\[ad'
-                           'don_id]\n\thttps://github.com/\[username]/\[repository_name] [bold white]|[/bold white] gh:'
-                           '\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui [bold'
-                           ' white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
+                           '[green]uri_integration[/green]\n\tEnables integration with Wago Addons and Wago page.\n\t"D'
+                           'ownload with Wago App" and "Send to WeakAura Companion App" buttons.\n\n[bold green]Support'
+                           'ed URL:[/bold green]\n\thttps://addons.wago.io/addons/\[addon_name] [bold white]|[/bold whi'
+                           'te] wa:\[addon_name]\n\thttps://www.wowinterface.com/downloads/\[addon_name] [bold white]|['
+                           '/bold white] wowi:\[addon_id]\n\thttps://www.tukui.org/addons.php?id=\[addon_id] [bold whit'
+                           'e]|[/bold white] tu:\[addon_id]\n\thttps://www.tukui.org/classic-addons.php?id=\[addon_id] '
+                           '[bold white]|[/bold white] tuc:\[addon_id]\n\thttps://www.tukui.org/classic-tbc-addons.php?'
+                           'id=\[addon_id] [bold white]|[/bold white] tubc:\[addon_id]\n\thttps://github.com/\[username'
+                           ']/\[repository_name] [bold white]|[/bold white] gh:\[username]/\[repository_name]\n\tElvUI '
+                           '[bold white]|[/bold white] ElvUI:Dev\n\tTukui [bold white]|[/bold white] Tukui:Dev\n\tShado'
+                           'w&Light:Dev', highlight=False)
 
     def c_exit(self, _):
         sys.exit(0)

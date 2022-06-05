@@ -4,26 +4,22 @@ import io
 import sys
 import json
 import gzip
-import time
 import glob
-import pickle
 import shutil
 import zipfile
+import hashlib
 import datetime
 import requests
-import itertools
-import cloudscraper
 from pathlib import Path
 from collections import Counter
 from checksumdir import dirhash
 from multiprocessing import Pool
 from urllib.parse import quote_plus
 from rich.progress import Progress, BarColumn
-from xml.dom.minidom import parse, parseString
-from . import retry, HEADERS, __version__
+from . import retry, HEADERS, APIAuth, __version__
 from .Tukui import TukuiAddon
 from .GitHub import GitHubAddon, GitHubAddonRaw
-from .CurseForge import CurseForgeAddon
+from .WagoAddons import WagoAddonsAddon
 from .WoWInterface import WoWInterfaceAddon
 
 
@@ -35,20 +31,16 @@ class Core:
         self.clientType = None
         self.config = None
         self.masterConfig = None
-        self.cfIDs = None
-        self.CBCompanionVersion = 1
         self.dirIndex = None
-        self.cfCache = {}
         self.wowiCache = {}
+        self.wagoCache = {}
         self.tukuiCache = None
         self.checksumCache = {}
-        self.scraper = cloudscraper.create_scraper()
 
     def init_master_config(self):
-        # noinspection PyBroadException
         try:
-            self.masterConfig = pickle.load(gzip.open(io.BytesIO(
-                requests.get('https://storage.googleapis.com/cursebreaker/config.pickle.gz',
+            self.masterConfig = json.load(gzip.open(io.BytesIO(
+                requests.get('https://storage.googleapis.com/cursebreaker/config-v2.json.gz',
                              headers=HEADERS, timeout=5).content)))
         except Exception:
             raise RuntimeError('Failed to fetch the master config file. '
@@ -57,6 +49,8 @@ class Core:
     def init_config(self):
         if os.path.isfile('CurseBreaker.json'):
             shutil.move('CurseBreaker.json', 'WTF')
+        if os.path.isfile(Path('WTF/CurseBreaker.cache')):
+            os.remove(Path('WTF/CurseBreaker.cache'))
         if os.path.isfile(self.configPath):
             with open(self.configPath, 'r') as f:
                 try:
@@ -67,15 +61,13 @@ class Core:
             self.config = {'Addons': [],
                            'WAStash': [],
                            'IgnoreClientVersion': {},
-                           'IgnoreDependencies': {},
                            'Backup': {'Enabled': True, 'Number': 7},
-                           'CFCacheCloudFlare': {},
                            'Version': __version__,
                            'WAUsername': '',
                            'WAAccountName': '',
                            'WAAPIKey': '',
                            'GHAPIKey': '',
-                           'CFCacheTimestamp': 0,
+                           'WAAAPIKey': '',
                            'CBCompanionVersion': 0,
                            'CompactMode': False,
                            'AutoUpdate': True,
@@ -133,12 +125,16 @@ class Core:
                         ['3.12.0', 'ShowAuthors', True],
                         ['3.16.0', 'IgnoreDependencies', {}],
                         ['3.18.0', 'WAStash', []],
-                        ['3.20.0', 'GHAPIKey', '']]:
+                        ['3.20.0', 'GHAPIKey', ''],
+                        ['4.0.0', 'WAAAPIKey', ''],
                         ['4.0.0', 'CBCompanionVersion', 0]]:
                 if add[1] not in self.config.keys():
                     self.config[add[1]] = add[2]
             for delete in [['1.3.0', 'URLCache'],
-                           ['3.0.1', 'CurseCache']]:
+                           ['3.0.1', 'CurseCache'],
+                           ['4.0.0', 'CFCacheCloudFlare'],
+                           ['4.0.0', 'CFCacheTimestamp'],
+                           ['4.0.0', 'IgnoreDependencies'],
                            ['4.0.0', 'WACompanionVersion']]:
                 if delete[1] in self.config.keys():
                     self.config.pop(delete[1], None)
@@ -176,7 +172,7 @@ class Core:
 
     def check_if_dev_global(self):
         for addon in self.config['Addons']:
-            if addon['URL'].startswith('https://www.curseforge.com/wow/addons/') and 'Development' in addon.keys():
+            if addon['URL'].startswith('https://addons.wago.io/addons/') and 'Development' in addon.keys():
                 return addon['Development']
         else:
             return 0
@@ -187,30 +183,25 @@ class Core:
                 shutil.rmtree(self.path / directory, ignore_errors=True)
 
     def parse_url(self, url):
-        for block in self.masterConfig['BlockList']:
-            if block in url.lower():
-                raise RuntimeError(f'{url}\nThe addon is unavailable. You can\'t manage it with this application.')
-        if url.startswith('https://www.curseforge.com/wow/addons/'):
-            return CurseForgeAddon(url, self.parse_cf_id(url), self.cfCache,
-                                   self.masterConfig['Flavors']['wow_retail'] if url in self.config['IgnoreClientVersion'].keys()
-                                   else self.masterConfig['Flavors'][self.clientType],
-                                   self.check_if_dev(url))
+        if url.startswith('https://addons.wago.io/addons/'):
+            return WagoAddonsAddon(url, self.wagoCache, 'retail' if url in self.config['IgnoreClientVersion'].keys()
+                                   else self.clientType, self.check_if_dev(url), self.config['WAAAPIKey'])
         elif url.startswith('https://www.wowinterface.com/downloads/'):
             return WoWInterfaceAddon(url, self.wowiCache)
         elif url.startswith('https://www.tukui.org/addons.php?id='):
-            if self.clientType != 'wow_retail':
+            if self.clientType != 'retail':
                 raise RuntimeError('Incorrect client version.')
             self.bulk_tukui_check()
             return TukuiAddon(url, self.tukuiCache)
         elif url.startswith('https://www.tukui.org/classic-addons.php?id='):
-            if self.clientType != 'wow_classic':
+            if self.clientType != 'classic':
                 raise RuntimeError('Incorrect client version.')
             elif url.endswith('=1') or url.endswith('=2'):
                 raise RuntimeError('ElvUI and Tukui cannot be installed this way.')
             self.bulk_tukui_check()
             return TukuiAddon(url, self.tukuiCache)
         elif url.startswith('https://www.tukui.org/classic-tbc-addons.php?id='):
-            if self.clientType != 'wow_burning_crusade':
+            if self.clientType != 'bc':
                 raise RuntimeError('Incorrect client version.')
             elif url.endswith('=1') or url.endswith('=2'):
                 raise RuntimeError('ElvUI and Tukui cannot be installed this way.')
@@ -218,46 +209,54 @@ class Core:
             return TukuiAddon(url, self.tukuiCache)
         elif url.startswith('https://github.com/'):
             return GitHubAddon(url, self.clientType, self.config['GHAPIKey'])
-        # TODO: Depreciation
-        elif url.startswith('https://www.townlong-yak.com/addons/'):
-            raise RuntimeError(f'{url}\nTownlong Yak is no longer supported by this application.'
-                               f'\nPlease uninstall this addon and install it from different source.')
         elif url.lower() == 'elvui':
-            if self.clientType == 'wow_retail':
+            if self.clientType == 'retail':
                 return TukuiAddon('ElvUI', self.tukuiCache, 'elvui')
             else:
                 self.bulk_tukui_check()
                 return TukuiAddon('2', self.tukuiCache)
         elif url.lower() == 'elvui:dev':
-            return GitHubAddonRaw('tukui-org/ElvUI', 'development', ['ElvUI', 'ElvUI_OptionsUI'], self.config['GHAPIKey'])
+            return GitHubAddonRaw('tukui-org/ElvUI', 'development', ['ElvUI', 'ElvUI_OptionsUI'],
+                                  self.config['GHAPIKey'])
         elif url.lower() == 'tukui':
-            if self.clientType == 'wow_retail':
+            if self.clientType == 'retail':
                 return TukuiAddon('Tukui', self.tukuiCache, 'tukui')
             else:
                 self.bulk_tukui_check()
                 return TukuiAddon('1', self.tukuiCache)
         elif url.lower() == 'tukui:dev':
-            if self.clientType == 'wow_retail' or self.clientType == 'wow_burning_crusade':
+            if self.clientType == 'retail' or self.clientType == 'bc':
                 return GitHubAddonRaw('tukui-org/Tukui', 'Live', ['Tukui'], self.config['GHAPIKey'])
             else:
                 return GitHubAddonRaw('tukui-org/Tukui', 'Live-Classic-Era', ['Tukui'], self.config['GHAPIKey'])
         elif url.lower() == 'shadow&light:dev':
-            if self.clientType == 'wow_retail':
-                return GitHubAddonRaw('Shadow-and-Light/shadow-and-light', 'dev', ['ElvUI_SLE'], self.config['GHAPIKey'])
+            if self.clientType == 'retail':
+                return GitHubAddonRaw('Shadow-and-Light/shadow-and-light', 'dev', ['ElvUI_SLE'],
+                                      self.config['GHAPIKey'])
             else:
                 raise RuntimeError('Incorrect client version.')
+        elif url.startswith('https://www.townlong-yak.com/addons/'):
+            raise RuntimeError(f'{url}\nTownlong Yak is no longer supported by this application.'
+                               f'\nPlease uninstall this addon and install it from different source.')
+        elif url.startswith('https://www.curseforge.com/wow/addons/'):
+            raise RuntimeError(f'{url}\nCurseForge is no longer supported by this application.'
+                               f'\nPlease uninstall this addon and install it from different source.')
         else:
             raise NotImplementedError('Provided URL is not supported.')
 
     def parse_url_source(self, url):
-        if url.startswith('https://www.curseforge.com/wow/addons/'):
-            return 'CF', url
+        if url.startswith('https://addons.wago.io/addons/'):
+            return 'Wago', url
         elif url.startswith('https://www.wowinterface.com/downloads/'):
             return 'WoWI', url
         elif url.startswith('https://www.tukui.org/addons.php?id=') or \
                 url.startswith('https://www.tukui.org/classic-addons.php?id=') or \
                 url.startswith('https://www.tukui.org/classic-tbc-addons.php?id='):
             return 'Tukui', url
+        elif url.lower() == 'elvui:dev':
+            return 'GitHub', 'https://github.com/tukui-org/ElvUI'
+        elif url.lower() == 'tukui:dev':
+            return 'GitHub', 'https://github.com/tukui-org/Tukui'
         elif url.lower().startswith('elvui'):
             return 'Tukui', 'https://www.tukui.org/download.php?ui=elvui'
         elif url.lower().startswith('tukui'):
@@ -269,15 +268,13 @@ class Core:
         else:
             return '?', None
 
-    def add_addon(self, url, ignore, nodeps):
+    def add_addon(self, url, ignore):
         if url.endswith(':'):
             raise NotImplementedError('Provided URL is not supported.')
-        elif 'twitch://' in url:
-            url = url.split('/download-client')[0].replace('twitch://', 'https://').strip()
-        elif 'curseforge://' in url:
-            url = self.parse_cf_payload(url.strip(), False)
-        elif url.startswith('cf:'):
-            url = f'https://www.curseforge.com/wow/addons/{url[3:]}'
+        elif 'wago-app://' in url:
+            url = self.parse_wagoapp_payload(url)
+        elif url.startswith('wa:'):
+            url = f'https://addons.wago.io/addons/{url[3:]}'
         elif url.startswith('wowi:'):
             url = f'https://www.wowinterface.com/downloads/info{url[5:]}.html'
         elif url.startswith('tu:'):
@@ -294,13 +291,11 @@ class Core:
         if not addon:
             if ignore:
                 self.config['IgnoreClientVersion'][url] = True
-            if nodeps:
-                self.config['IgnoreDependencies'][url] = True
             new = self.parse_url(url)
             new.get_addon()
             addon = self.check_if_installed_dirs(new.directories)
             if addon:
-                return False, addon['Name'], addon['Version'], None
+                return False, addon['Name'], addon['Version']
             self.cleanup(new.directories)
             new.install(self.path)
             checksums = {}
@@ -313,9 +308,8 @@ class Core:
                                           'Checksums': checksums
                                           })
             self.save_config()
-            return True, new.name, new.currentVersion, \
-                None if url in self.config['IgnoreDependencies'].keys() else new.dependencies
-        return False, addon['Name'], addon['Version'], None
+            return True, new.name, new.currentVersion
+        return False, addon['Name'], addon['Version']
 
     def del_addon(self, url, keep):
         old = self.check_if_installed(url)
@@ -323,7 +317,6 @@ class Core:
             if not keep:
                 self.cleanup(old['Directories'])
             self.config['IgnoreClientVersion'].pop(old['URL'], None)
-            self.config['IgnoreDependencies'].pop(old['URL'], None)
             self.config['Addons'][:] = [d for d in self.config['Addons'] if d.get('URL') != url
                                         and d.get('Name') != url]
             self.save_config()
@@ -342,7 +335,6 @@ class Core:
             else:
                 modified = self.check_checksum(old, False)
             blocked = self.check_if_blocked(old)
-            new.dependencies = None if url in self.config['IgnoreDependencies'].keys() else new.dependencies
             if force or (new.currentVersion != old['Version'] and update and not modified and not blocked):
                 new.get_addon()
                 self.cleanup(old['Directories'])
@@ -358,9 +350,9 @@ class Core:
             if force:
                 modified = False
                 blocked = False
-            return new.name, new.author, new.currentVersion, oldversion, new.uiVersion, modified, blocked, source, \
-                sourceurl, new.changelogUrl, new.dependencies, dev
-        return url, [], False, False, None, False, False, '?', None, None, None, None
+            return new.name, new.author, new.currentVersion, oldversion, new.uiVersion, modified, blocked, source,\
+                sourceurl, new.changelogUrl, dev
+        return url, [], False, False, None, False, False, '?', None, None, None
 
     def check_checksum(self, addon, bulk=True):
         checksums = {}
@@ -390,7 +382,7 @@ class Core:
         if url == 'global':
             state = self.check_if_dev_global()
             for addon in self.config['Addons']:
-                if addon['URL'].startswith('https://www.curseforge.com/wow/addons/'):
+                if addon['URL'].startswith('https://addons.wago.io/addons/'):
                     if state == 0:
                         addon['Development'] = 1
                     elif state == 1:
@@ -402,7 +394,7 @@ class Core:
         else:
             addon = self.check_if_installed(url)
             if addon:
-                if addon['URL'].startswith('https://www.curseforge.com/wow/addons/'):
+                if addon['URL'].startswith('https://addons.wago.io/addons/'):
                     state = self.check_if_dev(url)
                     if state == 0:
                         addon['Development'] = 1
@@ -477,23 +469,29 @@ class Core:
                             progress.update(task, advance=1, refresh=True)
         zipf.close()
 
+    # noinspection PyTypeChecker
     def find_orphans(self):
         orphanedaddon = []
         orphaneconfig = []
         directories = []
-        directoriesgit = []
+        directoriesspecial = []
         ignored = ['.DS_Store']
+        special = ['+Wowhead_Looter', 'CurseBreakerCompanion', 'SharedMedia_MyMedia', 'WeakAurasCompanion',
+                   'TradeSkillMaster_AppHelper']
         for addon in self.config['Addons']:
             for directory in addon['Directories']:
                 directories.append(directory)
         for directory in os.listdir(self.path):
-            if directory not in directories:
+            if os.path.isdir(self.path / directory) and directory not in directories:
                 if os.path.isdir(self.path / directory / '.git'):
                     orphanedaddon.append(f'{directory} [GIT]')
-                    directoriesgit.append(directory)
+                    directoriesspecial.append(directory)
+                elif directory in special:
+                    orphanedaddon.append(f'{directory} [Special]')
+                    directoriesspecial.append(directory)
                 elif directory not in ignored:
                     orphanedaddon.append(directory)
-        directories += directoriesgit + orphanedaddon
+        directories += directoriesspecial + orphanedaddon
         for root, dirs, files in os.walk('WTF/', followlinks=True):
             for f in files:
                 if 'Blizzard_' not in f and f.endswith('.lua'):
@@ -502,37 +500,32 @@ class Core:
                         orphaneconfig.append(str(Path(root, f))[4:])
         return orphanedaddon, orphaneconfig
 
-    @retry(custom_error='Failed to execute the search.')
     def search(self, query):
         results = []
-        payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/search?gameId=1&pageSize=10&searchFilter='
-                               f'{quote_plus(query.strip())}', headers=HEADERS, timeout=5).json()
-        for result in payload:
-            results.append(result['websiteUrl'])
+        payload = requests.get(f'https://addons.wago.io/api/external/addons/_search?query={quote_plus(query.strip())}'
+                               f'&game_version={self.clientType}', headers=HEADERS,
+                               auth=APIAuth('Bearer', self.config['WAAAPIKey']), timeout=5)
+        if payload.status_code == 401:
+            raise RuntimeError('Wago Addons API key is missing or incorrect.')
+        elif payload.status_code == 403:
+            raise RuntimeError('Provided Wago Addons API key is expired. Please acquire a new one.')
+        else:
+            payload = payload.json()
+        for result in payload['data']:
+            results.append(result['website_url'])
         return results
 
     def create_reg(self):
         with open('CurseBreaker.reg', 'w') as outfile:
             outfile.write('Windows Registry Editor Version 5.00\n\n'
-                          '[HKEY_CLASSES_ROOT\.ccip\Shell\Open\Command]\n'
-                          '@="\\"' + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\\twitch]\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\\wago-app]\n'
                           '"URL Protocol"="\\"\\""\n'
                           '@="\\"URL:CurseBreaker Protocol\\""\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\\twitch\DefaultIcon]\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\\wago-app\DefaultIcon]\n'
                           '@="\\"CurseBreaker.exe,1\\""\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\\twitch\shell]\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\\twitch\shell\open]\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\\twitch\shell\open\command]\n'
-                          '@="\\"' + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\curseforge]\n'
-                          '"URL Protocol"="\\"\\""\n'
-                          '@="\\"URL:CurseBreaker Protocol\\""\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\curseforge\DefaultIcon]\n'
-                          '@="\\"CurseBreaker.exe,1\\""\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\curseforge\shell]\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\curseforge\shell\open]\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\curseforge\shell\open\command]\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\\wago-app\shell]\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\\wago-app\shell\open]\n'
+                          '[HKEY_CURRENT_USER\Software\Classes\\wago-app\shell\open\command]\n'
                           '@="\\"' + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""\n'
                           '[HKEY_CURRENT_USER\Software\Classes\weakauras-companion]\n'
                           '"URL Protocol"="\\"\\""\n'
@@ -544,93 +537,56 @@ class Core:
                           '[HKEY_CURRENT_USER\Software\Classes\weakauras-companion\shell\open\command]\n'
                           '@="\\"' + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""')
 
-    @retry()
-    def parse_cf_id(self, url, bulk=False, reverse=False):
-        if not self.cfIDs:
-            # noinspection PyBroadException
-            try:
-                if not os.path.isfile(self.cachePath) or time.time() - self.config['CFCacheTimestamp'] > 86400:
-                    with open(self.cachePath, 'wb') as f:
-                        f.write(gzip.decompress(requests.get(
-                            f'https://storage.googleapis.com/cursebreaker/cfid.pickle.gz', headers=HEADERS,
-                            timeout=5).content))
-                    self.config['CFCacheTimestamp'] = int(time.time())
-                    self.save_config()
-                with open(self.cachePath, 'rb') as f:
-                    self.cfIDs = pickle.load(f)
-                self.cfIDs = {**self.config['CFCacheCloudFlare'], **self.cfIDs}
-            except Exception:
-                self.cfIDs = {}
-        if reverse:
-            try:
-                return list(self.cfIDs.keys())[list(self.cfIDs.values()).index(str(url))]
-            except ValueError:
-                return None
-        slug = url.split('/')[-1]
-        if slug in self.cfIDs:
-            project = self.cfIDs[slug]
-        else:
-            try:
-                payload = self.scraper.get(url + '/download-client')
-                if payload.status_code == 404:
-                    renamecheck = self.scraper.get(url, allow_redirects=False)
-                    if renamecheck.status_code == 303:
-                        payload = self.scraper.get(f'https://www.curseforge.com{renamecheck.headers["location"]}'
-                                                   f'/download-client')
-                    if payload.status_code == 404:
-                        if bulk:
-                            return 0
-                        else:
-                            raise RuntimeError(f'{slug}\nThe project could be removed from CurseForge or renamed. Unins'
-                                               f'tall it (and reinstall if it still exists) to fix this issue.')
-            except cloudscraper.CloudflareChallengeError:
-                return 0
-            xml = parseString(payload.text)
-            project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
-            self.config['CFCacheCloudFlare'][slug] = project
-            self.cfIDs = {**self.config['CFCacheCloudFlare'], **self.cfIDs}
-            self.save_config()
-        return project
-
     @retry(custom_error='Failed to parse the URI.')
-    def parse_cf_payload(self, path, xml=True):
-        if xml:
-            xml = parse(path)
-            project = xml.childNodes[0].getElementsByTagName('project')[0].getAttribute('id')
+    def parse_wagoapp_payload(self, url):
+        projectid = url.replace('wago-app://addons/', '')
+        payload = requests.get(f'https://addons.wago.io/api/external/addons/{projectid}?game_version='
+                               f'{self.clientType}', headers=HEADERS,
+                               auth=APIAuth('Bearer', self.config['WAAAPIKey']), timeout=5)
+        if payload.status_code == 401:
+            raise RuntimeError('Wago Addons API key is missing or incorrect.')
+        elif payload.status_code == 403:
+            raise RuntimeError('Provided Wago Addons API key is expired. Please acquire a new one.')
         else:
-            project = re.search(r'\d+', path).group()
-        payload = requests.get(f'https://addons-ecs.forgesvc.net/api/v2/addon/{project}', headers=HEADERS,
-                               timeout=5).json()
-        url = payload['websiteUrl'].strip()
-        return url
+            payload = payload.json()
+        return f'https://addons.wago.io/addons/{payload["slug"]}'
 
     @retry()
     def bulk_check(self, addons):
-        ids_cf = []
         ids_wowi = []
+        ids_wago = []
         for addon in addons:
-            if addon['URL'].startswith('https://www.curseforge.com/wow/addons/'):
-                ids_cf.append(int(self.parse_cf_id(addon['URL'], bulk=True)))
-            elif addon['URL'].startswith('https://www.wowinterface.com/downloads/'):
+            if addon['URL'].startswith('https://www.wowinterface.com/downloads/'):
                 ids_wowi.append(re.findall(r'\d+', addon['URL'])[0].strip())
-        if len(ids_cf) > 0:
-            payload = requests.post('https://addons-ecs.forgesvc.net/api/v2/addon', json=ids_cf,
-                                    headers=HEADERS, timeout=5).json()
-            for addon in payload:
-                self.cfCache[str(addon['id'])] = addon
+            elif addon['URL'].startswith('https://addons.wago.io/addons/') and \
+                    addon['URL'] not in self.config['IgnoreClientVersion'].keys():
+                ids_wago.append(addon['URL'].replace('https://addons.wago.io/addons/', ''))
         if len(ids_wowi) > 0:
             payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{",".join(ids_wowi)}.json',
                                    headers=HEADERS, timeout=5).json()
             if 'ERROR' not in payload:
                 for addon in payload:
                     self.wowiCache[str(addon['UID'])] = addon
+        # TODO Add bulk support
+        # if len(ids_wago) > 0 and self.config['WAAAPIKey'] != '':
+        #     payload = requests.post(f'https://addons.wago.io/api/external/addons/_recents?game_version='
+        #                             f'{self.clientType}', json={'addons': ids_wago}, headers=HEADERS,
+        #                             auth=APIAuth('Bearer', self.config['WAAAPIKey']), timeout=5)
+        #     if payload.status_code == 401:
+        #         raise RuntimeError('Wago Addons API key is missing or incorrect.')
+        #     elif payload.status_code == 403:
+        #         raise RuntimeError('Provided Wago Addons API key is expired. Please acquire a new one.')
+        #     else:
+        #         payload = payload.json()
+        #     for addon in payload['addons']:
+        #         self.wagoCache[addon] = payload['addons'][addon]
 
     @retry(custom_error='Failed to parse Tukui API data')
     def bulk_tukui_check(self):
         if not self.tukuiCache:
-            if self.clientType == 'wow_classic':
+            if self.clientType == 'classic':
                 endpoint = 'classic-addons'
-            elif self.clientType == 'wow_burning_crusade':
+            elif self.clientType == 'bc':
                 endpoint = 'classic-tbc-addons'
             else:
                 endpoint = 'addons'
@@ -649,99 +605,57 @@ class Core:
         else:
             return []
 
+    # noinspection PyTypeChecker
     def detect_addons(self):
-        if not self.dirIndex:
-            self.dirIndex = pickle.load(gzip.open(io.BytesIO(
-                requests.get(f'https://storage.googleapis.com/cursebreaker/dir_{self.clientType}.pickle.gz',
-                             headers=HEADERS, timeout=5).content)))
+        names = []
+        namesinstalled = []
+        slugs = []
+        output = []
+        ignored = ['ElvUI_OptionsUI', 'Tukui_Config', '+Wowhead_Looter', 'WeakAurasCompanion', 'CurseBreakerCompanion',
+                   'SharedMedia_MyMedia', 'TradeSkillMaster_AppHelper', '.DS_Store']
+        specialcases = ['ElvUI', 'Tukui']
+
         addon_dirs = os.listdir(self.path)
-        ignored = ['ElvUI_OptionsUI', 'Tukui_Config', '+Wowhead_Looter', 'WeakAurasCompanion', 'SharedMedia_MyMedia',
-                   '.DS_Store']
-        hit = []
-        partial_hit = []
-        miss = []
         for directory in addon_dirs:
             if os.path.isdir(self.path / directory) and not os.path.islink(self.path / directory) and \
-                    not os.path.isdir(self.path / directory / '.git') and not directory.startswith('Blizzard_') and directory not in ignored:
-                if directory in self.dirIndex['single']['cf']:
-                    if len(self.dirIndex['single']['cf'][directory]) > 1:
-                        partial_hit.append(self.dirIndex['single']['cf'][directory])
-                    elif not self.check_if_installed(f'https://www.curseforge.com/wow/addons/'
-                                                     f'{self.dirIndex["single"]["cf"][directory][0]}'):
-                        if not (directory == 'ElvUI_SLE' and self.check_if_installed('Shadow&Light:Dev')):
-                            hit.append(f'cf:{self.dirIndex["single"]["cf"][directory][0]}')
-                else:
-                    if directory == 'ElvUI' or directory == 'Tukui':
-                        if not self.check_if_installed(directory):
-                            hit.append(directory)
-                    else:
-                        miss.append(directory)
-        hit = list(set(hit))
-        partial_hit.sort()
-        partial_hit = list(partial_hit for partial_hit, _ in itertools.groupby(partial_hit))
+                    not os.path.isdir(self.path / directory / '.git') and not directory.startswith('Blizzard_') and \
+                    directory not in ignored + specialcases:
+                directoryhash = WagoAddonsHasher(self.path / directory)
+                output.append({'name': directory, 'hash': directoryhash.get_hash()})
 
-        partial_hit_parsed = []
-        for partial in partial_hit:
-            for addon in partial:
-                if f'cf:{addon}' in hit:
-                    break
+        payload = requests.post(f'https://addons.wago.io/api/external/addons/_match?game_version='
+                                f'{self.clientType}', json={'addons': output}, headers=HEADERS,
+                                auth=APIAuth('Bearer', self.config['WAAAPIKey']), timeout=5)
+        if payload.status_code == 401:
+            raise RuntimeError('Wago Addons API key is missing or incorrect.')
+        elif payload.status_code == 403:
+            raise RuntimeError('Provided Wago Addons API key is expired. Please acquire a new one.')
+        else:
+            payload = payload.json()
+        for addon in payload['addons']:
+            if self.check_if_installed(addon['website_url']):
+                namesinstalled.append(addon['name'])
             else:
-                partial_hit_parsed.append(partial)
-        partial_hit = partial_hit_parsed
-
-        partial_hit_parsed = []
-        for partial in partial_hit:
-            partial_hit_temp = {}
-            for addon in partial:
-                if addon in self.dirIndex['full']['cf']:
-                    directories = self.dirIndex['full']['cf'][addon]
-                    complete = True
+                names.append(addon['name'])
+                slugs.append(f'wa:{addon["website_url"].split("/")[-1]}')
+        for special in specialcases:
+            if os.path.isdir(self.path / special):
+                if self.check_if_installed(special):
+                    namesinstalled.append(special)
                 else:
-                    directories = []
-                    complete = False
-                for directory in directories:
-                    if not os.path.isdir(self.path / directory):
-                        complete = False
-                        break
-                if complete:
-                    partial_hit_temp[addon] = len(directories)
-            if len(partial_hit_temp) > 0:
-                partial_hit_parsed_max = max(partial_hit_temp.items(), key=lambda x: x[1])
-                partial_hit_parsed_temp = []
-                for key, value in partial_hit_temp.items():
-                    if value == partial_hit_parsed_max[1]:
-                        partial_hit_parsed_temp.append(key)
-                partial_hit_parsed.append(partial_hit_parsed_temp)
-            else:
-                for addon in partial:
-                    if addon in self.dirIndex['full']['cf']:
-                        directories = self.dirIndex['full']['cf'][addon]
-                        for directory in directories:
-                            if os.path.isdir(self.path / directory):
-                                miss.append(directory)
-        miss = list(set(miss))
-        partial_hit_parsed.sort()
-        partial_hit = list(partial_hit_parsed for partial_hit_parsed, _ in itertools.groupby(partial_hit_parsed))
+                    names.append(special)
+                    slugs.append(special)
+        names.sort()
+        namesinstalled.sort()
+        slugs.sort()
 
-        partial_hit_parsed = []
-        for addons in partial_hit:
-            if len(addons) == 1 and not self.check_if_installed(f'https://www.curseforge.com/wow/addons/{addons[0]}'):
-                hit.append(f'cf:{addons[0]}')
-            elif len(addons) > 1:
-                for addon in addons:
-                    if self.check_if_installed(f'https://www.curseforge.com/wow/addons/{addon}'):
-                        break
-                else:
-                    addons = ['cf:' + s for s in addons]
-                    partial_hit_parsed.append(addons)
-
-        return sorted(hit), sorted(partial_hit_parsed), sorted(miss)
+        return names, slugs, namesinstalled
 
     def export_addons(self):
         addons = []
         for addon in self.config['Addons']:
-            if addon['URL'].startswith('https://www.curseforge.com/wow/addons/'):
-                url = f'cf:{addon["URL"].split("/")[-1]}'
+            if addon['URL'].startswith('https://addons.wago.io/addons/'):
+                url = f'wa:{addon["URL"].replace("https://addons.wago.io/addons/", "")}'
             elif addon['URL'].startswith('https://www.wowinterface.com/downloads/info'):
                 url = f'wowi:{addon["URL"].split("/info")[-1].replace(".html", "")}'
             elif addon['URL'].startswith('https://www.tukui.org/addons.php?id='):
@@ -758,40 +672,46 @@ class Core:
         return f'install {",".join(sorted(addons))}'
 
 
-class DependenciesParser:
-    def __init__(self, core):
-        self.core = core
-        self.dependencies = []
-        self.ignore = [14328, 15049]
+class WagoAddonsHasher:
+    def __init__(self, directory):
+        self.directory = directory
+        self.filesToHash = []
+        self.filesToParse = []
+        self.hashes = []
+        self.parse()
 
-    def add_dependency(self, dependency):
-        if dependency:
-            self.dependencies = self.dependencies + dependency
+    def parse_file(self, target):
+        for f in target:
+            if f.is_file():
+                self.filesToHash.append(f)
+                if not f.name.lower().endswith('.lua'):
+                    with open(f, 'r', encoding='utf-8') as g:
+                        newfilestoparse = None
+                        data = g.read()
+                        if f.name.lower().endswith('.toc'):
+                            data = re.sub(r'\s*#.*$', '', data, flags=re.I | re.M)
+                            newfilestoparse = re.findall(r'^\s*((?:(?<!\.\.).)+\.(?:xml|lua))\s*$', data,
+                                                         flags=re.I | re.M)
+                        elif f.name.lower().endswith('.xml'):
+                            data = re.sub(r'<!--.*?-->', '', data, flags=re.I | re.S)
+                            newfilestoparse = re.findall(r"<(?:Include|Script)\s+file=[\"']((?:(?<!\.\.).)+)[\"']\s*/>",
+                                                         data, flags=re.I)
+                        if newfilestoparse and len(newfilestoparse) > 0:
+                            newfilestoparse = [Path(f.parent, element) for element in newfilestoparse]
+                            self.parse_file(newfilestoparse)
 
-    def parse_dependency(self, output=False):
-        self.dependencies = list(set(self.dependencies))
-        for ignore in self.ignore:
-            if ignore in self.dependencies:
-                self.dependencies.remove(ignore)
-        slugs = []
-        processed = []
-        for d in self.dependencies:
-            slug = self.core.parse_cf_id(d, reverse=True)
-            if slug:
-                slugs.append(f'https://www.curseforge.com/wow/addons/{slug}')
-        if output:
-            for s in slugs:
-                installed = self.core.check_if_installed(s)
-                if installed:
-                    processed.append(installed['Name'])
-                else:
-                    processed.append(f'cf:{s}')
-            return sorted(processed)
-        else:
-            for s in slugs:
-                if not self.core.check_if_installed(s):
-                    processed.append(s)
-            if len(processed) > 0:
-                return ','.join(processed)
-            else:
-                return None
+    def parse(self):
+        for f in list(self.directory.glob('*')):
+            if f.name.lower().endswith('.toc'):
+                self.filesToParse.append(f)
+            elif f.name.lower() == 'bindings.xml':
+                self.filesToHash.append(f)
+        self.parse_file(self.filesToParse)
+        self.filesToHash = list(dict.fromkeys(self.filesToHash))
+        for f in self.filesToHash:
+            with open(f, 'rb') as g:
+                self.hashes.append(hashlib.md5(g.read()).hexdigest())
+        self.hashes.sort()
+
+    def get_hash(self):
+        return hashlib.md5(''.join(self.hashes).encode('utf-8')).hexdigest()
