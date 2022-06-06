@@ -30,7 +30,7 @@ from multiprocessing import freeze_support
 from prompt_toolkit import PromptSession, HTML
 from prompt_toolkit.shortcuts import confirm
 from prompt_toolkit.completion import WordCompleter, NestedCompleter
-from distutils.version import StrictVersion
+from packaging.version import Version
 from CB import HEADERS, HEADLESS_TERMINAL_THEME, __version__
 from CB.Core import Core
 from CB.Compat import pause, timeout, clear, set_terminal_title, set_terminal_size, KBHit
@@ -230,7 +230,7 @@ class TUI:
                                 or (self.os == 'Linux' and '.gz' in binary['name']):
                             url = binary['browser_download_url']
                             break
-                    if url and StrictVersion(remoteversion[1:]) > StrictVersion(__version__):
+                    if url and Version(remoteversion[1:]) > Version(__version__):
                         self.console.print('[green]Updating CurseBreaker...[/green]')
                         shutil.move(sys.executable, sys.executable + '.old')
                         payload = requests.get(url, headers=HEADERS, timeout=5)
@@ -795,7 +795,8 @@ class TUI:
                 self.core.config['WAStash'] = []
                 self.core.save_config()
             wago = WagoUpdater(self.core.config, self.core.masterConfig['ClientTypes'][self.core.clientType]['TOC'])
-            if self.core.masterConfig['CBCompanionVersion'] > self.core.config['CBCompanionVersion']:
+            if Version(__version__) >= Version(self.core.masterConfig['ConfigVersion']) and \
+                    self.core.masterConfig['CBCompanionVersion'] > self.core.config['CBCompanionVersion']:
                 self.core.config['CBCompanionVersion'] = self.core.masterConfig['CBCompanionVersion']
                 self.core.save_config()
                 force = True

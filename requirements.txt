@@ -1,6 +1,7 @@
 python-dateutil
 prompt-toolkit
 checksumdir
+packaging
 pyperclip
 requests
 markdown
