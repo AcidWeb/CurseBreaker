@@ -178,10 +178,12 @@ class TUI:
         self.console.print('Use command [green]help[/green] or press [green]TAB[/green] to see a list of available comm'
                            'ands.\nCommand [green]exit[/green] or pressing [green]CTRL+D[/green] will close the applica'
                            'tion.\n')
-        if len(self.core.config['Addons']) > 0:
-            # TODO Add API key message
+        if len(self.core.config['Addons']) == 0:
             self.console.print('To enable Wago Addons support API key needs to be provided.\nIt can be obtained here: ['
-                               'link=X]X[/link]\nAfter that it needs to added to application configuration by using [green]set wago_addons_api[/green] command.\nCommand [green]import[/green] might be used to detect already installed addons.')
+                               'link=https://www.patreon.com/wagoio]https://www.patreon.com/wagoio[/link]\nAfter that i'
+                               't needs to added to application configuration by using [green]set wago_addons_api[/gree'
+                               'n] command.\nCommand [green]import[/green] might be used to detect already installed ad'
+                               'dons.')
         self.motd_parser()
         if self.core.backup_check():
             self.console.print(f'[green]Backing up WTF directory:[/green]')
@@ -708,7 +710,6 @@ class TUI:
                                '\n\t\tEnables/disables automatic Wago updates.\n\t\tIf a username is provided check wil'
                                'l start to ignore the specified author.', highlight=False)
 
-    # TODO wago_addons_api add URL
     def c_set(self, args):
         if args:
             args = args.strip()
@@ -765,13 +766,15 @@ class TUI:
             else:
                 self.console.print('Unknown option.')
         else:
-            self.console.print('[green]Usage:[/green]\n\t[green]set wago_addons_api [API key][/green]\n\t\tSets Wago Addons API key required to use Wago Addons as addon source.\n\t\tIt can be obtained here:'
-                               ' [link=X]X[/link]\n\t[green]set wago_api [API key][/green]\n\t\tSets Wago API key r'
-                               'equired to access private entries.\n\t\tIt can be obtained here: [link=https://wago.io/'
-                               'account]https://wago.io/account[/link]\n\t[green]set wago_wow_account [Account name][/g'
-                               'reen]\n\t\tSets WoW account used by Wago updater.\n\t\tNeeded only if compatibile addon'
-                               's are used on more than one WoW account.\n\t[green]set gh_api [API key][/green]\n\t\tSe'
-                               'ts GitHub API key. Might be needed to get around API rate limits.', highlight=False)
+            self.console.print('[green]Usage:[/green]\n\t[green]set wago_addons_api [API key][/green]\n\t\tSets Wago Ad'
+                               'dons API key required to use Wago Addons as addon source.\n\t\tIt can be obtained here:'
+                               ' [link=https://www.patreon.com/wagoio]https://www.patreon.com/wagoio[/link]\n\t[green]s'
+                               'et wago_api [API key][/green]\n\t\tSets Wago API key required to access private entries'
+                               '.\n\t\tIt can be obtained here: [link=https://wago.io/account]https://wago.io/account[/'
+                               'link]\n\t[green]set wago_wow_account [Account name][/green]\n\t\tSets WoW account used '
+                               'by Wago updater.\n\t\tNeeded only if compatibile addons are used on more than one WoW a'
+                               'ccount.\n\t[green]set gh_api [API key][/green]\n\t\tSets GitHub API key. Might be neede'
+                               'd to get around API rate limits.', highlight=False)
 
     def c_wago_update(self, _, verbose=True, flush=True):
         if os.path.isdir(Path('Interface/AddOns/WeakAuras')) or os.path.isdir(Path('Interface/AddOns/Plater')):
@@ -875,7 +878,6 @@ class TUI:
         self.console.print(f'{payload}\n\nThe command above was copied to the clipboard.', highlight=False)
 
     def c_help(self, _):
-        # TODO Update
         self.console.print('[green]install [URL][/green]\n\tCommand accepts a space-separated list of links.\n\t[bold w'
                            'hite]Flags:[/bold white]\n\t'
                            '\t[bold white]-i[/bold white] - Disable the client version check.\n'
@@ -914,7 +916,8 @@ class TUI:
                            '[green]toggle wago [Username][/green]\n\tEnables/disables automatic Wago updates.\n\tIf a u'
                            'sername is provided check will start to ignore the specified author.\n'
                            '[green]set wago_addons_api [API key][/green]\n\tSets Wago Addons API key required to use Wa'
-                           'go Addons as addon source.\n\tIt can be obtained here: [link=X]X[/link]\n'
+                           'go Addons as addon source.\n\tIt can be obtained here: [link=https://www.patreon.com/wagoio'
+                           ']https://www.patreon.com/wagoio[/link]\n'
                            '[green]set wago_api [API key][/green]\n\tSets Wago API key required to access private entri'
                            'es.\n\tIt can be obtained here: [link=https://wago.io/account]https://wago.io/account[/link'
                            ']\n'
