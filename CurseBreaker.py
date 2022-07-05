@@ -523,6 +523,8 @@ class TUI:
                                 addon if isinstance(addon, str) else addon['URL'], update, force)
                             if provider:
                                 source = f' [bold white]{source}[/bold white]'
+                            elif source == 'Unsupported':
+                                source = f' [bold red]{source.upper()}[/bold red]'
                             else:
                                 source = ''
                             if versionold:
@@ -533,7 +535,7 @@ class TUI:
                                                            self.parse_link(versionold, changelog, dstate,
                                                                            uiversion=uiversion))
                                     else:
-                                        if compact and compacted > -1:
+                                        if compact and compacted > -1 and 'unsupported' not in source.lower():
                                             compacted += 1
                                         else:
                                             self.table.add_row(f'[green]Up-to-date[/green]{source}',

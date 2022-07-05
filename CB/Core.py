@@ -236,11 +236,9 @@ class Core:
             else:
                 raise RuntimeError('Incorrect client version.')
         elif url.startswith('https://www.townlong-yak.com/addons/'):
-            raise RuntimeError(f'{url}\nTownlong Yak is no longer supported by this application.'
-                               f'\nPlease uninstall this addon and install it from different source.')
+            raise RuntimeError(f'{url}\nTownlong Yak is no longer supported by this application.')
         elif url.startswith('https://www.curseforge.com/wow/addons/'):
-            raise RuntimeError(f'{url}\nCurseForge is no longer supported by this application.'
-                               f'\nPlease uninstall this addon and install it from different source.')
+            raise RuntimeError(f'{url}\nCurseForge is no longer supported by this application.')
         else:
             raise NotImplementedError('Provided URL is not supported.')
 
@@ -326,15 +324,19 @@ class Core:
     def update_addon(self, url, update, force):
         old = self.check_if_installed(url)
         if old:
-            new = self.parse_url(old['URL'])
             dev = self.check_if_dev(old['URL'])
-            source, sourceurl = self.parse_url_source(old['URL'])
+            blocked = self.check_if_blocked(old)
             oldversion = old['Version']
             if old['URL'] in self.checksumCache:
                 modified = self.checksumCache[old['URL']]
             else:
                 modified = self.check_checksum(old, False)
-            blocked = self.check_if_blocked(old)
+            if old['URL'].startswith(('https://www.townlong-yak.com/addons/',
+                                      'https://www.curseforge.com/wow/addons/')):
+                return old['Name'], [], oldversion, oldversion, None, modified, blocked, 'Unsupported', old['URL'],\
+                       None, dev
+            source, sourceurl = self.parse_url_source(old['URL'])
+            new = self.parse_url(old['URL'])
             if force or (new.currentVersion != old['Version'] and update and not modified and not blocked):
                 new.get_addon()
                 self.cleanup(old['Directories'])
