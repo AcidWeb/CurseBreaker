@@ -505,12 +505,8 @@ class Core:
         payload = requests.get(f'https://addons.wago.io/api/external/addons/_search?query={quote_plus(query.strip())}'
                                f'&game_version={self.clientType}', headers=HEADERS,
                                auth=APIAuth('Bearer', self.config['WAAAPIKey']), timeout=5)
-        if payload.status_code == 401:
-            raise RuntimeError('Wago Addons API key is missing or incorrect.')
-        elif payload.status_code == 403:
-            raise RuntimeError('Provided Wago Addons API key is expired. Please acquire a new one.')
-        else:
-            payload = payload.json()
+        self.parse_wagoaddons_error(payload.status_code)
+        payload = payload.json()
         for result in payload['data']:
             results.append(result['website_url'])
         return results
@@ -537,18 +533,13 @@ class Core:
                           '[HKEY_CURRENT_USER\Software\Classes\weakauras-companion\shell\open\command]\n'
                           '@="\\"' + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""')
 
-    @retry(custom_error='Failed to parse the URI.')
     def parse_wagoapp_payload(self, url):
         projectid = url.replace('wago-app://addons/', '')
         payload = requests.get(f'https://addons.wago.io/api/external/addons/{projectid}?game_version='
                                f'{self.clientType}', headers=HEADERS,
                                auth=APIAuth('Bearer', self.config['WAAAPIKey']), timeout=5)
-        if payload.status_code == 401:
-            raise RuntimeError('Wago Addons API key is missing or incorrect.')
-        elif payload.status_code == 403:
-            raise RuntimeError('Provided Wago Addons API key is expired. Please acquire a new one.')
-        else:
-            payload = payload.json()
+        self.parse_wagoaddons_error(payload.status_code)
+        payload = payload.json()
         return f'https://addons.wago.io/addons/{payload["slug"]}'
 
     @retry()
@@ -572,12 +563,8 @@ class Core:
         #     payload = requests.post(f'https://addons.wago.io/api/external/addons/_recents?game_version='
         #                             f'{self.clientType}', json={'addons': ids_wago}, headers=HEADERS,
         #                             auth=APIAuth('Bearer', self.config['WAAAPIKey']), timeout=5)
-        #     if payload.status_code == 401:
-        #         raise RuntimeError('Wago Addons API key is missing or incorrect.')
-        #     elif payload.status_code == 403:
-        #         raise RuntimeError('Provided Wago Addons API key is expired. Please acquire a new one.')
-        #     else:
-        #         payload = payload.json()
+        #     self.parse_wagoaddons_error(payload.status_code)
+        #     payload = payload.json()
         #     for addon in payload['addons']:
         #         self.wagoCache[addon] = payload['addons'][addon]
 
@@ -626,12 +613,8 @@ class Core:
         payload = requests.post(f'https://addons.wago.io/api/external/addons/_match?game_version='
                                 f'{self.clientType}', json={'addons': output}, headers=HEADERS,
                                 auth=APIAuth('Bearer', self.config['WAAAPIKey']), timeout=5)
-        if payload.status_code == 401:
-            raise RuntimeError('Wago Addons API key is missing or incorrect.')
-        elif payload.status_code == 403:
-            raise RuntimeError('Provided Wago Addons API key is expired. Please acquire a new one.')
-        else:
-            payload = payload.json()
+        self.parse_wagoaddons_error(payload.status_code)
+        payload = payload.json()
         for addon in payload['addons']:
             if self.check_if_installed(addon['website_url']):
                 namesinstalled.append(addon['name'])
@@ -670,6 +653,16 @@ class Core:
                 url = addon['URL'].lower()
             addons.append(url)
         return f'install {",".join(sorted(addons))}'
+
+    def parse_wagoaddons_error(self, code):
+        if code == 401:
+            raise RuntimeError('Wago Addons API key is missing or incorrect.')
+        elif code == 403:
+            raise RuntimeError('Provided Wago Addons API key is expired. Please acquire a new one.')
+        elif code == 423:
+            raise RuntimeError('Provided Wago Addons API key is blocked. Please acquire a new one.')
+        elif code == 429 or code == 500:
+            raise RuntimeError('Temporary Wago Addons API issue. Please try later.')
 
 
 class WagoAddonsHasher:

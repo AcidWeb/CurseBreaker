@@ -180,7 +180,7 @@ class TUI:
                            'tion.\n')
         if len(self.core.config['Addons']) == 0:
             self.console.print('To enable Wago Addons support API key needs to be provided.\nIt can be obtained here: ['
-                               'link=https://www.patreon.com/wagoio]https://www.patreon.com/wagoio[/link]\nAfter that i'
+                               'link=https://addons.wago.io/patreon]https://addons.wago.io/patreon[/link]\nAfter that i'
                                't needs to added to application configuration by using [green]set wago_addons_api[/gree'
                                'n] command.\nCommand [green]import[/green] might be used to detect already installed ad'
                                'dons.')
@@ -768,7 +768,7 @@ class TUI:
         else:
             self.console.print('[green]Usage:[/green]\n\t[green]set wago_addons_api [API key][/green]\n\t\tSets Wago Ad'
                                'dons API key required to use Wago Addons as addon source.\n\t\tIt can be obtained here:'
-                               ' [link=https://www.patreon.com/wagoio]https://www.patreon.com/wagoio[/link]\n\t[green]s'
+                               ' [link=https://addons.wago.io/patreon]https://addons.wago.io/patreon[/link]\n\t[green]s'
                                'et wago_api [API key][/green]\n\t\tSets Wago API key required to access private entries'
                                '.\n\t\tIt can be obtained here: [link=https://wago.io/account]https://wago.io/account[/'
                                'link]\n\t[green]set wago_wow_account [Account name][/green]\n\t\tSets WoW account used '
@@ -916,8 +916,8 @@ class TUI:
                            '[green]toggle wago [Username][/green]\n\tEnables/disables automatic Wago updates.\n\tIf a u'
                            'sername is provided check will start to ignore the specified author.\n'
                            '[green]set wago_addons_api [API key][/green]\n\tSets Wago Addons API key required to use Wa'
-                           'go Addons as addon source.\n\tIt can be obtained here: [link=https://www.patreon.com/wagoio'
-                           ']https://www.patreon.com/wagoio[/link]\n'
+                           'go Addons as addon source.\n\tIt can be obtained here: [link=https://addons.wago.io/patreon'
+                           ']https://addons.wago.io/patreon[/link]\n'
                            '[green]set wago_api [API key][/green]\n\tSets Wago API key required to access private entri'
                            'es.\n\tIt can be obtained here: [link=https://wago.io/account]https://wago.io/account[/link'
                            ']\n'

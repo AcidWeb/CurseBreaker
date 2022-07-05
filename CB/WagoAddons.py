@@ -31,7 +31,9 @@ class WagoAddonsAddon:
                 raise RuntimeError(f'{url}\nWago Addons API key is missing or incorrect.')
             elif self.payload.status_code == 403:
                 raise RuntimeError(f'{url}\nProvided Wago Addons API key is expired. Please acquire a new one.')
-            elif self.payload.status_code == 404 or self.payload.status_code == 500:
+            elif self.payload.status_code == 423:
+                raise RuntimeError(f'{url}\nProvided Wago Addons API key is blocked. Please acquire a new one.')
+            elif self.payload.status_code == 404 or self.payload.status_code == 429 or self.payload.status_code == 500:
                 raise RuntimeError(f'{url}\nThis might be a temporary issue with Wago Addons API or the project was '
                                    f'removed/renamed. In this case, uninstall it (and reinstall if it still exists) '
                                    f'to fix this issue.')

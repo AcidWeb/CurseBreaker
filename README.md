@@ -38,7 +38,7 @@ By default **CurseBreaker** will create backups of the entire `WTF` directory.
 
 ## WAGO ADDONS SUPPORT
 To use Wago Addons as addon source user needs to provide a personal API key.\
-The key can be obtained [here](https://www.patreon.com/wagoio) and needs to be added to the application configuration by using `set wago_addons_api` command.
+The key can be obtained [here](https://addons.wago.io/patreon) and needs to be added to the application configuration by using `set wago_addons_api` command.
 
 ## WEAKAURAS SUPPORT
 **CurseBreaker** by default will try to update all detected WeakAuras and Plater profiles/scripts. Process work the same as WeakAuras Companion.\
