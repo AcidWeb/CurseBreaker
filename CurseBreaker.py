@@ -425,7 +425,7 @@ class TUI:
                 optignore = True
                 args = args.replace('-i', '', 1)
             args = re.sub(r'([a-zA-Z0-9_:])([ ]+)([a-zA-Z0-9_:])', r'\1,\3', args)
-            addons = [addon.strip() for addon in list(reader([args], skipinitialspace=True))[0]]
+            addons = [re.sub(r'[\[\]]', '', addon).strip() for addon in list(reader([args], skipinitialspace=True))[0]]
             exceptions = []
             if len(addons) > 0:
                 if self.core.clientType != 'retail':
