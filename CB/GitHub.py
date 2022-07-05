@@ -18,7 +18,9 @@ class GitHubAddon:
                                         auth=APIAuth('token', self.apiKey), timeout=5)
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             raise RuntimeError(f'{project}\nGitHub API failed to respond.')
-        if self.payload.status_code == 403:
+        if self.payload.status_code == 401:
+            raise RuntimeError(f'{project}\nIncorrect or expired GitHub API personal access token.')
+        elif self.payload.status_code == 403:
             raise RuntimeError(f'{project}\nGitHub API rate limit exceeded. Try later or provide personal access '
                                f'token.')
         elif self.payload.status_code == 404:

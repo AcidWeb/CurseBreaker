@@ -8,3 +8,5 @@ WTF-Backup/
 /Build.sh
 /.env
 *.zip
+*.exe
+*.gz
