@@ -680,7 +680,7 @@ class WagoAddonsHasher:
             if f.is_file():
                 self.filesToHash.append(f)
                 if not f.name.lower().endswith('.lua'):
-                    with open(f, 'r', encoding='utf-8') as g:
+                    with open(f, 'r', encoding='utf-8', errors='ignore') as g:
                         newfilestoparse = None
                         data = g.read()
                         if f.name.lower().endswith('.toc'):
