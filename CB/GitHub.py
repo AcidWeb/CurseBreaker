@@ -72,6 +72,8 @@ class GitHubAddon:
                 targetflavor = 'classic'
             elif self.clientType == 'bc':
                 targetflavor = 'bcc'
+            elif self.clientType == 'wotlk':
+                targetflavor = 'wrath'
             else:
                 targetflavor = 'mainline'
             for release in self.metadata['releases']:
@@ -99,24 +101,31 @@ class GitHubAddon:
             latest = None
             latestclassic = None
             latestbc = None
+            latestwrath = None
             for release in self.payloads[self.releaseDepth]['assets']:
                 if release['name'] and '-nolib' not in release['name'] \
                         and release['content_type'] in {'application/x-zip-compressed', 'application/zip'}:
                     if not latest and not release['name'].endswith('-classic.zip') and \
-                            not release['name'].endswith('-bc.zip') and not release['name'].endswith('-bcc.zip'):
+                            not release['name'].endswith('-bc.zip') and not release['name'].endswith('-bcc.zip') and \
+                            not release['name'].endswith('-wrath.zip'):
                         latest = release['browser_download_url']
                     elif not latestclassic and release['name'].endswith('-classic.zip'):
                         latestclassic = release['browser_download_url']
                     elif not latestbc and (release['name'].endswith('-bc.zip') or release['name'].endswith('-bcc.zip')):
                         latestbc = release['browser_download_url']
+                    elif not latestwrath and release['name'].endswith('-wrath.zip'):
+                        latestwrath = release['browser_download_url']
             if (self.clientType == 'retail' and latest) \
                     or (self.clientType == 'classic' and latest and not latestclassic) \
-                    or (self.clientType == 'bc' and latest and not latestbc):
+                    or (self.clientType == 'bc' and latest and not latestbc) \
+                    or (self.clientType == 'wotlk' and latest and not latestwrath):
                 self.downloadUrl = latest
             elif self.clientType == 'classic' and latestclassic:
                 self.downloadUrl = latestclassic
             elif self.clientType == 'bc' and latestbc:
                 self.downloadUrl = latestbc
+            elif self.clientType == 'wotlk' and latestwrath:
+                self.downloadUrl = latestwrath
             else:
                 self.releaseDepth += 1
                 self.parse()
@@ -146,7 +155,9 @@ class GitHubAddonRaw:
                                         headers=HEADERS, auth=APIAuth('token', self.apiKey), timeout=5)
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             raise RuntimeError(f'{project}\nGitHub API failed to respond.')
-        if self.payload.status_code == 403:
+        if self.payload.status_code == 401:
+            raise RuntimeError(f'{project}\nIncorrect or expired GitHub API personal access token.')
+        elif self.payload.status_code == 403:
             raise RuntimeError(f'{project}\nGitHub API rate limit exceeded. Try later or provide personal access '
                                f'token.')
         elif self.payload.status_code == 404:

@@ -74,6 +74,9 @@ class TUI:
             flavor = os.path.basename(os.getcwd())
         if flavor in {'_retail_', '_ptr_'}:
             self.core.clientType = 'retail'
+        elif flavor in {'_classic_beta_'}:
+            self.core.clientType = 'wotlk'
+            set_terminal_title(f'CurseBreaker v{__version__} - Wrath of the Lich King')
         elif flavor in {'_classic_', '_classic_ptr_'}:
             self.core.clientType = 'bc'
             set_terminal_title(f'CurseBreaker v{__version__} - Burning Crusade')

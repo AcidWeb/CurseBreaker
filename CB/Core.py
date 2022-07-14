@@ -182,6 +182,7 @@ class Core:
             for directory in directories:
                 shutil.rmtree(self.path / directory, ignore_errors=True)
 
+    # TODO Cleanup after WOTLK Beta
     def parse_url(self, url):
         if url.startswith('https://addons.wago.io/addons/'):
             return WagoAddonsAddon(url, self.wagoCache, 'retail' if url in self.config['IgnoreClientVersion'].keys()
@@ -190,19 +191,19 @@ class Core:
             return WoWInterfaceAddon(url, self.wowiCache)
         elif url.startswith('https://www.tukui.org/addons.php?id='):
             if self.clientType != 'retail':
-                raise RuntimeError('Incorrect client version.')
+                raise RuntimeError('Unsupported client version.')
             self.bulk_tukui_check()
             return TukuiAddon(url, self.tukuiCache)
         elif url.startswith('https://www.tukui.org/classic-addons.php?id='):
             if self.clientType != 'classic':
-                raise RuntimeError('Incorrect client version.')
+                raise RuntimeError('Unsupported client version.')
             elif url.endswith('=1') or url.endswith('=2'):
                 raise RuntimeError('ElvUI and Tukui cannot be installed this way.')
             self.bulk_tukui_check()
             return TukuiAddon(url, self.tukuiCache)
         elif url.startswith('https://www.tukui.org/classic-tbc-addons.php?id='):
             if self.clientType != 'bc':
-                raise RuntimeError('Incorrect client version.')
+                raise RuntimeError('Unsupported client version.')
             elif url.endswith('=1') or url.endswith('=2'):
                 raise RuntimeError('ElvUI and Tukui cannot be installed this way.')
             self.bulk_tukui_check()
@@ -212,29 +213,37 @@ class Core:
         elif url.lower() == 'elvui':
             if self.clientType == 'retail':
                 return TukuiAddon('ElvUI', self.tukuiCache, 'elvui')
+            elif self.clientType == 'wotlk':
+                raise RuntimeError('Unsupported client version.')
             else:
                 self.bulk_tukui_check()
                 return TukuiAddon('2', self.tukuiCache)
         elif url.lower() == 'elvui:dev':
-            return GitHubAddonRaw('tukui-org/ElvUI', 'development', ['ElvUI', 'ElvUI_OptionsUI'],
-                                  self.config['GHAPIKey'])
+            if self.clientType == 'wotlk':
+                return GitHubAddonRaw('tukui-org/ElvUI', 'wrath_beta', ['ElvUI', 'ElvUI_OptionsUI'],
+                                      self.config['GHAPIKey'])
+            else:
+                return GitHubAddonRaw('tukui-org/ElvUI', 'development', ['ElvUI', 'ElvUI_OptionsUI'],
+                                      self.config['GHAPIKey'])
         elif url.lower() == 'tukui':
             if self.clientType == 'retail':
                 return TukuiAddon('Tukui', self.tukuiCache, 'tukui')
+            elif self.clientType == 'wotlk':
+                raise RuntimeError('Unsupported client version.')
             else:
                 self.bulk_tukui_check()
                 return TukuiAddon('1', self.tukuiCache)
         elif url.lower() == 'tukui:dev':
-            if self.clientType == 'retail' or self.clientType == 'bc':
+            if self.clientType != 'wotlk':
                 return GitHubAddonRaw('tukui-org/Tukui', 'Live', ['Tukui'], self.config['GHAPIKey'])
             else:
-                return GitHubAddonRaw('tukui-org/Tukui', 'Live-Classic-Era', ['Tukui'], self.config['GHAPIKey'])
+                raise RuntimeError('Unsupported client version.')
         elif url.lower() == 'shadow&light:dev':
             if self.clientType == 'retail':
                 return GitHubAddonRaw('Shadow-and-Light/shadow-and-light', 'dev', ['ElvUI_SLE'],
                                       self.config['GHAPIKey'])
             else:
-                raise RuntimeError('Incorrect client version.')
+                raise RuntimeError('Unsupported client version.')
         elif url.startswith('https://www.townlong-yak.com/addons/'):
             raise RuntimeError(f'{url}\nTownlong Yak is no longer supported by this application.')
         elif url.startswith('https://www.curseforge.com/wow/addons/'):
@@ -570,6 +579,7 @@ class Core:
         #     for addon in payload['addons']:
         #         self.wagoCache[addon] = payload['addons'][addon]
 
+    # TODO Cleanup after WOTLK Beta
     @retry(custom_error='Failed to parse Tukui API data')
     def bulk_tukui_check(self):
         if not self.tukuiCache:
