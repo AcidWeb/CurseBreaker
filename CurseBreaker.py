@@ -346,8 +346,9 @@ class TUI:
         for addon in sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower()):
             addons.append(addon['Name'])
         slugs = ['ElvUI', 'Tukui']
-        for item in self.slugs['wa']:
-            slugs.append(f'wa:{item}')
+        if self.core.config['WAAAPIKey'] != '':
+            for item in self.slugs['wa']:
+                slugs.append(f'wa:{item}')
         for item in self.slugs['wowi']:
             slugs.append(f'wowi:{item}')
         slugs.extend(['ElvUI:Dev', 'Tukui:Dev', 'Shadow&Light:Dev'])
