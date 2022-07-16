@@ -341,7 +341,7 @@ class TUI:
                     requests.get('https://storage.googleapis.com/cursebreaker/slugs-v2.json.gz',
                                  headers=HEADERS, timeout=5).content)))
             except Exception:
-                self.slugs = {'wa': [], 'wowi': []}
+                self.slugs = {'wa': [], 'wowi': [], 'gh': []}
         addons = []
         for addon in sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower()):
             addons.append(addon['Name'])
@@ -351,6 +351,8 @@ class TUI:
                 slugs.append(f'wa:{item}')
         for item in self.slugs['wowi']:
             slugs.append(f'wowi:{item}')
+        for item in self.slugs['gh']:
+            slugs.append(f'gh:{item}')
         slugs.extend(['ElvUI:Dev', 'Tukui:Dev', 'Shadow&Light:Dev'])
         accounts = []
         for account in self.core.detect_accounts():
