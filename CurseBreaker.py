@@ -375,6 +375,7 @@ class TUI:
                        'channel': WordCompleter(addons + ['global'], ignore_case=True, sentence=True),
                        'compact_mode': None,
                        'pinning': WordCompleter(addons, ignore_case=True, sentence=True),
+                       'sources': None,
                        'wago': None},
             'set': {'wago_addons_api': None,
                     'wago_api': None,
@@ -385,9 +386,11 @@ class TUI:
             'exit': None
         })
 
-    def setup_table(self):
+    def setup_table(self, sources=False):
         self.table = Table(box=box.SQUARE)
         self.table.add_column('Status', header_style='bold white', no_wrap=True, justify='center')
+        if sources:
+            self.table.add_column('Source', header_style='bold white', no_wrap=True, justify='center')
         self.table.add_column('Name / Author' if self.core.config['ShowAuthors'] else 'Name', header_style='bold white')
         self.table.add_column('Version', header_style='bold white')
 
@@ -502,8 +505,10 @@ class TUI:
                                'full links as an argument.\n\t[bold white]Flags:[/bold white]\n\t\t[bold white]-k[/bold'
                                ' white] - Keep the addon files after uninstalling.', highlight=False)
 
-    def c_update(self, args, addline=False, update=True, force=False, provider=False, reversecompact=False):
+    def c_update(self, args, addline=False, update=True, force=False, reverseprovider=False, reversecompact=False):
         compact = not self.core.config['CompactMode'] if reversecompact else self.core.config['CompactMode']
+        provider = not self.core.config['ShowSources'] if reverseprovider else self.core.config['ShowSources']
+        self.setup_table(sources=provider)
         if args:
             addons = self.parse_args(args)
             compacted = -1
@@ -527,44 +532,44 @@ class TUI:
                             name, authors, versionnew, versionold, uiversion, modified, blocked, source, sourceurl, \
                              changelog, dstate = self.core.update_addon(
                                 addon if isinstance(addon, str) else addon['URL'], update, force)
-                            if provider:
-                                source = f' [bold white]{source}[/bold white]'
-                            elif source == 'Unsupported':
-                                source = f' [bold red]{source.upper()}[/bold red]'
+                            if source == 'Unsupported' and not provider:
+                                additionalstatus = f' [bold red]{source.upper()}[/bold red]'
                             else:
-                                source = ''
+                                additionalstatus = ''
                             if versionold:
                                 if versionold == versionnew:
                                     if modified:
-                                        self.table.add_row(f'[bold red]Modified[/bold red]{source}',
-                                                           self.parse_link(name, sourceurl, authors=authors),
-                                                           self.parse_link(versionold, changelog, dstate,
-                                                                           uiversion=uiversion))
+                                        payload = [f'[bold red]Modified[/bold red]{additionalstatus}',
+                                                   self.parse_link(name, sourceurl, authors=authors),
+                                                   self.parse_link(versionold, changelog, dstate, uiversion=uiversion)]
                                     else:
-                                        if compact and compacted > -1 and 'unsupported' not in source.lower():
+                                        if compact and compacted > -1 and source != 'Unsupported':
                                             compacted += 1
                                         else:
-                                            self.table.add_row(f'[green]Up-to-date[/green]{source}',
-                                                               self.parse_link(name, sourceurl, authors=authors),
-                                                               self.parse_link(versionold, changelog, dstate,
-                                                                               uiversion=uiversion))
+                                            payload = [f'[green]Up-to-date[/green]{additionalstatus}',
+                                                       self.parse_link(name, sourceurl, authors=authors),
+                                                       self.parse_link(versionold, changelog, dstate,
+                                                                       uiversion=uiversion)]
                                 else:
                                     if modified or blocked:
-                                        self.table.add_row(f'[bold red]Update suppressed[/bold red]{source}',
-                                                           self.parse_link(name, sourceurl, authors=authors),
-                                                           self.parse_link(versionold, changelog, dstate,
-                                                                           uiversion=uiversion))
+                                        payload = [f'[bold red]Update suppressed[/bold red]{additionalstatus}',
+                                                   self.parse_link(name, sourceurl, authors=authors),
+                                                   self.parse_link(versionold, changelog, dstate, uiversion=uiversion)]
                                     else:
                                         version = self.parse_link(versionnew, changelog, dstate, uiversion=uiversion)
                                         version.stylize('yellow')
-                                        self.table.add_row(
-                                            f'[yellow]{"Updated" if update else "Update available"}[/yellow]{source}',
-                                            self.parse_link(name, sourceurl, authors=authors),
-                                            version)
+                                        payload = [f'[yellow]{"Updated" if update else "Update available"}[/yellow]'
+                                                   f'{additionalstatus}', self.parse_link(name, sourceurl,
+                                                                                          authors=authors), version]
                             else:
-                                self.table.add_row(f'[bold black]Not installed[/bold black]{source}',
-                                                   Text(addon, no_wrap=True),
-                                                   Text('', no_wrap=True))
+                                payload = [f'[bold black]Not installed[/bold black]{additionalstatus}',
+                                           Text(addon, no_wrap=True), Text('', no_wrap=True)]
+                            if provider:
+                                if source == 'Unsupported':
+                                    payload.insert(1, f'[bold red]{source.upper()}[/bold red]')
+                                else:
+                                    payload.insert(1, source)
+                            self.table.add_row(*payload)
                         except Exception as e:
                             exceptions.append(e)
                         progress.update(task, advance=1 if args else 0.5, refresh=True)
@@ -703,6 +708,10 @@ class TUI:
                 status = self.core.generic_toggle('CompactMode')
                 self.console.print('Table compact mode is now:',
                                    '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
+            elif args.startswith('sources'):
+                status = self.core.generic_toggle('ShowSources')
+                self.console.print('The source column is now:',
+                                   '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
             else:
                 self.console.print('Unknown option.')
         else:
@@ -714,9 +723,10 @@ class TUI:
                                ' alpha/beta versions for the provided addon.\n\t[green]toggle compact_mode [/green]\n\t'
                                '\tEnables/disables compact table mode that hides entries of up-to-date addons.\n\t[gree'
                                'n]toggle pinning [Name][/green]\n\t\tCommand accepts an addon name as argument.\n\t\tBl'
-                               'ocks/unblocks updating of the provided addon.\n\t[green]toggle wago [Username][/green]'
-                               '\n\t\tEnables/disables automatic Wago updates.\n\t\tIf a username is provided check wil'
-                               'l start to ignore the specified author.', highlight=False)
+                               'ocks/unblocks updating of the provided addon.\n\t[green]toggle sources[/green]\n\t\tEna'
+                               'bles/disables the source column in the status table.\n\t[green]toggle wago [Username][/'
+                               'green]\n\t\tEnables/disables automatic Wago updates.\n\t\tIf a username is provided che'
+                               'ck will start to ignore the specified author.', highlight=False)
 
     def c_set(self, args):
         if args:
@@ -902,8 +912,8 @@ class TUI:
                            '[green]status[/green]\n\tPrints the current state of all installed addons.\n\t[bold yellow]'
                            '[!][/bold yellow] mark means that the latest release is not updated yet for the current WoW'
                            ' version.\n\t[bold white]Flags:[/bold white]\n\t\t[bold white]-a[/bold white] - Temporary r'
-                           'everse the table compacting option.\n\t\t[bold white]-s[/bold white] - Display the source o'
-                           'f the addons.\n'
+                           'everse the table compacting option.\n\t\t[bold white]-s[/bold white] - Temporary reverse th'
+                           'e source display option.\n'
                            '[green]orphans[/green]\n\tPrints list of orphaned directories and files.\n'
                            '[green]search [Keyword][/green]\n\tExecutes addon search on Wago Addons.\n'
                            '[green]backup[/green]\n\tCommand creates a backup of WTF directory.\n'
@@ -921,6 +931,7 @@ class TUI:
                            'es of up-to-date addons.\n'
                            '[green]toggle pinning [Name][/green]\n\tCommand accepts an addon name as argument.\n\tBlock'
                            's/unblocks updating of the provided addon.\n'
+                           '[green]toggle sources[/green]\n\tEnables/disables the source column in the status table.\n'
                            '[green]toggle wago [Username][/green]\n\tEnables/disables automatic Wago updates.\n\tIf a u'
                            'sername is provided check will start to ignore the specified author.\n'
                            '[green]set wago_addons_api [API key][/green]\n\tSets Wago Addons API key required to use Wa'

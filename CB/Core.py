@@ -71,7 +71,8 @@ class Core:
                            'CBCompanionVersion': 0,
                            'CompactMode': False,
                            'AutoUpdate': True,
-                           'ShowAuthors': True}
+                           'ShowAuthors': True,
+                           'ShowSources': False}
             self.save_config()
         if not os.path.isdir('WTF-Backup') and self.config['Backup']['Enabled']:
             os.mkdir('WTF-Backup')
@@ -127,7 +128,8 @@ class Core:
                         ['3.18.0', 'WAStash', []],
                         ['3.20.0', 'GHAPIKey', ''],
                         ['4.0.0', 'WAAAPIKey', ''],
-                        ['4.0.0', 'CBCompanionVersion', 0]]:
+                        ['4.0.0', 'CBCompanionVersion', 0],
+                        ['4.2.0', 'ShowSources', False]]:
                 if add[1] not in self.config.keys():
                     self.config[add[1]] = add[2]
             for delete in [['1.3.0', 'URLCache'],
