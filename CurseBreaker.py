@@ -68,11 +68,12 @@ class TUI:
             pause(self.headless)
             sys.exit(1)
         # Detect client flavor
+        # TODO WotLK Cleanup
         if 'CURSEBREAKER_FLAVOR' in os.environ:
             flavor = os.environ.get('CURSEBREAKER_FLAVOR')
         else:
             flavor = os.path.basename(os.getcwd())
-        if flavor in {'_retail_', '_ptr_'}:
+        if flavor in {'_retail_', '_ptr_', '_beta_'}:
             self.core.clientType = 'retail'
         elif flavor in {'_classic_beta_'}:
             self.core.clientType = 'wotlk'
@@ -426,6 +427,7 @@ class TUI:
         obj.no_wrap = True
         return obj
 
+    # TODO WotLK Cleanup
     def c_install(self, args):
         if args:
             optignore = False
@@ -895,6 +897,7 @@ class TUI:
         pyperclip.copy(payload)
         self.console.print(f'{payload}\n\nThe command above was copied to the clipboard.', highlight=False)
 
+    # TODO WotLK Cleanup
     def c_help(self, _):
         self.console.print('[green]install [URL][/green]\n\tCommand accepts a space-separated list of links.\n\t[bold w'
                            'hite]Flags:[/bold white]\n\t'

@@ -184,7 +184,7 @@ class Core:
             for directory in directories:
                 shutil.rmtree(self.path / directory, ignore_errors=True)
 
-    # TODO Cleanup after WOTLK Beta
+    # TODO WotLK Cleanup
     def parse_url(self, url):
         if url.startswith('https://addons.wago.io/addons/'):
             return WagoAddonsAddon(url, self.wagoCache, 'retail' if url in self.config['IgnoreClientVersion'].keys()
@@ -253,6 +253,7 @@ class Core:
         else:
             raise NotImplementedError('Provided URL is not supported.')
 
+    # TODO WotLK Cleanup
     def parse_url_source(self, url):
         if url.startswith('https://addons.wago.io/addons/'):
             return 'Wago', url
@@ -277,6 +278,7 @@ class Core:
         else:
             return '?', None
 
+    # TODO WotLK Cleanup
     def add_addon(self, url, ignore):
         if url.endswith(':'):
             raise NotImplementedError('Provided URL is not supported.')
@@ -581,7 +583,7 @@ class Core:
         #     for addon in payload['addons']:
         #         self.wagoCache[addon] = payload['addons'][addon]
 
-    # TODO Cleanup after WOTLK Beta
+    # TODO WotLK Cleanup
     @retry(custom_error='Failed to parse Tukui API data')
     def bulk_tukui_check(self):
         if not self.tukuiCache:
@@ -648,6 +650,7 @@ class Core:
 
         return names, slugs, namesinstalled
 
+    # TODO WotLK Cleanup
     def export_addons(self):
         addons = []
         for addon in self.config['Addons']:

@@ -17,7 +17,7 @@ Read the instructions on the top of the screen.
 Already installed addons will not be recognized by **CurseBreaker** and they need to be reinstalled.\
 This process can be partially automated by using the `import` command.
 
-_Retail_, _Burning Crusade_ and _Classic_ clients are supported. The client version is detected automatically.\
+_Retail_, _WotLK_, _Burning Crusade_ and _Classic_ clients are supported. The client version is detected automatically.\
 By default **CurseBreaker** will create backups of the entire `WTF` directory.
 
 ## TIPS & TRICKS
@@ -51,7 +51,7 @@ When GitHub is frequently used as a source for addons there is the possibility o
 If that occurs user must get a [personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token). And then add it to the application configuration by using `set gh_api` command.
 
 ## KNOWN ISSUES
-- Using "double" WoWInterface projects ([example](https://www.wowinterface.com/downloads/info5086-BigWigsBossmods)) will always install a retail version of the addon. It can't be fixed as WoWInterface API doesn't support this type of project.
+- Using WoWInterface projects that provide multiple addon releases ([example](https://www.wowinterface.com/downloads/info5086-BigWigsBossmods)) will always install a retail version of the addon. It can't be fixed as WoWInterface API doesn't support this type of project.
 - Some WoWInterface addon categories (e.g. Compilations, Optional) are not handled by their API. Addons in these categories can't be installed.
 - WoWInterface projects that need to install files outside the `Interface\AddOns` directory are not supported.
 
