@@ -15,7 +15,6 @@ class WagoAddonsAddon:
         project = url.replace('https://addons.wago.io/addons/', '')
         self.apiKey = apikey
         self.clientType = clienttype
-        # TODO Add bulk support
         if project in checkcache:
             self.payload = checkcache[project]
             self.payload['display_name'] = self.payload['name']
@@ -83,13 +82,10 @@ class WagoAddonsAddon:
             raise RuntimeError(f'{self.name}.\nFailed to find release for your client version.')
         release = self.payload['recent_release'][max(release, key=release.get)]
 
-        self.downloadUrl = release['download_link']
+        self.downloadUrl = release['download_link'] if 'download_link' in release else release['link']
+        self.uiVersion = release['patch'] if 'patch' in release else release[f'supported_{self.clientType}_patch']
         self.changelogUrl = f'{self.payload["website_url"]}/versions'
         self.currentVersion = release['label']
-        if 'patch' in release:
-            self.uiVersion = release['patch']
-        else:
-            self.uiVersion = release[f'supported_{self.clientType}_patch']
 
     @retry()
     def get_addon(self):

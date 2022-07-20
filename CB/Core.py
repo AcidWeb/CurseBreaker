@@ -34,6 +34,7 @@ class Core:
         self.dirIndex = None
         self.wowiCache = {}
         self.wagoCache = {}
+        self.wagoIdCache = None
         self.tukuiCache = None
         self.checksumCache = {}
 
@@ -557,7 +558,7 @@ class Core:
         payload = payload.json()
         return f'https://addons.wago.io/addons/{payload["slug"]}'
 
-    @retry()
+    # TODO Improve the check when Wago Addons API will be will be expanded
     def bulk_check(self, addons):
         ids_wowi = []
         ids_wago = []
@@ -566,22 +567,33 @@ class Core:
                 ids_wowi.append(re.findall(r'\d+', addon['URL'])[0].strip())
             elif addon['URL'].startswith('https://addons.wago.io/addons/') and \
                     addon['URL'] not in self.config['IgnoreClientVersion'].keys():
-                ids_wago.append(addon['URL'].replace('https://addons.wago.io/addons/', ''))
+                ids_wago.append({'slug': addon['URL'].replace('https://addons.wago.io/addons/', ''), 'id': ''})
         if len(ids_wowi) > 0:
             payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{",".join(ids_wowi)}.json',
                                    headers=HEADERS, timeout=5).json()
             if 'ERROR' not in payload:
                 for addon in payload:
                     self.wowiCache[str(addon['UID'])] = addon
-        # TODO Add bulk support
-        # if len(ids_wago) > 0 and self.config['WAAAPIKey'] != '':
-        #     payload = requests.post(f'https://addons.wago.io/api/external/addons/_recents?game_version='
-        #                             f'{self.clientType}', json={'addons': ids_wago}, headers=HEADERS,
-        #                             auth=APIAuth('Bearer', self.config['WAAAPIKey']), timeout=5)
-        #     self.parse_wagoaddons_error(payload.status_code)
-        #     payload = payload.json()
-        #     for addon in payload['addons']:
-        #         self.wagoCache[addon] = payload['addons'][addon]
+        if len(ids_wago) > 0 and self.config['WAAAPIKey'] != '':
+            if not self.wagoIdCache:
+                self.wagoIdCache = requests.get(f'https://addons.wago.io/api/data/slugs?game_version={self.clientType}',
+                                                headers=HEADERS, timeout=5)
+                self.parse_wagoaddons_error(self.wagoIdCache.status_code)
+                self.wagoIdCache = self.wagoIdCache.json()
+            for addon in ids_wago:
+                if addon['slug'] in self.wagoIdCache['addons']:
+                    addon['id'] = self.wagoIdCache['addons'][addon['slug']]['id']
+            payload = requests.post(f'https://addons.wago.io/api/external/addons/_recents?game_version='
+                                    f'{self.clientType}',
+                                    json={'addons': [addon["id"] for addon in ids_wago if addon["id"] != ""]},
+                                    headers=HEADERS, auth=APIAuth('Bearer', self.config['WAAAPIKey']), timeout=5)
+            self.parse_wagoaddons_error(payload.status_code)
+            payload = payload.json()
+            for addonid in payload['addons']:
+                for addon in ids_wago:
+                    if addon['id'] == addonid:
+                        self.wagoCache[addon['slug']] = payload['addons'][addonid]
+                        break
 
     # TODO WotLK Cleanup
     @retry(custom_error='Failed to parse Tukui API data')
