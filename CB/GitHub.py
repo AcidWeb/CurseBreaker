@@ -60,7 +60,9 @@ class GitHubAddon:
     def parse_metadata(self):
         for release in self.payloads[self.releaseDepth]['assets']:
             if release['name'] and release['name'] == 'release.json':
-                self.metadata = requests.get(release['browser_download_url'], headers=HEADERS, timeout=5).json()
+                self.metadata = requests.get(release['url'],
+                                             headers=dict({'Accept': 'application/octet-stream'}, **HEADERS),
+                                             auth=APIAuth('token', self.apiKey), timeout=5).json()
                 break
         else:
             self.metadata = None
@@ -92,7 +94,7 @@ class GitHubAddon:
                 self.parse()
             for release in self.payloads[self.releaseDepth]['assets']:
                 if release['name'] and release['name'] == targetfile:
-                    self.downloadUrl = release['browser_download_url']
+                    self.downloadUrl = release['url']
                     break
             if not self.downloadUrl:
                 self.releaseDepth += 1
@@ -108,13 +110,13 @@ class GitHubAddon:
                     if not latest and not release['name'].endswith('-classic.zip') and \
                             not release['name'].endswith('-bc.zip') and not release['name'].endswith('-bcc.zip') and \
                             not release['name'].endswith('-wrath.zip'):
-                        latest = release['browser_download_url']
+                        latest = release['url']
                     elif not latestclassic and release['name'].endswith('-classic.zip'):
-                        latestclassic = release['browser_download_url']
+                        latestclassic = release['url']
                     elif not latestbc and (release['name'].endswith('-bc.zip') or release['name'].endswith('-bcc.zip')):
-                        latestbc = release['browser_download_url']
+                        latestbc = release['url']
                     elif not latestwrath and release['name'].endswith('-wrath.zip'):
-                        latestwrath = release['browser_download_url']
+                        latestwrath = release['url']
             if (self.clientType == 'retail' and latest) \
                     or (self.clientType == 'classic' and latest and not latestclassic) \
                     or (self.clientType == 'bc' and latest and not latestbc) \
@@ -132,7 +134,9 @@ class GitHubAddon:
 
     @retry()
     def get_addon(self):
-        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS, timeout=5).content))
+        self.archive = zipfile.ZipFile(io.BytesIO(
+            requests.get(self.downloadUrl, headers=dict({'Accept': 'application/octet-stream'}, **HEADERS),
+                         auth=APIAuth('token', self.apiKey), timeout=5).content))
         for file in self.archive.namelist():
             if file.lower().endswith('.toc') and '/' not in file:
                 raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
