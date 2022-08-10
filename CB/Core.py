@@ -222,12 +222,8 @@ class Core:
                 self.bulk_tukui_check()
                 return TukuiAddon('2', self.tukuiCache)
         elif url.lower() == 'elvui:dev':
-            if self.clientType == 'wotlk':
-                return GitHubAddonRaw('tukui-org/ElvUI', 'wrath_beta', ['ElvUI', 'ElvUI_OptionsUI'],
-                                      self.config['GHAPIKey'])
-            else:
-                return GitHubAddonRaw('tukui-org/ElvUI', 'development', ['ElvUI', 'ElvUI_OptionsUI'],
-                                      self.config['GHAPIKey'])
+            return GitHubAddonRaw('tukui-org/ElvUI', 'development', ['ElvUI', 'ElvUI_OptionsUI'],
+                                  self.config['GHAPIKey'])
         elif url.lower() == 'tukui':
             if self.clientType == 'retail':
                 return TukuiAddon('Tukui', self.tukuiCache, 'tukui')
