@@ -513,6 +513,9 @@ class Core:
         return orphanedaddon, orphaneconfig
 
     def search(self, query):
+        if self.config['WAAAPIKey'] == '':
+            raise RuntimeError('This feature requires the Wago Addons API key.\n'
+                               'It can be obtained here: https://addons.wago.io/patreon')
         results = []
         payload = requests.get(f'https://addons.wago.io/api/external/addons/_search?query={quote_plus(query.strip())}'
                                f'&game_version={self.clientType}', headers=HEADERS,
@@ -546,6 +549,9 @@ class Core:
                           '@="\\"' + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""')
 
     def parse_wagoapp_payload(self, url):
+        if self.config['WAAAPIKey'] == '':
+            raise RuntimeError('This feature requires the Wago Addons API key.\n'
+                               'It can be obtained here: https://addons.wago.io/patreon')
         projectid = url.replace('wago-app://addons/', '')
         payload = requests.get(f'https://addons.wago.io/api/external/addons/{projectid}?game_version='
                                f'{self.clientType}', headers=HEADERS,
@@ -618,6 +624,9 @@ class Core:
 
     # noinspection PyTypeChecker
     def detect_addons(self):
+        if self.config['WAAAPIKey'] == '':
+            raise RuntimeError('This feature requires the Wago Addons API key.\n'
+                               'It can be obtained here: https://addons.wago.io/patreon')
         names = []
         namesinstalled = []
         slugs = []

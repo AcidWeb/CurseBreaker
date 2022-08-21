@@ -20,6 +20,9 @@ class WagoAddonsAddon:
             self.payload['display_name'] = self.payload['name']
             self.payload['recent_release'] = self.payload['recent_releases']
         else:
+            if self.apiKey == '':
+                raise RuntimeError(f'{url}\nThe Wago Addons API key is missing. '
+                                   f'It can be obtained here: https://addons.wago.io/patreon')
             try:
                 self.payload = requests.get(f'https://addons.wago.io/api/external/addons/{project}?game_version='
                                             f'{self.clientType}', headers=HEADERS, auth=APIAuth('Bearer', self.apiKey),
