@@ -68,19 +68,15 @@ class TUI:
             pause(self.headless)
             sys.exit(1)
         # Detect client flavor
-        # TODO WotLK Cleanup
         if 'CURSEBREAKER_FLAVOR' in os.environ:
             flavor = os.environ.get('CURSEBREAKER_FLAVOR')
         else:
             flavor = os.path.basename(os.getcwd())
-        if flavor in {'_retail_', '_ptr_', '_beta_'}:
+        if flavor in {'_retail_', '_ptr_'}:
             self.core.clientType = 'retail'
-        elif flavor in {'_classic_beta_'}:
+        elif flavor in {'_classic_', '_classic_ptr_'}:
             self.core.clientType = 'wotlk'
             set_terminal_title(f'CurseBreaker v{__version__} - Wrath of the Lich King')
-        elif flavor in {'_classic_', '_classic_ptr_'}:
-            self.core.clientType = 'bc'
-            set_terminal_title(f'CurseBreaker v{__version__} - Burning Crusade')
         elif flavor in {'_classic_era_', '_classic_era_ptr_'}:
             self.core.clientType = 'classic'
             set_terminal_title(f'CurseBreaker v{__version__} - Classic')
@@ -427,7 +423,6 @@ class TUI:
         obj.no_wrap = True
         return obj
 
-    # TODO WotLK Cleanup
     def c_install(self, args):
         if args:
             optignore = False
@@ -473,11 +468,11 @@ class TUI:
                                'interface.com/downloads/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\tht'
                                'tps://www.tukui.org/addons.php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]'
                                '\n\thttps://www.tukui.org/classic-addons.php?id=\[addon_id] [bold white]|[/bold white] '
-                               'tuc:\[addon_id]\n\thttps://www.tukui.org/classic-tbc-addons.php?id=\[addon_id] [bold wh'
-                               'ite]|[/bold white] tubc:\[addon_id]\n\thttps://github.com/\[username]/\[repository_name'
-                               '] [bold white]|[/bold white] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/'
-                               'bold white] ElvUI:Dev\n\tTukui [bold white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev'
-                               '', highlight=False)
+                               'tuc:\[addon_id]\n\thttps://www.tukui.org/classic-wotlk-addons.php?id=\[addon_id] [bold '
+                               'white]|[/bold white] tuwc:\[addon_id]\n\thttps://github.com/\[username]/\[repository_na'
+                               'me] [bold white]|[/bold white] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|'
+                               '[/bold white] ElvUI:Dev\n\tTukui [bold white]|[/bold white] Tukui:Dev\n\tShadow&Light:D'
+                               'ev', highlight=False)
 
     def c_uninstall(self, args):
         if args:
@@ -897,7 +892,6 @@ class TUI:
         pyperclip.copy(payload)
         self.console.print(f'{payload}\n\nThe command above was copied to the clipboard.', highlight=False)
 
-    # TODO WotLK Cleanup
     def c_help(self, _):
         self.console.print('[green]install [URL][/green]\n\tCommand accepts a space-separated list of links.\n\t[bold w'
                            'hite]Flags:[/bold white]\n\t'
@@ -953,11 +947,11 @@ class TUI:
                            'te] wa:\[addon_name]\n\thttps://www.wowinterface.com/downloads/\[addon_name] [bold white]|['
                            '/bold white] wowi:\[addon_id]\n\thttps://www.tukui.org/addons.php?id=\[addon_id] [bold whit'
                            'e]|[/bold white] tu:\[addon_id]\n\thttps://www.tukui.org/classic-addons.php?id=\[addon_id] '
-                           '[bold white]|[/bold white] tuc:\[addon_id]\n\thttps://www.tukui.org/classic-tbc-addons.php?'
-                           'id=\[addon_id] [bold white]|[/bold white] tubc:\[addon_id]\n\thttps://github.com/\[username'
-                           ']/\[repository_name] [bold white]|[/bold white] gh:\[username]/\[repository_name]\n\tElvUI '
-                           '[bold white]|[/bold white] ElvUI:Dev\n\tTukui [bold white]|[/bold white] Tukui:Dev\n\tShado'
-                           'w&Light:Dev', highlight=False)
+                           '[bold white]|[/bold white] tuc:\[addon_id]\n\thttps://www.tukui.org/classic-wotlk-addons.ph'
+                           'p?id=\[addon_id] [bold white]|[/bold white] tuwc:\[addon_id]\n\thttps://github.com/\[userna'
+                           'me]/\[repository_name] [bold white]|[/bold white] gh:\[username]/\[repository_name]\n\tElvU'
+                           'I [bold white]|[/bold white] ElvUI:Dev\n\tTukui [bold white]|[/bold white] Tukui:Dev\n\tSha'
+                           'dow&Light:Dev', highlight=False)
 
     def c_exit(self, _):
         sys.exit(0)

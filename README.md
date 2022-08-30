@@ -17,7 +17,7 @@ Read the instructions on the top of the screen.
 Already installed addons will not be recognized by **CurseBreaker** and they need to be reinstalled.\
 This process can be partially automated by using the `import` command.
 
-_Retail_, _WotLK_, _Burning Crusade_ and _Classic_ clients are supported. The client version is detected automatically.\
+_Retail_, _WotLK Classic_ and _Classic_ clients are supported. The client version is detected automatically.\
 By default **CurseBreaker** will create backups of the entire `WTF` directory.
 
 ## TIPS & TRICKS
@@ -31,7 +31,7 @@ By default **CurseBreaker** will create backups of the entire `WTF` directory.
 ## SUPPORTED URL
 - Wago Addons: `https://addons.wago.io/addons/[addon_name]`, `wa:[addon_name]`
 - WoWInterface: `https://www.wowinterface.com/downloads/[addon_name]`, `wowi:[addon_id]`
-- Tukui: `ElvUI`, `Tukui`, `https://www.tukui.org/addons.php?id=[addon_id]`, `https://www.tukui.org/classic-addons.php?id=[addon_id]`, `https://www.tukui.org/classic-tbc-addons.php?id=[addon_id]`, `tu:[addon_id]`, `tuc:[addon_id]` , `tubc:[addon_id]`
+- Tukui: `ElvUI`, `Tukui`, `https://www.tukui.org/addons.php?id=[addon_id]`, `https://www.tukui.org/classic-addons.php?id=[addon_id]`, `https://www.tukui.org/classic-wotlk-addons.php?id=[addon_id]`, `tu:[addon_id]`, `tuc:[addon_id]` , `tuwc:[addon_id]`
 - GitHub: `ElvUI:Dev`, `Tukui:Dev`, `Shadow&Light:Dev`
 - GitHub Releases: `https://github.com/[username]/[repository_name]`, `gh:[username]/[repository_name]`
 - Wago: **CurseBreaker** can update auras and Plater profiles/scripts like WeakAuras Companion.

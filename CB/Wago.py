@@ -94,6 +94,7 @@ class PlaterParser(BaseParser):
 
 
 class WagoUpdater:
+    # noinspection PyTypeChecker
     def __init__(self, config, clienttoc):
         self.username = config['WAUsername']
         self.accountName = config['WAAccountName']
@@ -101,7 +102,6 @@ class WagoUpdater:
         self.clientTOC = clienttoc
         self.bbParser = bbcode.Parser()
         Markdown.output_formats['plain'] = markdown_unmark_element
-        # noinspection PyTypeChecker
         self.mdParser = Markdown(output_format='plain')
         self.mdParser.stripTopLevelTags = False
         self.headers = HEADERS

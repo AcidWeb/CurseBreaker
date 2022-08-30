@@ -115,6 +115,10 @@ class Core:
                 # 3.3.0
                 if 'Development' in addon.keys() and isinstance(addon['Development'], bool):
                     addon['Development'] = 1
+                # 4.3.0
+                if addon['URL'].startswith('https://www.tukui.org/classic-tbc-addons.php?id='):
+                    addon['URL'] = addon['URL'].replace('https://www.tukui.org/classic-tbc-addons.php?id=',
+                                                        'https://www.tukui.org/classic-wotlk-addons.php?id=')
             for add in [['2.1.0', 'WAUsername', ''],
                         ['2.2.0', 'WAAccountName', ''],
                         ['2.2.0', 'WAAPIKey', ''],
@@ -185,7 +189,6 @@ class Core:
             for directory in directories:
                 shutil.rmtree(self.path / directory, ignore_errors=True)
 
-    # TODO WotLK Cleanup
     def parse_url(self, url):
         if url.startswith('https://addons.wago.io/addons/'):
             return WagoAddonsAddon(url, self.wagoCache, 'retail' if url in self.config['IgnoreClientVersion'].keys()
@@ -204,8 +207,8 @@ class Core:
                 raise RuntimeError('ElvUI and Tukui cannot be installed this way.')
             self.bulk_tukui_check()
             return TukuiAddon(url, self.tukuiCache)
-        elif url.startswith('https://www.tukui.org/classic-tbc-addons.php?id='):
-            if self.clientType != 'bc':
+        elif url.startswith('https://www.tukui.org/classic-wotlk-addons.php?id='):
+            if self.clientType != 'wotlk':
                 raise RuntimeError('Unsupported client version.')
             elif url.endswith('=1') or url.endswith('=2'):
                 raise RuntimeError('ElvUI and Tukui cannot be installed this way.')
@@ -216,8 +219,6 @@ class Core:
         elif url.lower() == 'elvui':
             if self.clientType == 'retail':
                 return TukuiAddon('ElvUI', self.tukuiCache, 'elvui')
-            elif self.clientType == 'wotlk':
-                raise RuntimeError('Unsupported client version.')
             else:
                 self.bulk_tukui_check()
                 return TukuiAddon('2', self.tukuiCache)
@@ -225,18 +226,9 @@ class Core:
             return GitHubAddonRaw('tukui-org/ElvUI', 'development', ['ElvUI', 'ElvUI_OptionsUI'],
                                   self.config['GHAPIKey'])
         elif url.lower() == 'tukui':
-            if self.clientType == 'retail':
-                return TukuiAddon('Tukui', self.tukuiCache, 'tukui')
-            elif self.clientType == 'wotlk':
-                raise RuntimeError('Unsupported client version.')
-            else:
-                self.bulk_tukui_check()
-                return TukuiAddon('1', self.tukuiCache)
+            return TukuiAddon('Tukui', self.tukuiCache, 'tukui')
         elif url.lower() == 'tukui:dev':
-            if self.clientType != 'wotlk':
-                return GitHubAddonRaw('tukui-org/Tukui', 'Live', ['Tukui'], self.config['GHAPIKey'])
-            else:
-                raise RuntimeError('Unsupported client version.')
+            return GitHubAddonRaw('tukui-org/Tukui', 'Live', ['Tukui'], self.config['GHAPIKey'])
         elif url.lower() == 'shadow&light:dev':
             if self.clientType == 'retail':
                 return GitHubAddonRaw('Shadow-and-Light/shadow-and-light', 'dev', ['ElvUI_SLE'],
@@ -250,7 +242,6 @@ class Core:
         else:
             raise NotImplementedError('Provided URL is not supported.')
 
-    # TODO WotLK Cleanup
     def parse_url_source(self, url):
         if url.startswith('https://addons.wago.io/addons/'):
             return 'Wago', url
@@ -258,7 +249,7 @@ class Core:
             return 'WoWI', url
         elif url.startswith('https://www.tukui.org/addons.php?id=') or \
                 url.startswith('https://www.tukui.org/classic-addons.php?id=') or \
-                url.startswith('https://www.tukui.org/classic-tbc-addons.php?id='):
+                url.startswith('https://www.tukui.org/classic-wotlk-addons.php?id='):
             return 'Tukui', url
         elif url.lower() == 'elvui:dev':
             return 'GitHub', 'https://github.com/tukui-org/ElvUI'
@@ -275,7 +266,6 @@ class Core:
         else:
             return '?', None
 
-    # TODO WotLK Cleanup
     def add_addon(self, url, ignore):
         if url.endswith(':'):
             raise NotImplementedError('Provided URL is not supported.')
@@ -289,8 +279,8 @@ class Core:
             url = f'https://www.tukui.org/addons.php?id={url[3:]}'
         elif url.startswith('tuc:'):
             url = f'https://www.tukui.org/classic-addons.php?id={url[4:]}'
-        elif url.startswith('tubc:'):
-            url = f'https://www.tukui.org/classic-tbc-addons.php?id={url[5:]}'
+        elif url.startswith('tuwc:'):
+            url = f'https://www.tukui.org/classic-wotlk-addons.php?id={url[5:]}'
         elif url.startswith('gh:'):
             url = f'https://github.com/{url[3:]}'
         if url.endswith('/'):
@@ -597,14 +587,13 @@ class Core:
                         self.wagoCache[addon['slug']] = payload['addons'][addonid]
                         break
 
-    # TODO WotLK Cleanup
     @retry(custom_error='Failed to parse Tukui API data')
     def bulk_tukui_check(self):
         if not self.tukuiCache:
             if self.clientType == 'classic':
                 endpoint = 'classic-addons'
-            elif self.clientType == 'bc':
-                endpoint = 'classic-tbc-addons'
+            elif self.clientType == 'wotlk':
+                endpoint = 'classic-wotlk-addons'
             else:
                 endpoint = 'addons'
             self.tukuiCache = requests.get(f'https://www.tukui.org/api.php?{endpoint}',
@@ -667,7 +656,6 @@ class Core:
 
         return names, slugs, namesinstalled
 
-    # TODO WotLK Cleanup
     def export_addons(self):
         addons = []
         for addon in self.config['Addons']:
@@ -679,8 +667,8 @@ class Core:
                 url = f'tu:{addon["URL"].split("?id=")[-1]}'
             elif addon['URL'].startswith('https://www.tukui.org/classic-addons.php?id='):
                 url = f'tuc:{addon["URL"].split("?id=")[-1]}'
-            elif addon['URL'].startswith('https://www.tukui.org/classic-tbc-addons.php?id='):
-                url = f'tubc:{addon["URL"].split("?id=")[-1]}'
+            elif addon['URL'].startswith('https://www.tukui.org/classic-wotlk-addons.php?id='):
+                url = f'tuwc:{addon["URL"].split("?id=")[-1]}'
             elif addon['URL'].startswith('https://github.com/'):
                 url = f'gh:{addon["URL"].replace("https://github.com/", "")}'
             else:

@@ -72,8 +72,6 @@ class GitHubAddon:
             targetfile = None
             if self.clientType == 'classic':
                 targetflavor = 'classic'
-            elif self.clientType == 'bc':
-                targetflavor = 'bcc'
             elif self.clientType == 'wotlk':
                 targetflavor = 'wrath'
             else:
@@ -102,7 +100,6 @@ class GitHubAddon:
         else:
             latest = None
             latestclassic = None
-            latestbc = None
             latestwrath = None
             for release in self.payloads[self.releaseDepth]['assets']:
                 if release['name'] and '-nolib' not in release['name'] \
@@ -113,19 +110,14 @@ class GitHubAddon:
                         latest = release['url']
                     elif not latestclassic and release['name'].endswith('-classic.zip'):
                         latestclassic = release['url']
-                    elif not latestbc and (release['name'].endswith('-bc.zip') or release['name'].endswith('-bcc.zip')):
-                        latestbc = release['url']
                     elif not latestwrath and release['name'].endswith('-wrath.zip'):
                         latestwrath = release['url']
             if (self.clientType == 'retail' and latest) \
                     or (self.clientType == 'classic' and latest and not latestclassic) \
-                    or (self.clientType == 'bc' and latest and not latestbc) \
                     or (self.clientType == 'wotlk' and latest and not latestwrath):
                 self.downloadUrl = latest
             elif self.clientType == 'classic' and latestclassic:
                 self.downloadUrl = latestclassic
-            elif self.clientType == 'bc' and latestbc:
-                self.downloadUrl = latestbc
             elif self.clientType == 'wotlk' and latestwrath:
                 self.downloadUrl = latestwrath
             else:

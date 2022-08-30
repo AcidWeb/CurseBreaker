@@ -1,8 +1,8 @@
 .idea/
 __pycache__/
-Interface/
-WTF/
-WTF-Backup/
+Interface
+WTF
+WTF-Backup
 /Wow.exe
 /CurseBreaker.reg
 /Build.sh
