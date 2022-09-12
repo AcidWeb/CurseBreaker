@@ -9,6 +9,7 @@ TUI/CLI addon updater for World of Warcraft.
 ## DOWNLOAD
 The latest release can be found [here](https://github.com/AcidWeb/CurseBreaker/releases/latest).\
 Please be aware that Linux (.gz) and macOS (.zip) versions are not thoroughly tested.
+Windows, Ubuntu 20.04+, Debian 11+ and macOS 11+ are supported.
 
 ## USAGE
 Place **CurseBreaker** binary inside the directory containing `Wow.exe`, `WowClassic.exe` or `World of Warcraft.app`.\

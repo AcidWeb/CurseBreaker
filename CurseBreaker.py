@@ -72,7 +72,7 @@ class TUI:
             flavor = os.environ.get('CURSEBREAKER_FLAVOR')
         else:
             flavor = os.path.basename(os.getcwd())
-        if flavor in {'_retail_', '_ptr_'}:
+        if flavor in {'_retail_', '_ptr_', '_beta_'}:
             self.core.clientType = 'retail'
         elif flavor in {'_classic_', '_classic_ptr_'}:
             self.core.clientType = 'wotlk'
