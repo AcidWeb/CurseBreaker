@@ -102,11 +102,10 @@ class GitHubAddon:
             latestclassic = None
             latestwrath = None
             for release in self.payloads[self.releaseDepth]['assets']:
-                if release['name'] and '-nolib' not in release['name'] \
-                        and release['content_type'] in {'application/x-zip-compressed', 'application/zip'}:
-                    if not latest and not release['name'].endswith('-classic.zip') and \
-                            not release['name'].endswith('-bc.zip') and not release['name'].endswith('-bcc.zip') and \
-                            not release['name'].endswith('-wrath.zip'):
+                if release['name'] and release['name'].endswith('.zip') and '-nolib' not in release['name'] \
+                        and release['content_type'] in ['application/x-zip-compressed', 'application/zip', 'raw']:
+                    if not latest and not release['name'].endswith(('-classic.zip', '-bc.zip', '-bcc.zip',
+                                                                    '-wrath.zip')):
                         latest = release['url']
                     elif not latestclassic and release['name'].endswith('-classic.zip'):
                         latestclassic = release['url']
