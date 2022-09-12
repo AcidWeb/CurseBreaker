@@ -31,7 +31,9 @@ class TukuiAddon:
         self.directories = []
         self.author = [self.payload['author']]
 
-        if 'changelog' in self.payload:
+        if special:
+            self.changelogUrl = f'https://www.tukui.org/download.php?ui={special}&changelog'
+        elif 'changelog' in self.payload:
             self.changelogUrl = self.payload['changelog']
         else:
             self.changelogUrl = None

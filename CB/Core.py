@@ -217,11 +217,7 @@ class Core:
         elif url.startswith('https://github.com/'):
             return GitHubAddon(url, self.clientType, self.config['GHAPIKey'])
         elif url.lower() == 'elvui':
-            if self.clientType == 'retail':
-                return TukuiAddon('ElvUI', self.tukuiCache, 'elvui')
-            else:
-                self.bulk_tukui_check()
-                return TukuiAddon('2', self.tukuiCache)
+            return TukuiAddon('ElvUI', self.tukuiCache, 'elvui')
         elif url.lower() == 'elvui:dev':
             return GitHubAddonRaw('tukui-org/ElvUI', 'development', ['ElvUI', 'ElvUI_OptionsUI'],
                                   self.config['GHAPIKey'])
