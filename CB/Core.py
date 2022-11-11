@@ -219,7 +219,7 @@ class Core:
         elif url.lower() == 'elvui':
             return TukuiAddon('ElvUI', self.tukuiCache, 'elvui')
         elif url.lower() == 'elvui:dev':
-            return GitHubAddonRaw('tukui-org/ElvUI', 'development', ['ElvUI', 'ElvUI_OptionsUI'],
+            return GitHubAddonRaw('tukui-org/ElvUI', 'development', ['ElvUI', 'ElvUI_Options', 'ElvUI_Libraries'],
                                   self.config['GHAPIKey'])
         elif url.lower() == 'tukui':
             return TukuiAddon('Tukui', self.tukuiCache, 'tukui')
@@ -616,8 +616,9 @@ class Core:
         namesinstalled = []
         slugs = []
         output = []
-        ignored = ['ElvUI_OptionsUI', 'Tukui_Config', '+Wowhead_Looter', 'WeakAurasCompanion', 'CurseBreakerCompanion',
-                   'SharedMedia_MyMedia', 'TradeSkillMaster_AppHelper', '.DS_Store']
+        ignored = ['ElvUI_OptionsUI', 'ElvUI_Options', 'ElvUI_Libraries', 'Tukui_Config', '+Wowhead_Looter',
+                   'WeakAurasCompanion', 'CurseBreakerCompanion', 'SharedMedia_MyMedia', 'TradeSkillMaster_AppHelper',
+                   '.DS_Store']
         specialcases = ['ElvUI', 'Tukui']
 
         addon_dirs = os.listdir(self.path)
