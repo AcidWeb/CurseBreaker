@@ -219,7 +219,7 @@ class TUI:
                         pass
                 try:
                     payload = requests.get('https://api.github.com/repos/AcidWeb/CurseBreaker/releases/latest',
-                                           headers=HEADERS, timeout=5).json()
+                                           headers=HEADERS, timeout=10).json()
                 except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
                     return
                 if 'name' in payload and 'body' in payload and 'assets' in payload:
@@ -235,7 +235,7 @@ class TUI:
                     if url and Version(remoteversion[1:]) > Version(__version__):
                         self.console.print('[green]Updating CurseBreaker...[/green]')
                         shutil.move(sys.executable, sys.executable + '.old')
-                        payload = requests.get(url, headers=HEADERS, timeout=5)
+                        payload = requests.get(url, headers=HEADERS, timeout=10)
                         if self.os == 'Darwin':
                             zipfile.ZipFile(io.BytesIO(payload.content)).extractall(path=os.path.dirname(
                                 os.path.abspath(sys.executable)))
