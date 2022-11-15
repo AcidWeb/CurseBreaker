@@ -10,12 +10,12 @@ checksumdir = "*"
 packaging = "*"
 pyperclip = "*"
 requests = "*"
+markdown = "*"
 bbcode = "*"
 rich = "*"
 lupa = "*"
-Markdown = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.10"
+python_version = "3.11"
