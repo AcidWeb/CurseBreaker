@@ -529,6 +529,7 @@ class TUI:
                             name, authors, versionnew, versionold, uiversion, modified, blocked, source, sourceurl, \
                              changelog, dstate = self.core.update_addon(
                                 addon if isinstance(addon, str) else addon['URL'], update, force)
+                            payload = None
                             if source == 'Unsupported' and not provider:
                                 additionalstatus = f' [bold red]{source.upper()}[/bold red]'
                             else:
@@ -561,12 +562,13 @@ class TUI:
                             else:
                                 payload = [f'[bold black]Not installed[/bold black]{additionalstatus}',
                                            Text(addon, no_wrap=True), Text('', no_wrap=True)]
-                            if provider:
-                                if source == 'Unsupported':
-                                    payload.insert(1, f'[bold red]{source.upper()}[/bold red]')
-                                else:
-                                    payload.insert(1, source)
-                            self.table.add_row(*payload)
+                            if payload:
+                                if provider:
+                                    if source == 'Unsupported':
+                                        payload.insert(1, f'[bold red]{source.upper()}[/bold red]')
+                                    else:
+                                        payload.insert(1, source)
+                                self.table.add_row(*payload)
                         except Exception as e:
                             exceptions.append(e)
                         progress.update(task, advance=1 if args else 0.5, refresh=True)
