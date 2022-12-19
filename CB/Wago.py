@@ -5,6 +5,7 @@ import bbcode
 import requests
 from io import StringIO
 from lupa import LuaRuntime
+from base64 import b64decode
 from pathlib import Path
 from markdown import Markdown
 from urllib.parse import quote_plus
@@ -150,7 +151,8 @@ class WagoUpdater:
                 stash = f'        ["{entry["slug"]}"] = {{\n          name = [=[{entry["name"]}]=],\n          author' \
                         f' = [=[{entry["username"]}]=],\n          encoded = [=[{raw}]=],\n          wagoVersion = [=' \
                         f'[{entry["version"]}]=],\n          wagoSemver = [=[{entry["versionString"]}]=],\n          ' \
-                        f'source = [=[Wago]=],\n          logo = [=[]=],\n          versionNote = [=[]=],\n        }}' \
+                        f'source = [=[Wago]=],\n          logo = [=[Interface\AddOns\CurseBreakerCompanion\Logo.tga]=' \
+                        f'],\n          versionNote = [=[]=],\n        }}' \
                         f',\n'
                 if entry['type'] == 'WEAKAURA':
                     wa.data['stash'].append(stash)
@@ -175,7 +177,8 @@ class WagoUpdater:
         slug = f'        ["{entry["slug"]}"] = {{\n          name = [=[{entry["name"]}]=],\n          author = [=[' \
                f'{entry["username"]}]=],\n          encoded = [=[{raw}]=],\n          wagoVersion = [=[' \
                f'{entry["version"]}]=],\n          wagoSemver = [=[{entry["versionString"]}]=],\n          source = [' \
-               f'=[Wago]=],\n          logo = [=[]=],\n          versionNote = [=[{self.parse_changelog(entry)}]=],\n' \
+               f'=[Wago]=],\n          logo = [=[Interface\AddOns\CurseBreakerCompanion\Logo.tga]=],\n          versi' \
+               f'onNote = [=[{self.parse_changelog(entry)}]=],\n' \
                f'        }},\n'
         addon.data['slugs'].append(slug)
 
@@ -209,7 +212,7 @@ class WagoUpdater:
                 out.write((f'## Interface: {self.clientTOC}\n'
                            '## Title: CurseBreaker Companion\n'
                            '## Notes: CurseBreaker -> WoW integration.\n'
-                           '## Version: 1.0.0\n'
+                           '## Version: 1.1.0\n'
                            '## Author: AcidWeb\n'
                            '## OptionalDeps: WeakAuras, Plater\n\n'                  
                            'Data.lua\n'
@@ -239,6 +242,28 @@ class WagoUpdater:
                            '    stash = {},\n'
                            '  },\n'
                            '}'))
+            with open(Path('Interface/AddOns/CurseBreakerCompanion/Logo.tga'), 'wb') as out:
+                out.write(b64decode(b'AAAKAAAAAAAAAAAAIAAgACAInwAAAACfAAAAAJ8AAAAAnwAAAACfAAAAAJ8AAAAAnwAAAACfAAAAAJEAA'
+                                    b'AAAAwAAABkAAAA1AAAALwAAAAGJAAAAAIcAAAAAAAAAAAqEAAAACwAAAAAMgQAAADwGAAAADAICC14nIW'
+                                    b'P1CAYhpwAAAA4AAAALAAAACocAAAAAhwAAAAABEREk7iQkRfSCJSVG9AElJUX0Ghoz9YEEBgv5BhoaM/U'
+                                    b'bGjX4SD2t/xkXP/skJEX1JCRF9BERJO6HAAAAAIcAAAAABiQkQ/8YNkj/KmiD/ypphP8jWG//I1lw/zJ/'
+                                    b'nv+BLnSR/wYyf57/IFBm/0g+rv8bNVP/HUhc/xcyQ/8kJEP/hwAAAACHAAAAAAQkJET/KmmD/1HG9v9Sy'
+                                    b'fn/Ucj3/4FSyvr/gT+dw/8GU839/z+bwf9JP6//LWmK/1HG9f8qaYT/JCRE/4cAAAAAhwAAAAAPJCRE/y'
+                                    b'diev8gVGr/M4Gg/x1NYP9CpMv/Km2H/zWDo/8/ncP/VM7//z+dw/9JP6//LmuM/1LJ+f8ra4X/JCRE/4c'
+                                    b'AAAAAhwAAAAAPJCRE/ydiev8nZH7/O5K1/ylpgv82iKr/KmuF/zWDo/8/ncP/VM7//z+dw/9JP6//LmuM'
+                                    b'/1LJ+f8ra4X/JCRE/4cAAAAAhwAAAAAPJCRE/ytqhP9QxfT/Usr6/1LJ+f9Ty/v/Ucj4/z+dwv8/ncP/V'
+                                    b'M7//z+dw/9JP6//LmuM/1LJ+f8ra4X/JCRE/4cAAAAAhwAAAAAPJCRE/ydie/8kWnD/M4Cg/yxxjf8/nM'
+                                    b'L/KWiB/zSBof8/ncP/VM7//z+dw/9JP6//LmuM/1LJ+f8ra4X/JCRE/4cAAAAAhwAAAAAPJCRE/yhkff8'
+                                    b'nY3v/PJa6/xxLXv86kLL/G0ZX/y1viv8/ncP/VM7//z+dw/9JP6//LmuM/1LJ+f8ra4X/JCRE/4cAAAAA'
+                                    b'hwAAAAAPJCRE/ytqhf9Rx/b/U8r7/1HG9v9Syvr/Ucf3/z6av/8/ncP/VM7//z+dw/9JP6//LmuM/1LJ+'
+                                    b'f8ra4X/JCRE/4cAAAAAhwAAAAAPJCRE/ypngf82hqf/OpCz/ydje/81h6j/KWmD/yhkff8/ncP/VM7//z'
+                                    b'+dw/9JP6//LmuM/1LJ+f8ra4X/JCRE/4cAAAAAhwAAAAAPIyND/yhjfP8iV2z/Mn+e/yhlff9Co8r/Hk9'
+                                    b'j/zqPsv8/ncP/VM7//z+dw/9JP6//LmuM/1LJ+f8ra4X/IyND/4cAAAAAhwAAAAAPDw8g7ylogv9QxPP/'
+                                    b'R7Db/1DF9f9RyPj/TLrm/zJ/nfwudpP8SbPe/z6Yvv9JP6//LWmJ/1DG9f8paIL/Dw8g74cAAAAAhwAAA'
+                                    b'AAPAAAAEQUZIpsRN0amCiYyphE3RqYROEemDzJAmAUZIWICCA1jCyk1mAokMcM2LoX6Dhgz3hA2RagFGS'
+                                    b'KbAAAAEIcAAAAAiAAAAAAAAAAAA4IAAAAEAQAAAAMAAAACgQAAAAAFAAAAAgAAARsDAw9XAAACNQAAAAQ'
+                                    b'AAAADiAAAAACfAAAAAJ8AAAAAnwAAAACfAAAAAJ8AAAAAnwAAAACfAAAAAJ8AAAAAAAAAAAAAAABUUlVF'
+                                    b'VklTSU9OLVhGSUxFLgA='))
 
     def update(self):
         if os.path.isdir(Path('Interface/AddOns/WeakAuras')) and os.path.isfile(
