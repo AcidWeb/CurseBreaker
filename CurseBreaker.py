@@ -306,7 +306,8 @@ class TUI:
             self.console.print(f'[bold green]CurseBreaker[/bold green] [bold red]v{__version__}[/bold red] | '
                                f'[yellow]{datetime.now()}[/yellow]', highlight=False)
         else:
-            clear()
+            if len(sys.argv) == 1:
+                clear()
             self.console.print(Rule(f'[bold green]CurseBreaker[/bold green] [bold red]v{__version__}[/bold red]'))
             self.console.print('')
 
