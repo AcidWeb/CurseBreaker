@@ -500,7 +500,8 @@ class Core:
 
     def search(self, query):
         if self.config['WAAAPIKey'] == '':
-            raise RuntimeError('This feature requires the Wago Addons API key.\n'
+            raise RuntimeError('This feature only searches the database of the Wago Addons. '
+                               'So their API key is required.\n'
                                'It can be obtained here: https://addons.wago.io/patreon')
         results = []
         payload = requests.get(f'https://addons.wago.io/api/external/addons/_search?query={quote_plus(query.strip())}'
@@ -610,8 +611,11 @@ class Core:
     # noinspection PyTypeChecker
     def detect_addons(self):
         if self.config['WAAAPIKey'] == '':
-            raise RuntimeError('This feature requires the Wago Addons API key.\n'
-                               'It can be obtained here: https://addons.wago.io/patreon')
+            raise RuntimeError('This feature only matches addons that are in the database of the Wago Addons. Other sou'
+                               'rces don\'t provide means to make a reasonable match. So Wago Addons API key is require'
+                               'd. This application still can be used without it. Already installed addons can be added'
+                               ' to CurseBreaker with the install command.\n'
+                               'API key can be obtained here: https://addons.wago.io/patreon')
         names = []
         namesinstalled = []
         slugs = []
