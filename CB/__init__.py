@@ -1,9 +1,9 @@
 import requests
 from rich.terminal_theme import TerminalTheme
 
-__version__ = '4.3.4'
+__version__ = '4.3.5'
 __license__ = 'GPLv3'
-__copyright__ = '2019-2022, Paweł Jastrzębski <pawelj@iosphe.re>'
+__copyright__ = '2019-2023, Paweł Jastrzębski <pawelj@iosphe.re>'
 __docformat__ = 'restructuredtext en'
 
 
