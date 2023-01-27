@@ -27,6 +27,7 @@ By default **CurseBreaker** will create backups of the entire `WTF` directory.
 - `install` command have an optional `-i` flag that can be used to disable the client version check.
 - TUI will look a little better if the application is started by something else than the default Windows command prompt. Preview version of [Windows Terminal](https://aka.ms/terminal-preview) is recommended.
 - Environment variable `CURSEBREAKER_PATH` can be used to set the custom location of WoW client.
+- The application can be run in non-interactive mode by providing commands directly as a parameter.
 - When the application is started with a `headless` parameter entire addon and Wago upgrade process plus WTF backup should be executed in the background. Log file _CurseBreaker.html_ will be created in the same directory as the application.
 
 ## SUPPORTED URL
@@ -38,7 +39,7 @@ By default **CurseBreaker** will create backups of the entire `WTF` directory.
 - Wago: **CurseBreaker** can update auras and Plater profiles/scripts like WeakAuras Companion.
 
 ## WAGO ADDONS SUPPORT
-To use Wago Addons as addon source user needs to provide a personal API key.\
+To use Wago Addons as addon source user needs to provide a personal API key. It is a paid feature.\
 The key can be obtained [here](https://addons.wago.io/patreon) and needs to be added to the application configuration by using `set wago_addons_api` command.
 
 ## WEAKAURAS SUPPORT
