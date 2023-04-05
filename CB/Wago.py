@@ -75,7 +75,7 @@ class PlaterParser(BaseParser):
     def parse_storage(self):
         with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/Plater.lua'), 'r', encoding='utf-8',
                   errors='ignore') as file:
-            data = file.read().replace('PlaterDB = {', '{')
+            data = file.read().replace('PlaterDB = {', '{', 1).rsplit('PlaterLanguage = {', 1)[0]
         platerdata = self.lua.eval(data)
         for profile in platerdata['profiles']:
             data = platerdata['profiles'][profile]['script_data']
