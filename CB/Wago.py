@@ -212,9 +212,10 @@ class WagoUpdater:
                 out.write((f'## Interface: {self.clientTOC}\n'
                            '## Title: CurseBreaker Companion\n'
                            '## Notes: CurseBreaker -> WoW integration.\n'
-                           '## Version: 1.1.0\n'
+                           '## Version: 1.2.0\n'
                            '## Author: AcidWeb\n'
-                           '## OptionalDeps: WeakAuras, Plater\n\n'                  
+                           '## OptionalDeps: WeakAuras, Plater\n'      
+                           '## IconTexture: Interface\AddOns\CurseBreakerCompanion\Logo\n\n'  
                            'Data.lua\n'
                            'Init.lua'))
             with open(Path('Interface/AddOns/CurseBreakerCompanion/Init.lua'), 'w', newline='\n') as out:
