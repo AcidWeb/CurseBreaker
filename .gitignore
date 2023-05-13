@@ -5,7 +5,7 @@ WTF
 WTF-Backup
 /Wow.exe
 /CurseBreaker.reg
-/Build.sh
+/Build.*
 /.env
 *.zip
 *.exe

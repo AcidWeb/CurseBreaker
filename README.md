@@ -22,10 +22,11 @@ _Retail_, _WotLK Classic_ and _Classic_ clients are supported. The client versio
 By default **CurseBreaker** will create backups of the entire `WTF` directory.
 
 ## TIPS & TRICKS
+- TUI will look a lot better if the application is started by something else than the default Windows command prompt. [Windows Terminal](https://aka.ms/terminal) is recommended.
+- Many of the fields are links if used terminal emulator supports them. 
 - On Windows command `uri_integration` can be used to enable integration with the Wago Addons and Wago page.
 - Most of the commands support the space-separated list of addons.
 - `install` command have an optional `-i` flag that can be used to disable the client version check.
-- TUI will look a little better if the application is started by something else than the default Windows command prompt. Preview version of [Windows Terminal](https://aka.ms/terminal-preview) is recommended.
 - Environment variable `CURSEBREAKER_PATH` can be used to set the custom location of WoW client.
 - The application can be run in non-interactive mode by providing commands directly as a parameter.
 - When the application is started with a `headless` parameter entire addon and Wago upgrade process plus WTF backup should be executed in the background. Log file _CurseBreaker.html_ will be created in the same directory as the application.
