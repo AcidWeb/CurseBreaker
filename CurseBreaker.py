@@ -815,7 +815,7 @@ class TUI:
             if flush and len(self.core.config['WAStash']) > 0:
                 self.core.config['WAStash'] = []
                 self.core.save_config()
-            wago = WagoUpdater(self.core.config, self.core.masterConfig['ClientTypes'][self.core.clientType]['TOC'])
+            wago = WagoUpdater(self.core.config)
             if Version(__version__) >= Version(self.core.masterConfig['ConfigVersion']) and \
                     self.core.masterConfig['CBCompanionVersion'] > self.core.config['CBCompanionVersion']:
                 self.core.config['CBCompanionVersion'] = self.core.masterConfig['CBCompanionVersion']
