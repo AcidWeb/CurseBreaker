@@ -6,6 +6,7 @@ import time
 import gzip
 import glob
 import json
+import random
 import shutil
 import zipfile
 import requests
@@ -164,6 +165,7 @@ class TUI:
                 if self.headless:
                     sys.exit(0)
                 else:
+                    self.print_author_reminder()
                     self.console.print('Press [bold]I[/bold] to enter interactive mode or any other button to close'
                                        ' the application.')
                     keypress = self.handle_keypress(0)
@@ -263,7 +265,8 @@ class TUI:
     def motd_parser(self):
         payload = requests.get('https://storage.googleapis.com/cursebreaker/motd', headers=HEADERS, timeout=5)
         if payload.status_code == 200:
-            self.console.print(Panel(payload.content.decode('UTF-8'), title='MOTD', border_style='red'))
+            self.console.print(Panel(payload.content.decode('UTF-8'), title=':warning: MOTD :warning:',
+                                     border_style='red'))
             self.console.print('')
 
     def handle_exception(self, e, table=True):
@@ -316,6 +319,23 @@ class TUI:
             html = self.console.export_html(inline_styles=True, theme=HEADLESS_TERMINAL_THEME)
             with open('CurseBreaker.html', 'a+', encoding='utf-8') as log:
                 log.write(html)
+
+    def print_author_reminder(self):
+        if random.randint(1, 10) == 1:
+            addon = random.choice(self.core.config['Addons'])
+            project_url = addon['URL']
+            if not project_url.startswith('https://'):
+                custom_project_url = {'elvui': 'https://www.tukui.org/support.php',
+                                      'elvui:dev': 'https://www.tukui.org/support.php',
+                                      'tukui': 'https://www.tukui.org/support.php',
+                                      'tukui:dev': 'https://www.tukui.org/support.php',
+                                      'shadow&light:dev': 'https://addons.wago.io/addons/shadow-and-light'}
+                project_url = custom_project_url[addon['URL'].lower()]
+            self.console.print(Panel(f'Hey! You use [bold white]{addon["Name"]}[/bold white] quite often. Maybe it\'s t'
+                                     f'ime to check out the project page how you can support the author(s)? [link='
+                                     f'{project_url}]{project_url}[/link]', title=':sparkles: Support :sparkles:',
+                                     border_style='yellow'))
+            self.console.print('')
 
     def setup_console(self):
         if self.headless:
