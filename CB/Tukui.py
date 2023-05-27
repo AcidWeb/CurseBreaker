@@ -1,6 +1,5 @@
 import os
 import io
-import re
 import zipfile
 import requests
 from . import retry, HEADERS
@@ -8,35 +7,21 @@ from . import retry, HEADERS
 
 class TukuiAddon:
     @retry()
-    def __init__(self, url, checkcache, special=None):
-        if special:
-            try:
-                self.payload = requests.get(f'https://www.tukui.org/api.php?ui={special}',
-                                            headers=HEADERS, timeout=5).json()
-            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-                raise RuntimeError(f'{url}\nTukui API failed to respond.')
+    def __init__(self, slug, checkcache, clientversion):
+        for addon in checkcache:
+            if addon['name'] == slug:
+                self.payload = addon
+                break
         else:
-            project = re.findall(r'\d+', url)[0]
-            for addon in checkcache:
-                if addon['id'] == project:
-                    self.payload = addon
-                    break
-            else:
-                raise RuntimeError(f'{url}\nProject not found.')
+            raise RuntimeError(f'{slug}\nProject not found.')
         self.name = self.payload['name'].strip().strip('\u200b')
         self.downloadUrl = self.payload['url']
         self.currentVersion = self.payload['version']
-        self.uiVersion = self.payload['patch']
+        self.uiVersion = clientversion if clientversion in self.payload['patch'] else self.payload['patch'][0]
         self.archive = None
-        self.directories = []
+        self.directories = self.payload['directories']
         self.author = [self.payload['author']]
-
-        if special:
-            self.changelogUrl = f'https://www.tukui.org/download.php?ui={special}&changelog'
-        elif 'changelog' in self.payload:
-            self.changelogUrl = self.payload['changelog']
-        else:
-            self.changelogUrl = None
+        self.changelogUrl = self.payload['changelog_url']
 
     @retry()
     def get_addon(self):

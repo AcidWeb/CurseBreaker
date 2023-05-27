@@ -487,13 +487,9 @@ class TUI:
                                'e client version check.\n[bold green]Supported URL:[/bold green]\n\thttps://addons.wago'
                                '.io/addons/\[addon_name] [bold white]|[/bold white] wa:\[addon_name]\n\thttps://www.wow'
                                'interface.com/downloads/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\tht'
-                               'tps://www.tukui.org/addons.php?id=\[addon_id] [bold white]|[/bold white] tu:\[addon_id]'
-                               '\n\thttps://www.tukui.org/classic-addons.php?id=\[addon_id] [bold white]|[/bold white] '
-                               'tuc:\[addon_id]\n\thttps://www.tukui.org/classic-wotlk-addons.php?id=\[addon_id] [bold '
-                               'white]|[/bold white] tuwc:\[addon_id]\n\thttps://github.com/\[username]/\[repository_na'
-                               'me] [bold white]|[/bold white] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|'
-                               '[/bold white] ElvUI:Dev\n\tTukui [bold white]|[/bold white] Tukui:Dev\n\tShadow&Light:D'
-                               'ev', highlight=False)
+                               'tps://github.com/\[username]/\[repository_name] [bold white]|[/bold white] gh:\[usernam'
+                               'e]/\[repository_name]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui [bold whit'
+                               'e]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
 
     def c_uninstall(self, args):
         if args:
@@ -968,13 +964,9 @@ class TUI:
                            'ownload with Wago App" and "Send to WeakAura Companion App" buttons.\n\n[bold green]Support'
                            'ed URL:[/bold green]\n\thttps://addons.wago.io/addons/\[addon_name] [bold white]|[/bold whi'
                            'te] wa:\[addon_name]\n\thttps://www.wowinterface.com/downloads/\[addon_name] [bold white]|['
-                           '/bold white] wowi:\[addon_id]\n\thttps://www.tukui.org/addons.php?id=\[addon_id] [bold whit'
-                           'e]|[/bold white] tu:\[addon_id]\n\thttps://www.tukui.org/classic-addons.php?id=\[addon_id] '
-                           '[bold white]|[/bold white] tuc:\[addon_id]\n\thttps://www.tukui.org/classic-wotlk-addons.ph'
-                           'p?id=\[addon_id] [bold white]|[/bold white] tuwc:\[addon_id]\n\thttps://github.com/\[userna'
-                           'me]/\[repository_name] [bold white]|[/bold white] gh:\[username]/\[repository_name]\n\tElvU'
-                           'I [bold white]|[/bold white] ElvUI:Dev\n\tTukui [bold white]|[/bold white] Tukui:Dev\n\tSha'
-                           'dow&Light:Dev', highlight=False)
+                           '/bold white] wowi:\[addon_id]\n\thttps://github.com/\[username]/\[repository_name] [bold wh'
+                           'ite]|[/bold white] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white] El'
+                           'vUI:Dev\n\tTukui [bold white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
 
     def c_exit(self, _):
         sys.exit(0)
