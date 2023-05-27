@@ -200,21 +200,12 @@ class Core:
             self.bulk_tukui_check()
             return TukuiAddon('ElvUI', self.tukuiCache,
                               self.masterConfig['ClientTypes'][self.clientType]['CurrentVersion'])
-        elif url.lower() == 'elvui:dev':
-            return GitHubAddonRaw('tukui-org/ElvUI', 'development', ['ElvUI', 'ElvUI_Options', 'ElvUI_Libraries'],
-                                  self.config['GHAPIKey'])
         elif url.lower() == 'tukui':
             self.bulk_tukui_check()
             return TukuiAddon('Tukui', self.tukuiCache,
                               self.masterConfig['ClientTypes'][self.clientType]['CurrentVersion'])
-        elif url.lower() == 'tukui:dev':
-            return GitHubAddonRaw('tukui-org/Tukui', 'Live', ['Tukui'], self.config['GHAPIKey'])
-        elif url.lower() == 'shadow&light:dev':
-            if self.clientType == 'retail':
-                return GitHubAddonRaw('Shadow-and-Light/shadow-and-light', 'dev', ['ElvUI_SLE'],
-                                      self.config['GHAPIKey'])
-            else:
-                raise RuntimeError('Unsupported client version.')
+        elif url.lower() in self.masterConfig['CustomRepository'].keys():
+            return GitHubAddonRaw(self.masterConfig['CustomRepository'][url.lower()], self.config['GHAPIKey'])
         elif url.startswith('https://www.townlong-yak.com/addons/'):
             raise RuntimeError(f'{url}\nTownlong Yak is no longer supported by this application.')
         elif url.startswith('https://www.curseforge.com/wow/addons/'):
@@ -229,18 +220,14 @@ class Core:
             return 'Wago', url
         elif url.startswith('https://www.wowinterface.com/downloads/'):
             return 'WoWI', url
-        elif url.lower() == 'elvui:dev':
-            return 'GitHub', 'https://github.com/tukui-org/ElvUI'
-        elif url.lower() == 'tukui:dev':
-            return 'GitHub', 'https://github.com/tukui-org/Tukui'
+        elif url.startswith('https://github.com/'):
+            return 'GitHub', url
+        elif url.lower().endswith(':dev'):
+            return 'GitHub', f'https://github.com/{self.masterConfig["CustomRepository"][url.lower()]["Repository"]}'
         elif url.lower().startswith('elvui'):
             return 'Tukui', 'https://www.tukui.org/download.php?ui=elvui'
         elif url.lower().startswith('tukui'):
             return 'Tukui', 'https://www.tukui.org/download.php?ui=tukui'
-        elif url.lower() == 'shadow&light:dev':
-            return 'GitHub', 'https://github.com/Shadow-and-Light/shadow-and-light'
-        elif url.startswith('https://github.com/'):
-            return 'GitHub', url
         else:
             return '?', None
 

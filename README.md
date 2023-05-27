@@ -35,7 +35,7 @@ By default **CurseBreaker** will create backups of the entire `WTF` directory.
 - Wago Addons: `https://addons.wago.io/addons/[addon_name]`, `wa:[addon_name]`
 - WoWInterface: `https://www.wowinterface.com/downloads/[addon_name]`, `wowi:[addon_id]`
 - Tukui: `ElvUI`, `Tukui`
-- GitHub: `ElvUI:Dev`, `Tukui:Dev`, `Shadow&Light:Dev`
+- GitHub: Development versions of multiple addons. Slugs are suffixed with `:Dev`.
 - GitHub Releases: `https://github.com/[username]/[repository_name]`, `gh:[username]/[repository_name]`
 - Wago: **CurseBreaker** can update auras and Plater profiles/scripts like WeakAuras Companion.
 

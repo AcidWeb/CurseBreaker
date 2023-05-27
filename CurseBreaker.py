@@ -325,12 +325,10 @@ class TUI:
             addon = random.choice(self.core.config['Addons'])
             project_url = addon['URL']
             if not project_url.startswith('https://'):
-                custom_project_url = {'elvui': 'https://www.tukui.org/support.php',
-                                      'elvui:dev': 'https://www.tukui.org/support.php',
-                                      'tukui': 'https://www.tukui.org/support.php',
-                                      'tukui:dev': 'https://www.tukui.org/support.php',
-                                      'shadow&light:dev': 'https://addons.wago.io/addons/shadow-and-light'}
-                project_url = custom_project_url[addon['URL'].lower()]
+                project_url = project_url.lower()
+                if not project_url.endswith(':dev'):
+                    project_url = f'{project_url}:dev'
+                project_url = self.core.masterConfig['CustomRepository'][project_url]['SupportURL']
             self.console.print(Panel(f'Hey! You use [bold white]{addon["Name"]}[/bold white] quite often. Maybe it\'s t'
                                      f'ime to check out the project page how you can support the author(s)? [link='
                                      f'{project_url}]{project_url}[/link]', title=':sparkles: Support :sparkles:',
@@ -371,7 +369,8 @@ class TUI:
             slugs.append(f'wowi:{item}')
         for item in self.slugs['gh']:
             slugs.append(f'gh:{item}')
-        slugs.extend(['ElvUI:Dev', 'Tukui:Dev', 'Shadow&Light:Dev'])
+        for item in self.slugs['custom']:
+            slugs.append(f'{item}')
         accounts = []
         for account in self.core.detect_accounts():
             accounts.append(account)
@@ -444,6 +443,12 @@ class TUI:
         obj.no_wrap = True
         return obj
 
+    def parse_custom_addons(self):
+        payload = []
+        for addon in self.core.masterConfig['CustomRepository'].values():
+            payload.append(addon['Slug'])
+        return ' [bold white]|[/bold white] '.join(payload)
+
     def c_install(self, args):
         if args:
             optignore = False
@@ -488,8 +493,8 @@ class TUI:
                                '.io/addons/\[addon_name] [bold white]|[/bold white] wa:\[addon_name]\n\thttps://www.wow'
                                'interface.com/downloads/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\tht'
                                'tps://github.com/\[username]/\[repository_name] [bold white]|[/bold white] gh:\[usernam'
-                               'e]/\[repository_name]\n\tElvUI [bold white]|[/bold white] ElvUI:Dev\n\tTukui [bold whit'
-                               'e]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
+                               'e]/\[repository_name]\n\tElvUI [bold white]|[/bold white] Tukui\n\t' +
+                               self.parse_custom_addons(), highlight=False)
 
     def c_uninstall(self, args):
         if args:
@@ -965,8 +970,8 @@ class TUI:
                            'ed URL:[/bold green]\n\thttps://addons.wago.io/addons/\[addon_name] [bold white]|[/bold whi'
                            'te] wa:\[addon_name]\n\thttps://www.wowinterface.com/downloads/\[addon_name] [bold white]|['
                            '/bold white] wowi:\[addon_id]\n\thttps://github.com/\[username]/\[repository_name] [bold wh'
-                           'ite]|[/bold white] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white] El'
-                           'vUI:Dev\n\tTukui [bold white]|[/bold white] Tukui:Dev\n\tShadow&Light:Dev', highlight=False)
+                           'ite]|[/bold white] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white] Tu'
+                           'kui\n\t' + self.parse_custom_addons(), highlight=False)
 
     def c_exit(self, _):
         sys.exit(0)

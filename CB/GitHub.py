@@ -143,44 +143,33 @@ class GitHubAddon:
 
 class GitHubAddonRaw:
     @retry()
-    def __init__(self, project, branch, targetdirs, apikey):
+    def __init__(self, addon, apikey):
+        repository = addon["Repository"]
         self.apiKey = apikey
+        self.branch = addon["Branch"]
+        self.name = addon["Name"]
         try:
-            self.payload = requests.get(f'https://api.github.com/repos/{project}/branches/{branch}',
+            self.payload = requests.get(f'https://api.github.com/repos/{repository}/branches/{self.branch}',
                                         headers=HEADERS, auth=APIAuth('token', self.apiKey), timeout=10)
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-            raise RuntimeError(f'{project}\nGitHub API failed to respond.')
+            raise RuntimeError(f'{self.name}\nGitHub API failed to respond.')
         if self.payload.status_code == 401:
-            raise RuntimeError(f'{project}\nIncorrect or expired GitHub API personal access token.')
+            raise RuntimeError(f'{self.name}\nIncorrect or expired GitHub API personal access token.')
         elif self.payload.status_code == 403:
-            raise RuntimeError(f'{project}\nGitHub API rate limit exceeded. Try later or provide personal access '
+            raise RuntimeError(f'{self.name}\nGitHub API rate limit exceeded. Try later or provide personal access '
                                f'token.')
         elif self.payload.status_code == 404:
-            raise RuntimeError(f'{project}\nTarget branch don\'t exist.')
+            raise RuntimeError(f'{self.name}\nTarget branch don\'t exist.')
         else:
             self.payload = self.payload.json()
-        self.name = None
-        self.shorthPath = project.split('/')[1]
-        self.downloadUrl = f'https://github.com/{project}/archive/refs/heads/{branch}.zip'
-        self.changelogUrl = f'https://github.com/{project}/commits/{branch}'
+        self.shorthPath = repository.split('/')[1]
+        self.downloadUrl = f'https://github.com/{repository}/archive/refs/heads/{self.branch}.zip'
+        self.changelogUrl = f'https://github.com/{repository}/commits/{self.branch}'
         self.currentVersion = self.payload['commit']['sha'][:7]
-        self.branch = branch
         self.uiVersion = None
         self.archive = None
-        self.directories = targetdirs
-        self.author = []
-
-        if project == 'tukui-org/ElvUI':
-            self.name = 'ElvUI'
-            self.author = ['Elv']
-        elif project == 'tukui-org/Tukui':
-            self.name = 'TukUI'
-            self.author = ['Tukz']
-        elif project == 'Shadow-and-Light/shadow-and-light':
-            self.name = 'ElvUI Shadow & Light'
-            self.author = ['Repooc', 'DarthPredator']
-        else:
-            raise RuntimeError(f'{project}\nThis source is unsupported.')
+        self.directories = addon["Directories"]
+        self.author = addon["Authors"]
 
     @retry()
     def get_addon(self):
