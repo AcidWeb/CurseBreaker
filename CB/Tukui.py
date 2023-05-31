@@ -9,7 +9,7 @@ class TukuiAddon:
     @retry()
     def __init__(self, slug, checkcache, clientversion):
         for addon in checkcache:
-            if addon['name'] == slug:
+            if addon['slug'] == slug:
                 self.payload = addon
                 break
         else:

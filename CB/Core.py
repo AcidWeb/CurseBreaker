@@ -198,11 +198,11 @@ class Core:
             return GitHubAddon(url, self.clientType, self.config['GHAPIKey'])
         elif url.lower() == 'elvui':
             self.bulk_tukui_check()
-            return TukuiAddon('ElvUI', self.tukuiCache,
+            return TukuiAddon('elvui', self.tukuiCache,
                               self.masterConfig['ClientTypes'][self.clientType]['CurrentVersion'])
         elif url.lower() == 'tukui':
             self.bulk_tukui_check()
-            return TukuiAddon('Tukui', self.tukuiCache,
+            return TukuiAddon('tukui', self.tukuiCache,
                               self.masterConfig['ClientTypes'][self.clientType]['CurrentVersion'])
         elif url.lower() in self.masterConfig['CustomRepository'].keys():
             return GitHubAddonRaw(self.masterConfig['CustomRepository'][url.lower()], self.config['GHAPIKey'])
@@ -551,7 +551,7 @@ class Core:
     @retry(custom_error='Failed to parse Tukui API data')
     def bulk_tukui_check(self):
         if not self.tukuiCache:
-            self.tukuiCache = requests.get('https://tukui-api.acidweb.dev/v1/addons', headers=HEADERS, timeout=5).json()
+            self.tukuiCache = requests.get('https://api.tukui.org/v1/addons', headers=HEADERS, timeout=5).json()
 
     def detect_accounts(self):
         if os.path.isdir(Path('WTF/Account')):
