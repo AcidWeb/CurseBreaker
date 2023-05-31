@@ -22,7 +22,7 @@ jobs:
         pip install -r requirements.txt
         pip install certifi pyinstaller --no-binary pyinstaller
     - name: Build binary
-      run: pyinstaller -y -F -i CurseBreaker.ico -n CurseBreaker -c --noupx --exclude-module FixTk --exclude-module tcl --exclude-module tk --exclude-module _tkinter --exclude-module tkinter --exclude-module Tkinter CurseBreaker.py
+      run: pyinstaller -y -F -i CurseBreaker.ico -n CurseBreaker -c --noupx --exclude-module FixTk --exclude-module tcl --exclude-module tk --exclude-module _tkinter --exclude-module tkinter --exclude-module Tkinter --additional-hooks-dir=. CurseBreaker.py
     - name: Upload binary
       uses: actions/upload-artifact@v3
       with:
@@ -43,7 +43,7 @@ jobs:
         pip install -r requirements.txt
         pip install certifi pyinstaller
     - name: Build binary
-      run: pyinstaller -y -F -n CurseBreaker -c -s --noupx --exclude-module FixTk --exclude-module tcl --exclude-module tk --exclude-module _tkinter --exclude-module tkinter --exclude-module Tkinter CurseBreaker.py
+      run: pyinstaller -y -F -n CurseBreaker -c -s --noupx --exclude-module FixTk --exclude-module tcl --exclude-module tk --exclude-module _tkinter --exclude-module tkinter --exclude-module Tkinter --additional-hooks-dir=. CurseBreaker.py
     - name: Upload binary
       uses: actions/upload-artifact@v3
       with:
@@ -64,7 +64,7 @@ jobs:
         pip3 install -r requirements.txt
         pip3 install certifi pyinstaller
     - name: Build binary
-      run: pyinstaller -y -F -n CurseBreaker -c -s --noupx --exclude-module FixTk --exclude-module tcl --exclude-module tk --exclude-module _tkinter --exclude-module tkinter --exclude-module Tkinter CurseBreaker.py
+      run: pyinstaller -y -F -n CurseBreaker -c -s --noupx --exclude-module FixTk --exclude-module tcl --exclude-module tk --exclude-module _tkinter --exclude-module tkinter --exclude-module Tkinter --additional-hooks-dir=. CurseBreaker.py
     - name: Upload binary
       uses: actions/upload-artifact@v3
       with:

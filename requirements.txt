@@ -7,4 +7,4 @@ requests
 markdown
 bbcode
 rich
-lupa==1.14.1
+lupa
