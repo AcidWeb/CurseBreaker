@@ -811,7 +811,7 @@ class TUI:
                                'et wago_api [API key][/green]\n\t\tSets Wago API key required to access private entries'
                                '.\n\t\tIt can be obtained here: [link=https://wago.io/account]https://wago.io/account[/'
                                'link]\n\t[green]set wago_wow_account [Account name][/green]\n\t\tSets WoW account used '
-                               'by Wago updater.\n\t\tNeeded only if compatibile addons are used on more than one WoW a'
+                               'by Wago updater.\n\t\tNeeded only if compatible addons are used on more than one WoW a'
                                'ccount.\n\t[green]set gh_api [API key][/green]\n\t\tSets GitHub API key. Might be neede'
                                'd to get around API rate limits.', highlight=False)
 
@@ -962,7 +962,7 @@ class TUI:
                            'es.\n\tIt can be obtained here: [link=https://wago.io/account]https://wago.io/account[/link'
                            ']\n'
                            '[green]set wago_wow_account [Account name][/green]\n\tSets WoW account used by Wago updater'
-                           '.\n\tNeeded only if compatibile addons are used on more than one WoW account.\n[green]set g'
+                           '.\n\tNeeded only if compatible addons are used on more than one WoW account.\n[green]set g'
                            'h_api [API key][/green]\n\tSets GitHub API key. Might be needed to get around API rate limi'
                            'ts.\n'
                            '[green]uri_integration[/green]\n\tEnables integration with Wago Addons and Wago page.\n\t"D'
