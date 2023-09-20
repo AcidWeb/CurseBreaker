@@ -117,9 +117,8 @@ class WagoUpdater:
     def check_updates(self, addon):
         output = [[], []]
         if len(addon.list) > 0:
-            payload = requests.get(f'https://data.wago.io/api/check/{addon.api}?ids='
-                                   f'{",".join(quote_plus(item) for item in addon.list.keys())}', headers=self.headers,
-                                   timeout=15).json()
+            payload = requests.post(f'https://data.wago.io/api/check/{addon.api}',
+                                    json={'ids': list(addon.list.keys())}, headers=self.headers, timeout=15).json()
             if 'error' in payload or 'msg' in payload:
                 raise RuntimeError
             for entry in payload:
@@ -140,9 +139,8 @@ class WagoUpdater:
     def check_stash(self, wa, plater):
         output = []
         if len(self.stash) > 0:
-            payload = requests.get(f'https://data.wago.io/api/check/?ids='
-                                   f'{",".join(quote_plus(item) for item in self.stash)}',
-                                   headers=self.headers, timeout=15).json()
+            payload = requests.post(f'https://data.wago.io/api/check/',
+                                    json={'ids': self.stash}, headers=self.headers, timeout=15).json()
             for entry in payload:
                 output.append(entry['name'])
                 raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}',
