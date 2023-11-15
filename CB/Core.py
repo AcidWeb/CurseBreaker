@@ -167,6 +167,22 @@ class Core:
         else:
             return 0
 
+    def check_if_overlap(self):
+        directories = []
+        found = set()
+        for addon in self.config['Addons']:
+            directories = directories + addon['Directories']
+        dupes = [x for x in directories if x in found or found.add(x)]
+        if len(dupes) > 0:
+            addons = []
+            for addon in self.config['Addons']:
+                if set(addon['Directories']).intersection(dupes):
+                    addons.append(addon['Name'])
+            addons.sort()
+            return '\n'.join(addons)
+        else:
+            return False
+
     def check_if_blocked(self, addon):
         if addon:
             if 'Block' in addon.keys():

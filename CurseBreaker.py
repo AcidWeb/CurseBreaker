@@ -599,6 +599,9 @@ class TUI:
             self.console.print(self.table)
             if compacted > 0:
                 self.console.print(f'Additionally [green]{compacted}[/green] addons are up-to-date.')
+            overlap = self.core.check_if_overlap()
+            if overlap:
+                self.console.print(f'\n[bold red]Detected addon directory overlap. This will cause issues. Affected addons:[/bold red]\n{overlap}')
         else:
             self.console.print('Apparently there are no addons installed by CurseBreaker (or you provided incorrect add'
                                'on name).\nCommand [green]import[/green] might be used to detect already installed addo'
