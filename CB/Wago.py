@@ -4,12 +4,12 @@ import shutil
 import bbcode
 import requests
 from io import StringIO, BytesIO
-from lupa import LuaRuntime
 from pathlib import Path
 from zipfile import ZipFile
 from markdown import Markdown
 from urllib.parse import quote_plus
 from . import retry, HEADERS
+from .SLPP import loads
 
 
 def markdown_unmark_element(element, stream=None):
@@ -26,7 +26,6 @@ def markdown_unmark_element(element, stream=None):
 
 class BaseParser:
     def __init__(self):
-        self.lua = LuaRuntime()
         self.urlParser = re.compile('/([a-zA-Z0-9_-]+)/(\d+)')
         self.list = {}
         self.ignored = {}
@@ -44,13 +43,13 @@ class WeakAuraParser(BaseParser):
         with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua'), 'r', encoding='utf-8',
                   errors='ignore') as file:
             data = file.read().replace('WeakAurasSaved = {', '{')
-        wadata = self.lua.eval(data)
+        wadata = loads(data)
         for wa in wadata['displays']:
-            if wadata['displays'][wa]['url']:
+            if 'url' in wadata['displays'][wa]:
                 search = self.urlParser.search(wadata['displays'][wa]['url'])
                 if search is not None and search.group(1) and search.group(2):
-                    if not wadata['displays'][wa]['parent'] and not wadata['displays'][wa]['ignoreWagoUpdate']:
-                        if wadata['displays'][wa]['skipWagoUpdate']:
+                    if 'parent' not in wadata['displays'][wa] and 'ignoreWagoUpdate' not in wadata['displays'][wa]:
+                        if 'skipWagoUpdate' in wadata['displays'][wa]:
                             self.ignored[search.group(1)] = int(wadata['displays'][wa]['skipWagoUpdate'])
                         self.list[search.group(1)] = int(search.group(2))
 
@@ -67,8 +66,8 @@ class PlaterParser(BaseParser):
             if data[script]['url']:
                 search = self.urlParser.search(data[script]['url'])
                 if search is not None and search.group(1) and search.group(2):
-                    if not data[script]['ignoreWagoUpdate']:
-                        if data[script]['skipWagoUpdate']:
+                    if 'ignoreWagoUpdate' not in data[script]:
+                        if 'skipWagoUpdate' in data[script]:
                             self.ignored[search.group(1)] = int(data[script]['skipWagoUpdate'])
                         self.list[search.group(1)] = int(search.group(2))
 
@@ -76,7 +75,7 @@ class PlaterParser(BaseParser):
         with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/Plater.lua'), 'r', encoding='utf-8',
                   errors='ignore') as file:
             data = file.read().replace('PlaterDB = {', '{', 1).rsplit('PlaterLanguage = {', 1)[0]
-        platerdata = self.lua.eval(data)
+        platerdata = loads(data)
         for profile in platerdata['profiles']:
             data = platerdata['profiles'][profile]['script_data']
             if data:
@@ -88,8 +87,8 @@ class PlaterParser(BaseParser):
             if data:
                 search = self.urlParser.search(data)
                 if search is not None and search.group(1) and search.group(2):
-                    if not platerdata['profiles'][profile]['ignoreWagoUpdate']:
-                        if platerdata['profiles'][profile]['skipWagoUpdate']:
+                    if 'ignoreWagoUpdate' not in platerdata['profiles'][profile]:
+                        if 'skipWagoUpdate' in platerdata['profiles'][profile]:
                             self.ignored[search.group(1)] = int(platerdata['profiles'][profile]['skipWagoUpdate'])
                         self.list[search.group(1)] = int(search.group(2))
 
