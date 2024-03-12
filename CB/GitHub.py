@@ -31,7 +31,7 @@ class GitHubAddon:
                 if release['assets'] and len(release['assets']) > 0 \
                         and not release['draft'] and not release['prerelease']:
                     self.payloads.append(release)
-                    if len(self.payloads) > 4:
+                    if len(self.payloads) > 14:
                         break
             if len(self.payloads) == 0:
                 raise RuntimeError(f'{url}\nThis integration supports only the projects that provide packaged'
