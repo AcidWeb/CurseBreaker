@@ -29,7 +29,7 @@ if platform.system() == 'Windows':
                          vi.StringStruct('InternalName', 'CurseBreaker.exe'),
                          vi.StringStruct('FileDescription', 'CurseBreaker'),
                          vi.StringStruct('CompanyName', ' '),
-                         vi.StringStruct('LegalCopyright', 'Copyright (C) 2019-2023 Paweł Jastrzębski'),
+                         vi.StringStruct('LegalCopyright', 'Copyright (C) 2019-2024 Paweł Jastrzębski'),
                          vi.StringStruct('ProductName', 'CurseBreaker')])
                 ]),
             vi.VarFileInfo([vi.VarStruct('Translation', [0, 1200])])

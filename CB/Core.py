@@ -309,7 +309,7 @@ class Core:
             if old['URL'].startswith(('https://www.townlong-yak.com/addons/',
                                       'https://www.curseforge.com/wow/addons/',
                                       'https://www.tukui.org/')):
-                return old['Name'], [], oldversion, oldversion, None, modified, blocked, 'Unsupported', old['URL'],\
+                return old['Name'], [], oldversion, oldversion, None, modified, blocked, 'Unsupported', old['URL'], \
                        None, dev
             source, sourceurl = self.parse_url_source(old['URL'])
             new = self.parse_url(old['URL'])
@@ -328,7 +328,7 @@ class Core:
             if force:
                 modified = False
                 blocked = False
-            return new.name, new.author, new.currentVersion, oldversion, new.uiVersion, modified, blocked, source,\
+            return new.name, new.author, new.currentVersion, oldversion, new.uiVersion, modified, blocked, source, \
                 sourceurl, new.changelogUrl, dev
         return url, [], False, False, None, False, False, '?', None, None, None
 
@@ -447,7 +447,6 @@ class Core:
                             progress.update(task, advance=1, refresh=True)
         zipf.close()
 
-    # noinspection PyTypeChecker
     def find_orphans(self):
         orphanedaddon = []
         orphaneconfig = []
@@ -496,23 +495,23 @@ class Core:
     def create_reg(self):
         with open('CurseBreaker.reg', 'w') as outfile:
             outfile.write('Windows Registry Editor Version 5.00\n\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\\wago-app]\n'
+                          '[HKEY_CURRENT_USER\\Software\\Classes\\wago-app]\n'
                           '"URL Protocol"="\\"\\""\n'
                           '@="\\"URL:CurseBreaker Protocol\\""\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\\wago-app\DefaultIcon]\n'
+                          '[HKEY_CURRENT_USER\\Software\\Classes\\wago-app\\DefaultIcon]\n'
                           '@="\\"CurseBreaker.exe,1\\""\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\\wago-app\shell]\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\\wago-app\shell\open]\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\\wago-app\shell\open\command]\n'
+                          '[HKEY_CURRENT_USER\\Software\\Classes\\wago-app\\shell]\n'
+                          '[HKEY_CURRENT_USER\\Software\\Classes\\wago-app\\shell\\open]\n'
+                          '[HKEY_CURRENT_USER\\Software\\Classes\\wago-app\\shell\\open\\command]\n'
                           '@="\\"' + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\weakauras-companion]\n'
+                          '[HKEY_CURRENT_USER\\Software\\Classes\\weakauras-companion]\n'
                           '"URL Protocol"="\\"\\""\n'
                           '@="\\"URL:CurseBreaker Protocol\\""\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\weakauras-companion\DefaultIcon]\n'
+                          '[HKEY_CURRENT_USER\\Software\\Classes\\weakauras-companion\\DefaultIcon]\n'
                           '@="\\"CurseBreaker.exe,1\\""\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\weakauras-companion\shell]\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\weakauras-companion\shell\open]\n'
-                          '[HKEY_CURRENT_USER\Software\Classes\weakauras-companion\shell\open\command]\n'
+                          '[HKEY_CURRENT_USER\\Software\\Classes\\weakauras-companion\\shell]\n'
+                          '[HKEY_CURRENT_USER\\Software\\Classes\\weakauras-companion\\shell\\open]\n'
+                          '[HKEY_CURRENT_USER\\Software\\Classes\\weakauras-companion\\shell\\open\\command]\n'
                           '@="\\"' + os.path.abspath(sys.executable).replace('\\', '\\\\') + '\\" \\"%1\\""')
 
     def parse_wagoapp_payload(self, url):
@@ -581,7 +580,6 @@ class Core:
         else:
             return []
 
-    # noinspection PyTypeChecker
     def detect_addons(self):
         if self.config['WAAAPIKey'] == '':
             raise RuntimeError('This feature only matches addons that are in the database of the Wago Addons. Other sou'

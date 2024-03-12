@@ -490,10 +490,10 @@ class TUI:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts a space-separated list of links as an arg'
                                'ument.[bold white]\n\tFlags:[/bold white]\n\t\t[bold white]-i[/bold white] - Disable th'
                                'e client version check.\n[bold green]Supported URL:[/bold green]\n\thttps://addons.wago'
-                               '.io/addons/\[addon_name] [bold white]|[/bold white] wa:\[addon_name]\n\thttps://www.wow'
-                               'interface.com/downloads/\[addon_name] [bold white]|[/bold white] wowi:\[addon_id]\n\tht'
-                               'tps://github.com/\[username]/\[repository_name] [bold white]|[/bold white] gh:\[usernam'
-                               'e]/\[repository_name]\n\tElvUI [bold white]|[/bold white] Tukui\n\t' +
+                               '.io/addons/\\[addon_name] [bold white]|[/bold white] wa:\\[addon_name]\n\thttps://www.w'
+                               'owinterface.com/downloads/\\[addon_name] [bold white]|[/bold white] wowi:\\[addon_id]\n'
+                               '\thttps://github.com/\\[username]/\\[repository_name] [bold white]|[/bold white] gh:\\['
+                               'username]/\\[repository_name]\n\tElvUI [bold white]|[/bold white] Tukui\n\t' +
                                self.parse_custom_addons(), highlight=False)
 
     def c_uninstall(self, args):
@@ -601,7 +601,8 @@ class TUI:
                 self.console.print(f'Additionally [green]{compacted}[/green] addons are up-to-date.')
             overlap = self.core.check_if_overlap()
             if overlap:
-                self.console.print(f'\n[bold red]Detected addon directory overlap. This will cause issues. Affected addons:[/bold red]\n{overlap}')
+                self.console.print(f'\n[bold red]Detected addon directory overlap. This will cause issues. Affected add'
+                                   f'ons:[/bold red]\n{overlap}')
         else:
             self.console.print('Apparently there are no addons installed by CurseBreaker (or you provided incorrect add'
                                'on name).\nCommand [green]import[/green] might be used to detect already installed addo'
@@ -614,8 +615,8 @@ class TUI:
             self.c_update(args, False, True, True)
         else:
             # noinspection PyTypeChecker
-            answer = confirm(HTML('<ansibrightred>Execute a forced update of all addons and overwrite ALL local '
-                                  'changes?</ansibrightred>'))
+            answer = confirm(HTML('<ansibrightred>Execute a forced update of all addons and overwrite ALL local changes'
+                                  '?</ansibrightred>'))
             if answer:
                 self.c_update(False, False, True, True)
 
@@ -970,11 +971,11 @@ class TUI:
                            's.\n'
                            '[green]uri_integration[/green]\n\tEnables integration with Wago Addons and Wago page.\n\t"D'
                            'ownload with Wago App" and "Send to WeakAura Companion App" buttons.\n\n[bold green]Support'
-                           'ed URL:[/bold green]\n\thttps://addons.wago.io/addons/\[addon_name] [bold white]|[/bold whi'
-                           'te] wa:\[addon_name]\n\thttps://www.wowinterface.com/downloads/\[addon_name] [bold white]|['
-                           '/bold white] wowi:\[addon_id]\n\thttps://github.com/\[username]/\[repository_name] [bold wh'
-                           'ite]|[/bold white] gh:\[username]/\[repository_name]\n\tElvUI [bold white]|[/bold white] Tu'
-                           'kui\n\t' + self.parse_custom_addons(), highlight=False)
+                           'ed URL:[/bold green]\n\thttps://addons.wago.io/addons/\\[addon_name] [bold white]|[/bold wh'
+                           'ite] wa:\\[addon_name]\n\thttps://www.wowinterface.com/downloads/\\[addon_name] [bold white'
+                           ']|[/bold white] wowi:\\[addon_id]\n\thttps://github.com/\\[username]/\\[repository_name] [b'
+                           'old white]|[/bold white] gh:\\[username]/\\[repository_name]\n\tElvUI [bold white]|[/bold w'
+                           'hite] Tukui\n\t' + self.parse_custom_addons(), highlight=False)
 
     def c_exit(self, _):
         sys.exit(0)

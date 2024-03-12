@@ -26,7 +26,7 @@ def markdown_unmark_element(element, stream=None):
 
 class BaseParser:
     def __init__(self):
-        self.urlParser = re.compile('/([a-zA-Z0-9_-]+)/(\d+)')
+        self.urlParser = re.compile('/([a-zA-Z0-9_-]+)/(\\d+)')
         self.list = {}
         self.ignored = {}
         self.data = {'slugs': [], 'stash': []}
@@ -147,8 +147,8 @@ class WagoUpdater:
                 stash = f'        ["{entry["slug"]}"] = {{\n          name = [=[{entry["name"]}]=],\n          author' \
                         f' = [=[{entry["username"]}]=],\n          encoded = [=[{raw}]=],\n          wagoVersion = [=' \
                         f'[{entry["version"]}]=],\n          wagoSemver = [=[{entry["versionString"]}]=],\n          ' \
-                        f'source = [=[Wago]=],\n          logo = [=[Interface\AddOns\CurseBreakerCompanion\LogoWA.tga' \
-                        f']=],\n          versionNote = [=[]=],\n        }}' \
+                        f'source = [=[Wago]=],\n          logo = [=[Interface\\AddOns\\CurseBreakerCompanion\\LogoWA.' \
+                        f'tga]=],\n          versionNote = [=[]=],\n        }}' \
                         f',\n'
                 if entry['type'] == 'WEAKAURA':
                     wa.data['stash'].append(stash)
@@ -173,8 +173,8 @@ class WagoUpdater:
         slug = f'        ["{entry["slug"]}"] = {{\n          name = [=[{entry["name"]}]=],\n          author = [=[' \
                f'{entry["username"]}]=],\n          encoded = [=[{raw}]=],\n          wagoVersion = [=[' \
                f'{entry["version"]}]=],\n          wagoSemver = [=[{entry["versionString"]}]=],\n          source = [' \
-               f'=[Wago]=],\n          logo = [=[Interface\AddOns\CurseBreakerCompanion\LogoWA.tga]=],\n          ver' \
-               f'sionNote = [=[{self.parse_changelog(entry)}]=],\n' \
+               f'=[Wago]=],\n          logo = [=[Interface\\AddOns\\CurseBreakerCompanion\\LogoWA.tga]=],\n          ' \
+               f'versionNote = [=[{self.parse_changelog(entry)}]=],\n' \
                f'        }},\n'
         addon.data['slugs'].append(slug)
 
