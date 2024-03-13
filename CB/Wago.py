@@ -63,19 +63,18 @@ class PlaterParser(BaseParser):
 
     def parse_storage_internal(self, data):
         for script in data:
-            if data[script]['url']:
-                search = self.urlParser.search(data[script]['url'])
-                if (search is not None and search.group(1) and search.group(2) and
-                        'ignoreWagoUpdate' not in data[script]):
-                    if 'skipWagoUpdate' in data[script]:
-                        self.ignored[search.group(1)] = int(data[script]['skipWagoUpdate'])
+            if script['url']:
+                search = self.urlParser.search(script['url'])
+                if search is not None and search.group(1) and search.group(2) and 'ignoreWagoUpdate' not in script:
+                    if 'skipWagoUpdate' in script:
+                        self.ignored[search.group(1)] = int(script['skipWagoUpdate'])
                     self.list[search.group(1)] = int(search.group(2))
 
     def parse_storage(self):
         with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/Plater.lua'), 'r', encoding='utf-8',
                   errors='ignore') as file:
-            data = file.read().replace('PlaterDB = {', '{', 1).rsplit('PlaterLanguage = {', 1)[0]
-        platerdata = loads(data)
+            data = file.read()
+        platerdata = loads(re.search(r'PlaterDB = {\n.*?}\n', data, re.DOTALL).group().replace('PlaterDB = {', '{', 1))
         for profile in platerdata['profiles']:
             if data := platerdata['profiles'][profile]['script_data']:
                 self.parse_storage_internal(data)
