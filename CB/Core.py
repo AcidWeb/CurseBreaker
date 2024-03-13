@@ -55,8 +55,8 @@ class Core:
             with open(self.configPath, 'r') as f:
                 try:
                     self.config = json.load(f)
-                except (StopIteration, UnicodeDecodeError, json.JSONDecodeError):
-                    raise RuntimeError
+                except (StopIteration, UnicodeDecodeError, json.JSONDecodeError) as e:
+                    raise RuntimeError from e
         else:
             self.config = {'Addons': [],
                            'WAStash': [],
@@ -83,69 +83,70 @@ class Core:
             json.dump(self.config, outfile, sort_keys=True, indent=4, separators=(',', ': '))
 
     def update_config(self):
-        if 'Version' not in self.config.keys() or self.config['Version'] != __version__:
-            urlupdate = {'elvui-classic': 'elvui', 'elvui-classic:dev': 'elvui:dev', 'tukui-classic': 'tukui',
-                         'sle:dev': 'shadow&light:dev', 'elvui:beta': 'elvui:dev'}
-            # 4.0.0
-            if 'WACompanionVersion' in self.config and os.path.isdir(Path('Interface/AddOns/WeakAurasCompanion')):
-                shutil.rmtree(Path('Interface/AddOns/WeakAurasCompanion'), ignore_errors=True)
-            for addon in self.config['Addons']:
-                # 1.1.0
-                if 'Checksums' not in addon.keys():
-                    checksums = {}
-                    for directory in addon['Directories']:
-                        checksums[directory] = dirhash(self.path / directory)
-                    addon['Checksums'] = checksums
-                # 1.1.1
-                if addon['Version'] is None:
-                    addon['Version'] = '1'
-                # 2.2.0, 3.9.4, 3.12.0
-                if addon['URL'].lower() in urlupdate:
-                    addon['URL'] = urlupdate[addon['URL'].lower()]
-                # 2.4.0
-                if addon['Name'] == 'TukUI':
-                    addon['Name'] = 'Tukui'
-                    addon['URL'] = 'Tukui'
-                # 2.7.3
-                addon['Directories'] = list(filter(None, set(addon['Directories'])))
-                # 3.0.2
-                if addon['URL'].endswith('/'):
-                    addon['URL'] = addon['URL'][:-1]
-                # 3.3.0
-                if 'Development' in addon.keys() and isinstance(addon['Development'], bool):
-                    addon['Development'] = 1
-                # 4.3.0
-                if addon['URL'].startswith('https://www.tukui.org/classic-tbc-addons.php?id='):
-                    addon['URL'] = addon['URL'].replace('https://www.tukui.org/classic-tbc-addons.php?id=',
-                                                        'https://www.tukui.org/classic-wotlk-addons.php?id=')
-            for add in [['2.1.0', 'WAUsername', ''],
-                        ['2.2.0', 'WAAccountName', ''],
-                        ['2.2.0', 'WAAPIKey', ''],
-                        ['2.2.0', 'WACompanionVersion', 0],
-                        ['2.8.0', 'IgnoreClientVersion', {}],
-                        ['3.0.1', 'CFCacheTimestamp', 0],
-                        ['3.1.10', 'CFCacheCloudFlare', {}],
-                        ['3.7.0', 'CompactMode', False],
-                        ['3.10.0', 'AutoUpdate', True],
-                        ['3.12.0', 'ShowAuthors', True],
-                        ['3.16.0', 'IgnoreDependencies', {}],
-                        ['3.18.0', 'WAStash', []],
-                        ['3.20.0', 'GHAPIKey', ''],
-                        ['4.0.0', 'WAAAPIKey', ''],
-                        ['4.0.0', 'CBCompanionVersion', 0],
-                        ['4.2.0', 'ShowSources', False]]:
-                if add[1] not in self.config.keys():
-                    self.config[add[1]] = add[2]
-            for delete in [['1.3.0', 'URLCache'],
-                           ['3.0.1', 'CurseCache'],
-                           ['4.0.0', 'CFCacheCloudFlare'],
-                           ['4.0.0', 'CFCacheTimestamp'],
-                           ['4.0.0', 'IgnoreDependencies'],
-                           ['4.0.0', 'WACompanionVersion']]:
-                if delete[1] in self.config.keys():
-                    self.config.pop(delete[1], None)
-            self.config['Version'] = __version__
-            self.save_config()
+        if 'Version' in self.config.keys() and self.config['Version'] == __version__:
+            return
+        urlupdate = {'elvui-classic': 'elvui', 'elvui-classic:dev': 'elvui:dev', 'tukui-classic': 'tukui',
+                     'sle:dev': 'shadow&light:dev', 'elvui:beta': 'elvui:dev'}
+        # 4.0.0
+        if 'WACompanionVersion' in self.config and os.path.isdir(Path('Interface/AddOns/WeakAurasCompanion')):
+            shutil.rmtree(Path('Interface/AddOns/WeakAurasCompanion'), ignore_errors=True)
+        for addon in self.config['Addons']:
+            # 1.1.0
+            if 'Checksums' not in addon.keys():
+                checksums = {}
+                for directory in addon['Directories']:
+                    checksums[directory] = dirhash(self.path / directory)
+                addon['Checksums'] = checksums
+            # 1.1.1
+            if addon['Version'] is None:
+                addon['Version'] = '1'
+            # 2.2.0, 3.9.4, 3.12.0
+            if addon['URL'].lower() in urlupdate:
+                addon['URL'] = urlupdate[addon['URL'].lower()]
+            # 2.4.0
+            if addon['Name'] == 'TukUI':
+                addon['Name'] = 'Tukui'
+                addon['URL'] = 'Tukui'
+            # 2.7.3
+            addon['Directories'] = list(filter(None, set(addon['Directories'])))
+            # 3.0.2
+            if addon['URL'].endswith('/'):
+                addon['URL'] = addon['URL'][:-1]
+            # 3.3.0
+            if 'Development' in addon.keys() and isinstance(addon['Development'], bool):
+                addon['Development'] = 1
+            # 4.3.0
+            if addon['URL'].startswith('https://www.tukui.org/classic-tbc-addons.php?id='):
+                addon['URL'] = addon['URL'].replace('https://www.tukui.org/classic-tbc-addons.php?id=',
+                                                    'https://www.tukui.org/classic-wotlk-addons.php?id=')
+        for add in [['2.1.0', 'WAUsername', ''],
+                    ['2.2.0', 'WAAccountName', ''],
+                    ['2.2.0', 'WAAPIKey', ''],
+                    ['2.2.0', 'WACompanionVersion', 0],
+                    ['2.8.0', 'IgnoreClientVersion', {}],
+                    ['3.0.1', 'CFCacheTimestamp', 0],
+                    ['3.1.10', 'CFCacheCloudFlare', {}],
+                    ['3.7.0', 'CompactMode', False],
+                    ['3.10.0', 'AutoUpdate', True],
+                    ['3.12.0', 'ShowAuthors', True],
+                    ['3.16.0', 'IgnoreDependencies', {}],
+                    ['3.18.0', 'WAStash', []],
+                    ['3.20.0', 'GHAPIKey', ''],
+                    ['4.0.0', 'WAAAPIKey', ''],
+                    ['4.0.0', 'CBCompanionVersion', 0],
+                    ['4.2.0', 'ShowSources', False]]:
+            if add[1] not in self.config.keys():
+                self.config[add[1]] = add[2]
+        for delete in [['1.3.0', 'URLCache'],
+                       ['3.0.1', 'CurseCache'],
+                       ['4.0.0', 'CFCacheCloudFlare'],
+                       ['4.0.0', 'CFCacheTimestamp'],
+                       ['4.0.0', 'IgnoreDependencies'],
+                       ['4.0.0', 'WACompanionVersion']]:
+            if delete[1] in self.config.keys():
+                self.config.pop(delete[1], None)
+        self.config['Version'] = __version__
+        self.save_config()
 
     def check_if_installed(self, url):
         for addon in self.config['Addons']:
@@ -158,12 +159,8 @@ class Core:
                 return addon
 
     def check_if_dev(self, url):
-        addon = self.check_if_installed(url)
-        if addon:
-            if 'Development' in addon.keys():
-                return addon['Development']
-            else:
-                return 0
+        if addon := self.check_if_installed(url):
+            return addon['Development'] if 'Development' in addon.keys() else 0
         else:
             return 0
 
@@ -172,8 +169,7 @@ class Core:
         found = set()
         for addon in self.config['Addons']:
             directories = directories + addon['Directories']
-        dupes = [x for x in directories if x in found or found.add(x)]
-        if len(dupes) > 0:
+        if dupes := [x for x in directories if x in found or found.add(x)]:
             addons = []
             for addon in self.config['Addons']:
                 if set(addon['Directories']).intersection(dupes):
@@ -184,20 +180,13 @@ class Core:
             return False
 
     def check_if_blocked(self, addon):
-        if addon:
-            if 'Block' in addon.keys():
-                return True
-            else:
-                return False
-        else:
-            return False
+        return bool(addon and 'Block' in addon.keys())
 
     def check_if_dev_global(self):
         for addon in self.config['Addons']:
             if addon['URL'].startswith('https://addons.wago.io/addons/') and 'Development' in addon.keys():
                 return addon['Development']
-        else:
-            return 0
+        return 0
 
     def cleanup(self, directories):
         if len(directories) > 0:
@@ -247,6 +236,26 @@ class Core:
         else:
             return '?', None
 
+    def parse_new_addon(self, ignore, url):
+        if ignore:
+            self.config['IgnoreClientVersion'][url] = True
+        new = self.parse_url(url)
+        new.get_addon()
+        if addon := self.check_if_installed_dirs(new.directories):
+            return False, addon['Name'], addon['Version']
+        self.cleanup(new.directories)
+        new.install(self.path)
+        checksums = {}
+        for directory in new.directories:
+            checksums[directory] = dirhash(self.path / directory)
+        self.config['Addons'].append({'Name': new.name,
+                                      'URL': url,
+                                      'Version': new.currentVersion,
+                                      'Directories': new.directories,
+                                      'Checksums': checksums})
+        self.save_config()
+        return True, new.name, new.currentVersion
+
     def add_addon(self, url, ignore):
         if url.endswith(':'):
             raise NotImplementedError('Provided URL is not supported.')
@@ -260,33 +269,13 @@ class Core:
             url = f'https://github.com/{url[3:]}'
         if url.endswith('/'):
             url = url[:-1]
-        addon = self.check_if_installed(url)
-        if not addon:
-            if ignore:
-                self.config['IgnoreClientVersion'][url] = True
-            new = self.parse_url(url)
-            new.get_addon()
-            addon = self.check_if_installed_dirs(new.directories)
-            if addon:
-                return False, addon['Name'], addon['Version']
-            self.cleanup(new.directories)
-            new.install(self.path)
-            checksums = {}
-            for directory in new.directories:
-                checksums[directory] = dirhash(self.path / directory)
-            self.config['Addons'].append({'Name': new.name,
-                                          'URL': url,
-                                          'Version': new.currentVersion,
-                                          'Directories': new.directories,
-                                          'Checksums': checksums
-                                          })
-            self.save_config()
-            return True, new.name, new.currentVersion
-        return False, addon['Name'], addon['Version']
+        if addon := self.check_if_installed(url):
+            return False, addon['Name'], addon['Version']
+        else:
+            return self.parse_new_addon(ignore, url)
 
     def del_addon(self, url, keep):
-        old = self.check_if_installed(url)
-        if old:
+        if old := self.check_if_installed(url):
             if not keep:
                 self.cleanup(old['Directories'])
             self.config['IgnoreClientVersion'].pop(old['URL'], None)
@@ -296,41 +285,40 @@ class Core:
             return old['Name'], old['Version']
         return False, False
 
-    def update_addon(self, url, update, force):
-        old = self.check_if_installed(url)
-        if old:
-            dev = self.check_if_dev(old['URL'])
-            blocked = self.check_if_blocked(old)
-            oldversion = old['Version']
-            if old['URL'] in self.checksumCache:
-                modified = self.checksumCache[old['URL']]
-            else:
-                modified = self.check_checksum(old, False)
-            if old['URL'].startswith(('https://www.townlong-yak.com/addons/',
-                                      'https://www.curseforge.com/wow/addons/',
-                                      'https://www.tukui.org/')):
-                return old['Name'], [], oldversion, oldversion, None, modified, blocked, 'Unsupported', old['URL'], \
+    def update_addon(self, url, update, force):  # sourcery skip: extract-method
+        if not (old := self.check_if_installed(url)):
+            return url, [], False, False, None, False, False, '?', None, None, None
+        dev = self.check_if_dev(old['URL'])
+        blocked = self.check_if_blocked(old)
+        oldversion = old['Version']
+        if old['URL'] in self.checksumCache:
+            modified = self.checksumCache[old['URL']]
+        else:
+            modified = self.check_checksum(old, False)
+        if old['URL'].startswith(('https://www.townlong-yak.com/addons/',
+                                  'https://www.curseforge.com/wow/addons/',
+                                  'https://www.tukui.org/')):
+            return old['Name'], [], oldversion, oldversion, None, modified, blocked, 'Unsupported', old['URL'], \
                        None, dev
-            source, sourceurl = self.parse_url_source(old['URL'])
-            new = self.parse_url(old['URL'])
-            if force or (new.currentVersion != old['Version'] and update and not modified and not blocked):
-                new.get_addon()
-                self.cleanup(old['Directories'])
-                new.install(self.path)
-                checksums = {}
-                for directory in new.directories:
-                    checksums[directory] = dirhash(self.path / directory)
-                old['Name'] = new.name
-                old['Version'] = new.currentVersion
-                old['Directories'] = new.directories
-                old['Checksums'] = checksums
-                self.save_config()
-            if force:
-                modified = False
-                blocked = False
-            return new.name, new.author, new.currentVersion, oldversion, new.uiVersion, modified, blocked, source, \
-                sourceurl, new.changelogUrl, dev
-        return url, [], False, False, None, False, False, '?', None, None, None
+        source, sourceurl = self.parse_url_source(old['URL'])
+        new = self.parse_url(old['URL'])
+        if force or (new.currentVersion != old['Version'] and update and not modified and not blocked):
+            new.get_addon()
+            self.cleanup(old['Directories'])
+            new.install(self.path)
+            checksums = {}
+            for directory in new.directories:
+                checksums[directory] = dirhash(self.path / directory)
+            old['Name'] = new.name
+            old['Version'] = new.currentVersion
+            old['Directories'] = new.directories
+            old['Checksums'] = checksums
+            self.save_config()
+        if force:
+            modified = False
+            blocked = False
+        return new.name, new.author, new.currentVersion, oldversion, new.uiVersion, modified, blocked, source, \
+            sourceurl, new.changelogUrl, dev
 
     def check_checksum(self, addon, bulk=True):
         checksums = {}
@@ -370,8 +358,7 @@ class Core:
             self.save_config()
             return state
         else:
-            addon = self.check_if_installed(url)
-            if addon:
+            if addon := self.check_if_installed(url):
                 if addon['URL'].startswith('https://addons.wago.io/addons/'):
                     state = self.check_if_dev(url)
                     if state == 0:
@@ -387,8 +374,7 @@ class Core:
             return None
 
     def block_toggle(self, url):
-        addon = self.check_if_installed(url)
-        if addon:
+        if addon := self.check_if_installed(url):
             state = self.check_if_blocked(addon)
             if state:
                 addon.pop('Block', None)
@@ -409,17 +395,15 @@ class Core:
             return self.config[option]
 
     def backup_check(self):
-        if self.config['Backup']['Enabled']:
-            if not os.path.isfile(Path('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip')):
-                listofbackups = [Path(x) for x in glob.glob('WTF-Backup/*.zip')]
-                if len(listofbackups) == self.config['Backup']['Number']:
-                    oldest_file = min(listofbackups, key=os.path.getctime)
-                    os.remove(oldest_file)
-                return True
-            else:
-                return False
-        else:
+        if not self.config['Backup']['Enabled']:
             return False
+        if os.path.isfile(Path('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip')):
+            return False
+        listofbackups = [Path(x) for x in glob.glob('WTF-Backup/*.zip')]
+        if len(listofbackups) == self.config['Backup']['Number']:
+            oldest_file = min(listofbackups, key=os.path.getctime)
+            os.remove(oldest_file)
+        return True
 
     def backup_wtf(self, console):
         archive = Path('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip')
@@ -433,7 +417,7 @@ class Core:
         zipf = zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED)
         filecount = 0
         for _, _, files in os.walk('WTF/', topdown=True, followlinks=True):
-            files = [f for f in files if not f[0] == '.']
+            files = [f for f in files if f[0] != '.']
             filecount += len(files)
         if filecount > 0:
             with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|', auto_refresh=False,
@@ -441,7 +425,7 @@ class Core:
                 task = progress.add_task('', total=filecount)
                 while not progress.finished:
                     for root, _, files in os.walk('WTF/', topdown=True, followlinks=True):
-                        files = [f for f in files if not f[0] == '.']
+                        files = [f for f in files if f[0] != '.']
                         for f in files:
                             zipf.write(Path(root, f))
                             progress.update(task, advance=1, refresh=True)
@@ -482,15 +466,12 @@ class Core:
             raise RuntimeError('This feature only searches the database of the Wago Addons. '
                                'So their API key is required.\n'
                                'It can be obtained here: https://addons.wago.io/patreon')
-        results = []
         payload = requests.get(f'https://addons.wago.io/api/external/addons/_search?query={quote_plus(query.strip())}'
                                f'&game_version={self.clientType}', headers=HEADERS,
                                auth=APIAuth('Bearer', self.config['WAAAPIKey']), timeout=5)
         self.parse_wagoaddons_error(payload.status_code)
         payload = payload.json()
-        for result in payload['data']:
-            results.append(result['website_url'])
-        return results
+        return [result['website_url'] for result in payload['data']]
 
     def create_reg(self):
         with open('CurseBreaker.reg', 'w') as outfile:
@@ -527,7 +508,7 @@ class Core:
         return f'https://addons.wago.io/addons/{payload["slug"]}'
 
     # TODO Improve the check when Wago Addons API will be will be expanded
-    def bulk_check(self, addons):
+    def bulk_check(self, addons):  # sourcery skip: extract-method
         ids_wowi = []
         ids_wago = []
         for addon in addons:
@@ -536,13 +517,13 @@ class Core:
             elif addon['URL'].startswith('https://addons.wago.io/addons/') and \
                     addon['URL'] not in self.config['IgnoreClientVersion'].keys():
                 ids_wago.append({'slug': addon['URL'].replace('https://addons.wago.io/addons/', ''), 'id': ''})
-        if len(ids_wowi) > 0:
+        if ids_wowi:
             payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{",".join(ids_wowi)}.json',
                                    headers=HEADERS, timeout=5).json()
             if 'ERROR' not in payload:
                 for addon in payload:
                     self.wowiCache[str(addon['UID'])] = addon
-        if len(ids_wago) > 0 and self.config['WAAAPIKey'] != '':
+        if ids_wago and self.config['WAAAPIKey'] != '':
             if not self.wagoIdCache:
                 self.wagoIdCache = requests.get(f'https://addons.wago.io/api/data/slugs?game_version={self.clientType}',
                                                 headers=HEADERS, timeout=5)
@@ -569,16 +550,15 @@ class Core:
             self.tukuiCache = requests.get('https://api.tukui.org/v1/addons', headers=HEADERS, timeout=5).json()
 
     def detect_accounts(self):
-        if os.path.isdir(Path('WTF/Account')):
-            accounts = os.listdir(Path('WTF/Account'))
-            accounts_processed = []
-            for account in accounts:
-                if os.path.isfile(Path(f'WTF/Account/{account}/SavedVariables/WeakAuras.lua')) or \
-                        os.path.isfile(Path(f'WTF/Account/{account}/SavedVariables/Plater.lua')):
-                    accounts_processed.append(account)
-            return accounts_processed
-        else:
+        if not os.path.isdir(Path('WTF/Account')):
             return []
+        accounts = os.listdir(Path('WTF/Account'))
+        accounts_processed = []
+        for account in accounts:
+            if os.path.isfile(Path(f'WTF/Account/{account}/SavedVariables/WeakAuras.lua')) or \
+                        os.path.isfile(Path(f'WTF/Account/{account}/SavedVariables/Plater.lua')):
+                accounts_processed.append(account)
+        return accounts_processed
 
     def detect_addons(self):
         if self.config['WAAAPIKey'] == '':
@@ -649,7 +629,7 @@ class Core:
             raise RuntimeError('Provided Wago Addons API key is expired. Please acquire a new one.')
         elif code == 423:
             raise RuntimeError('Provided Wago Addons API key is blocked. Please acquire a new one.')
-        elif code == 429 or code == 500:
+        elif code in [429, 500]:
             raise RuntimeError('Temporary Wago Addons API issue. Please try later.')
 
 

@@ -16,8 +16,8 @@ class WoWInterfaceAddon:
             try:
                 self.payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{project}.json',
                                             headers=HEADERS, timeout=5).json()
-            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-                raise RuntimeError(f'{url}\nWoWInterface API failed to respond.')
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                raise RuntimeError(f'{url}\nWoWInterface API failed to respond.') from e
             if 'ERROR' in self.payload:
                 raise RuntimeError(f'{url}\nThis might be a temporary error or this project is not supported '
                                    f'by WoWInterface API.')
@@ -39,7 +39,7 @@ class WoWInterfaceAddon:
             if '/' not in os.path.dirname(file):
                 self.directories.append(os.path.dirname(file))
         self.directories = list(filter(None, set(self.directories)))
-        if len(self.directories) == 0:
+        if not self.directories:
             raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
 
     def install(self, path):

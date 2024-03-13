@@ -47,11 +47,11 @@ class WeakAuraParser(BaseParser):
         for wa in wadata['displays']:
             if 'url' in wadata['displays'][wa]:
                 search = self.urlParser.search(wadata['displays'][wa]['url'])
-                if search is not None and search.group(1) and search.group(2):
-                    if 'parent' not in wadata['displays'][wa] and 'ignoreWagoUpdate' not in wadata['displays'][wa]:
-                        if 'skipWagoUpdate' in wadata['displays'][wa]:
-                            self.ignored[search.group(1)] = int(wadata['displays'][wa]['skipWagoUpdate'])
-                        self.list[search.group(1)] = int(search.group(2))
+                if (search is not None and search.group(1) and search.group(2) and
+                        'parent' not in wadata['displays'][wa] and 'ignoreWagoUpdate' not in wadata['displays'][wa]):
+                    if 'skipWagoUpdate' in wadata['displays'][wa]:
+                        self.ignored[search.group(1)] = int(wadata['displays'][wa]['skipWagoUpdate'])
+                    self.list[search.group(1)] = int(search.group(2))
 
 
 class PlaterParser(BaseParser):
@@ -65,11 +65,11 @@ class PlaterParser(BaseParser):
         for script in data:
             if data[script]['url']:
                 search = self.urlParser.search(data[script]['url'])
-                if search is not None and search.group(1) and search.group(2):
-                    if 'ignoreWagoUpdate' not in data[script]:
-                        if 'skipWagoUpdate' in data[script]:
-                            self.ignored[search.group(1)] = int(data[script]['skipWagoUpdate'])
-                        self.list[search.group(1)] = int(search.group(2))
+                if (search is not None and search.group(1) and search.group(2) and
+                        'ignoreWagoUpdate' not in data[script]):
+                    if 'skipWagoUpdate' in data[script]:
+                        self.ignored[search.group(1)] = int(data[script]['skipWagoUpdate'])
+                    self.list[search.group(1)] = int(search.group(2))
 
     def parse_storage(self):
         with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/Plater.lua'), 'r', encoding='utf-8',
@@ -77,20 +77,17 @@ class PlaterParser(BaseParser):
             data = file.read().replace('PlaterDB = {', '{', 1).rsplit('PlaterLanguage = {', 1)[0]
         platerdata = loads(data)
         for profile in platerdata['profiles']:
-            data = platerdata['profiles'][profile]['script_data']
-            if data:
+            if data := platerdata['profiles'][profile]['script_data']:
                 self.parse_storage_internal(data)
-            data = platerdata['profiles'][profile]['hook_data']
-            if data:
+            if data := platerdata['profiles'][profile]['hook_data']:
                 self.parse_storage_internal(data)
-            data = platerdata['profiles'][profile]['url']
-            if data:
+            if data := platerdata['profiles'][profile]['url']:
                 search = self.urlParser.search(data)
-                if search is not None and search.group(1) and search.group(2):
-                    if 'ignoreWagoUpdate' not in platerdata['profiles'][profile]:
-                        if 'skipWagoUpdate' in platerdata['profiles'][profile]:
-                            self.ignored[search.group(1)] = int(platerdata['profiles'][profile]['skipWagoUpdate'])
-                        self.list[search.group(1)] = int(search.group(2))
+                if (search is not None and search.group(1) and search.group(2) and
+                        'ignoreWagoUpdate' not in platerdata['profiles'][profile]):
+                    if 'skipWagoUpdate' in platerdata['profiles'][profile]:
+                        self.ignored[search.group(1)] = int(platerdata['profiles'][profile]['skipWagoUpdate'])
+                    self.list[search.group(1)] = int(search.group(2))
 
 
 class WagoUpdater:
@@ -122,10 +119,10 @@ class WagoUpdater:
                 raise RuntimeError
             for entry in payload:
                 if 'username' in entry and (not self.username or entry['username'] != self.username):
-                    if not entry['slug'] in addon.list:
+                    if entry['slug'] not in addon.list:
                         entry['slug'] = entry['_id']
-                    if entry['version'] > addon.list[entry['slug']] and (not entry['slug'] in addon.ignored or
-                       (entry['slug'] in addon.ignored and entry['version'] != addon.ignored[entry['slug']])):
+                    if (entry['version'] > addon.list[entry['slug']] and
+                            (entry['slug'] not in addon.ignored or entry['version'] != addon.ignored[entry['slug']])):
                         output[0].append([entry['name'], entry['url']])
                         self.update_entry(entry, addon)
                     elif 'name' in entry:
@@ -138,7 +135,7 @@ class WagoUpdater:
     def check_stash(self, wa, plater):
         output = []
         if len(self.stash) > 0:
-            payload = requests.post(f'https://data.wago.io/api/check/',
+            payload = requests.post('https://data.wago.io/api/check/',
                                     json={'ids': self.stash}, headers=self.headers, timeout=15).json()
             for entry in payload:
                 output.append(entry['name'])
@@ -158,13 +155,12 @@ class WagoUpdater:
         return output
 
     def parse_changelog(self, entry):
-        if 'changelog' in entry and 'text' in entry['changelog']:
-            if entry['changelog']['format'] == 'bbcode':
-                return self.bbParser.strip(entry['changelog']['text'])
-            elif entry['changelog']['format'] == 'markdown':
-                return self.mdParser.convert(entry['changelog']['text'])
-        else:
+        if 'changelog' not in entry or 'text' not in entry['changelog']:
             return ''
+        if entry['changelog']['format'] == 'bbcode':
+            return self.bbParser.strip(entry['changelog']['text'])
+        elif entry['changelog']['format'] == 'markdown':
+            return self.mdParser.convert(entry['changelog']['text'])
 
     @retry('Failed to parse Wago data. Wago might be down or provided API key is incorrect.')
     def update_entry(self, entry, addon):

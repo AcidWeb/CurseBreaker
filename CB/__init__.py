@@ -21,15 +21,13 @@ def retry(custom_error=False):
                     continue
                 else:
                     return result
+            if custom_error:
+                raise RuntimeError(custom_error) from None
+            elif description:
+                raise RuntimeError(f'Failed to parse addon data: {description}') from None
             else:
-                if custom_error:
-                    raise RuntimeError(custom_error) from None
-                else:
-                    if description:
-                        raise RuntimeError(f'Failed to parse addon data: {description}') from None
-                    else:
-                        raise RuntimeError('Unknown error during parsing addon data. '
-                                           'There may be some issue with the website.') from None
+                raise RuntimeError('Unknown error during parsing addon data. '
+                                   'There may be some issue with the website.') from None
         return inner
     return wraps
 

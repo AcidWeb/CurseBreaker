@@ -1,0 +1,18 @@
+version: '1'
+
+ignore:
+- CB\SLPP.py
+
+rule_settings:
+  enable:
+  - default
+  disable:
+  - list-comprehension
+  - dict-comprehension
+  - for-append-to-extend
+  - use-next
+  rule_types:
+  - refactoring
+  - suggestion
+  - comment
+  python_version: '3.12'

@@ -15,6 +15,7 @@ bbcode = "*"
 rich = "*"
 
 [dev-packages]
+sourcery = "*"
 
 [requires]
 python_version = "3.12"

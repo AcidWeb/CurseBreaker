@@ -30,7 +30,7 @@ class TukuiAddon:
             if '/' not in os.path.dirname(file):
                 self.directories.append(os.path.dirname(file))
         self.directories = list(filter(None, set(self.directories)))
-        if len(self.directories) == 0:
+        if not self.directories:
             raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
 
     def install(self, path):

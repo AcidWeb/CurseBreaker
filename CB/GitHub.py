@@ -16,8 +16,8 @@ class GitHubAddon:
         try:
             self.payload = requests.get(f'https://api.github.com/repos/{project}/releases', headers=HEADERS,
                                         auth=APIAuth('token', self.apiKey), timeout=10)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-            raise RuntimeError(f'{project}\nGitHub API failed to respond.')
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+            raise RuntimeError(f'{project}\nGitHub API failed to respond.') from e
         if self.payload.status_code == 401:
             raise RuntimeError(f'{project}\nIncorrect or expired GitHub API personal access token.')
         elif self.payload.status_code == 403:
@@ -33,7 +33,7 @@ class GitHubAddon:
                     self.payloads.append(release)
                     if len(self.payloads) > 14:
                         break
-            if len(self.payloads) == 0:
+            if not self.payloads:
                 raise RuntimeError(f'{url}\nThis integration supports only the projects that provide packaged'
                                    f' releases.')
         self.name = project.split('/')[1]
@@ -55,7 +55,10 @@ class GitHubAddon:
         self.currentVersion = self.payloads[self.releaseDepth]['tag_name'] or self.payloads[self.releaseDepth]['name']
         self.changelogUrl = self.payloads[self.releaseDepth]['html_url']
         self.parse_metadata()
-        self.get_latest_package()
+        if self.metadata:
+            self.get_latest_package()
+        else:
+            self.get_latest_package_nometa()
 
     def parse_metadata(self):
         for release in self.payloads[self.releaseDepth]['assets']:
@@ -68,60 +71,60 @@ class GitHubAddon:
             self.metadata = None
 
     def get_latest_package(self):
-        if self.metadata:
-            targetfile = None
-            if self.clientType == 'classic':
-                targetflavor = 'classic'
-            elif self.clientType == 'wotlk':
-                targetflavor = 'wrath'
-            else:
-                targetflavor = 'mainline'
-            for release in self.metadata['releases']:
-                if not release['nolib']:
-                    for flavor in release['metadata']:
-                        if flavor['flavor'] == targetflavor:
-                            targetfile = release['filename']
-                            if 'name' in release:
-                                self.name = release['name']
-                                self.currentVersion = release['version']
-                            break
-                    if targetfile:
-                        break
-            if not targetfile:
-                self.releaseDepth += 1
-                self.parse()
-            for release in self.payloads[self.releaseDepth]['assets']:
-                if release['name'] and release['name'] == targetfile:
-                    self.downloadUrl = release['url']
-                    break
-            if not self.downloadUrl:
-                self.releaseDepth += 1
-                self.parse()
+        targetfile = None
+        if self.clientType == 'classic':
+            targetflavor = 'classic'
+        elif self.clientType == 'wotlk':
+            targetflavor = 'wrath'
         else:
-            latest = None
-            latestclassic = None
-            latestwrath = None
-            for release in self.payloads[self.releaseDepth]['assets']:
-                if release['name'] and release['name'].endswith('.zip') and '-nolib' not in release['name'] \
-                        and release['content_type'] in ['application/x-zip-compressed', 'application/zip', 'raw']:
-                    if not latest and not release['name'].endswith(('-classic.zip', '-bc.zip', '-bcc.zip',
-                                                                    '-wrath.zip')):
-                        latest = release['url']
-                    elif not latestclassic and release['name'].endswith('-classic.zip'):
-                        latestclassic = release['url']
-                    elif not latestwrath and release['name'].endswith('-wrath.zip'):
-                        latestwrath = release['url']
-            if (self.clientType == 'retail' and latest) \
-                    or (self.clientType == 'classic' and latest and not latestclassic) \
-                    or (self.clientType == 'wotlk' and latest and not latestwrath):
-                self.downloadUrl = latest
-            elif self.clientType == 'classic' and latestclassic:
-                self.downloadUrl = latestclassic
-            elif self.clientType == 'wotlk' and latestwrath:
-                self.downloadUrl = latestwrath
-            else:
-                self.releaseDepth += 1
-                self.parse()
+            targetflavor = 'mainline'
+        for release in self.metadata['releases']:
+            if not release['nolib']:
+                for flavor in release['metadata']:
+                    if flavor['flavor'] == targetflavor:
+                        targetfile = release['filename']
+                        if 'name' in release:
+                            self.name = release['name']
+                            self.currentVersion = release['version']
+                        break
+                if targetfile:
+                    break
+        if not targetfile:
+            self.releaseDepth += 1
+            self.parse()
+        for release in self.payloads[self.releaseDepth]['assets']:
+            if release['name'] and release['name'] == targetfile:
+                self.downloadUrl = release['url']
+                break
+        if not self.downloadUrl:
+            self.releaseDepth += 1
+            self.parse()
+
+    def get_latest_package_nometa(self):
+        latest = None
+        latestclassic = None
+        latestwrath = None
+        for release in self.payloads[self.releaseDepth]['assets']:
+            if release['name'] and release['name'].endswith('.zip') and '-nolib' not in release['name'] \
+                    and release['content_type'] in ['application/x-zip-compressed', 'application/zip', 'raw']:
+                if not latest and not release['name'].endswith(('-classic.zip', '-bc.zip', '-bcc.zip',
+                                                                '-wrath.zip')):
+                    latest = release['url']
+                elif not latestclassic and release['name'].endswith('-classic.zip'):
+                    latestclassic = release['url']
+                elif not latestwrath and release['name'].endswith('-wrath.zip'):
+                    latestwrath = release['url']
+        if (self.clientType == 'retail' and latest) \
+                or (self.clientType == 'classic' and latest and not latestclassic) \
+                or (self.clientType == 'wotlk' and latest and not latestwrath):
+            self.downloadUrl = latest
+        elif self.clientType == 'classic' and latestclassic:
+            self.downloadUrl = latestclassic
+        elif self.clientType == 'wotlk' and latestwrath:
+            self.downloadUrl = latestwrath
+        else:
+            self.releaseDepth += 1
+            self.parse()
 
     @retry()
     def get_addon(self):
@@ -134,7 +137,7 @@ class GitHubAddon:
             if '/' not in os.path.dirname(file):
                 self.directories.append(os.path.dirname(file))
         self.directories = list(filter(None, set(self.directories)))
-        if len(self.directories) == 0:
+        if not self.directories:
             raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
 
     def install(self, path):
@@ -151,8 +154,8 @@ class GitHubAddonRaw:
         try:
             self.payload = requests.get(f'https://api.github.com/repos/{repository}/branches/{self.branch}',
                                         headers=HEADERS, auth=APIAuth('token', self.apiKey), timeout=10)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-            raise RuntimeError(f'{self.name}\nGitHub API failed to respond.')
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+            raise RuntimeError(f'{self.name}\nGitHub API failed to respond.') from e
         if self.payload.status_code == 401:
             raise RuntimeError(f'{self.name}\nIncorrect or expired GitHub API personal access token.')
         elif self.payload.status_code == 403:

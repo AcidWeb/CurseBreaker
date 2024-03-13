@@ -1,3 +1,6 @@
+import sys
+sys.path.append(SPECPATH)
+
 import platform
 from CB import __version__ as version
 

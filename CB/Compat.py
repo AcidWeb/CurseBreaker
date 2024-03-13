@@ -26,13 +26,13 @@ class KBHit:
         if system != 'Windows':
             termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.old_term)
 
-    def getch(self):
+    def getch(self):  # sourcery skip: assign-if-exp
         if system == 'Windows':
             return msvcrt.getch()
         else:
             return sys.stdin.read(1)
 
-    def kbhit(self):
+    def kbhit(self):  # sourcery skip: remove-unnecessary-else
         if system == 'Windows':
             return msvcrt.kbhit()
         else:

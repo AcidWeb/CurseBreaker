@@ -27,23 +27,23 @@ class WagoAddonsAddon:
                 self.payload = requests.get(f'https://addons.wago.io/api/external/addons/{project}?game_version='
                                             f'{self.clientType}', headers=HEADERS, auth=APIAuth('Bearer', self.apiKey),
                                             timeout=5)
-            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-                raise RuntimeError(f'{url}\nWago Addons API failed to respond.')
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                raise RuntimeError(f'{url}\nWago Addons API failed to respond.') from e
             if self.payload.status_code == 401:
                 raise RuntimeError(f'{url}\nWago Addons API key is missing or incorrect.')
             elif self.payload.status_code == 403:
                 raise RuntimeError(f'{url}\nProvided Wago Addons API key is expired. Please acquire a new one.')
             elif self.payload.status_code == 423:
                 raise RuntimeError(f'{url}\nProvided Wago Addons API key is blocked. Please acquire a new one.')
-            elif self.payload.status_code == 404 or self.payload.status_code == 429 or self.payload.status_code == 500:
+            elif self.payload.status_code in {404, 429, 500}:
                 raise RuntimeError(f'{url}\nThis might be a temporary issue with Wago Addons API or the project was '
                                    f'removed/renamed. In this case, uninstall it (and reinstall if it still exists) '
                                    f'to fix this issue.')
             else:
                 try:
                     self.payload = self.payload.json()
-                except (StopIteration, JSONDecodeError):
-                    raise RuntimeError(f'{url}\nThis might be a temporary issue with Wago Addons API.')
+                except (StopIteration, JSONDecodeError) as e:
+                    raise RuntimeError(f'{url}\nThis might be a temporary issue with Wago Addons API.') from e
         self.name = self.payload['display_name'].strip().strip('\u200b')
         self.allowDev = allowdev
         self.downloadUrl = None
@@ -81,7 +81,7 @@ class WagoAddonsAddon:
             else:
                 release.pop('alpha', None)
                 release.pop('beta', None)
-        if len(release) == 0:
+        if not release:
             raise RuntimeError(f'{self.name}.\nFailed to find release for your client version.')
         release = self.payload['recent_release'][max(release, key=release.get)]
 
@@ -98,7 +98,7 @@ class WagoAddonsAddon:
             if '/' not in os.path.dirname(file):
                 self.directories.append(os.path.dirname(file))
         self.directories = list(filter(None, set(self.directories)))
-        if len(self.directories) == 0:
+        if not self.directories:
             raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
 
     def install(self, path):
