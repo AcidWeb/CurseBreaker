@@ -63,7 +63,7 @@ class PlaterParser(BaseParser):
 
     def parse_storage_internal(self, data):
         for script in data:
-            if script['url']:
+            if 'url' in script:
                 search = self.urlParser.search(script['url'])
                 if search is not None and search.group(1) and search.group(2) and 'ignoreWagoUpdate' not in script:
                     if 'skipWagoUpdate' in script:
@@ -80,8 +80,8 @@ class PlaterParser(BaseParser):
                 self.parse_storage_internal(data)
             if data := platerdata['profiles'][profile]['hook_data']:
                 self.parse_storage_internal(data)
-            if data := platerdata['profiles'][profile]['url']:
-                search = self.urlParser.search(data)
+            if 'url' in platerdata['profiles'][profile]:
+                search = self.urlParser.search(platerdata['profiles'][profile]['url'])
                 if (search is not None and search.group(1) and search.group(2) and
                         'ignoreWagoUpdate' not in platerdata['profiles'][profile]):
                     if 'skipWagoUpdate' in platerdata['profiles'][profile]:
