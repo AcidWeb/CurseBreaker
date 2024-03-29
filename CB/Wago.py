@@ -198,7 +198,7 @@ class WagoUpdater:
         target_path = Path('Interface/AddOns/CurseBreakerCompanion')
         if not os.path.isdir(target_path) or force:
             shutil.rmtree(target_path, ignore_errors=True)
-            ZipFile(BytesIO(requests.get('https://storage.googleapis.com/cursebreaker/CurseBreakerCompanion.zip',
+            ZipFile(BytesIO(requests.get('https://cursebreaker.acidweb.dev/CurseBreakerCompanion.zip',
                                          headers=HEADERS, timeout=5).content)).extractall(target_path / '..')
 
     def update(self):

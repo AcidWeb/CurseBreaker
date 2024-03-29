@@ -252,7 +252,7 @@ class TUI:
             sys.exit(1)
 
     def motd_parser(self):
-        payload = requests.get('https://storage.googleapis.com/cursebreaker/motd', headers=HEADERS, timeout=5)
+        payload = requests.get('https://cursebreaker.acidweb.dev/motd', headers=HEADERS, timeout=5)
         if payload.status_code == 200:
             self.console.print(Panel(payload.content.decode('UTF-8'), title=':warning: MOTD :warning:',
                                      border_style='red'))
@@ -348,8 +348,8 @@ class TUI:
             # noinspection PyBroadException
             try:
                 self.slugs = json.load(gzip.open(io.BytesIO(
-                    requests.get('https://storage.googleapis.com/cursebreaker/slugs-v2.json.gz',
-                                 headers=HEADERS, timeout=5).content)))
+                    requests.get('https://cursebreaker.acidweb.dev/slugs-v2.json.gz', headers=HEADERS,
+                                 timeout=5).content)))
             except Exception:
                 self.slugs = {'wa': [], 'wowi': [], 'gh': []}
         addons = []

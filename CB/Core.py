@@ -40,8 +40,8 @@ class Core:
     def init_master_config(self):
         try:
             self.masterConfig = json.load(gzip.open(io.BytesIO(
-                requests.get('https://storage.googleapis.com/cursebreaker/config-v2.json.gz',
-                             headers=HEADERS, timeout=5).content)))
+                requests.get('https://cursebreaker.acidweb.dev/config-v2.json.gz', headers=HEADERS,
+                             timeout=5).content)))
         except Exception:
             raise RuntimeError('Failed to fetch the master config file. '
                                'Check your connectivity to Google Cloud.') from None
