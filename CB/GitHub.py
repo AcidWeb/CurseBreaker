@@ -166,7 +166,11 @@ class GitHubAddonRaw:
         else:
             self.payload = self.payload.json()
         self.shorthPath = repository.split('/')[1]
-        self.downloadUrl = f'https://github.com/{repository}/archive/refs/heads/{self.branch}.zip'
+        if self.name in ['ElvUI']:
+            self.downloadUrl = f'https://api.tukui.org/v1/download/dev/{self.name.lower()}/{self.branch}'
+        else:
+            self.downloadUrl = f'https://github.com/{repository}/archive/refs/heads/{self.branch}.zip'
+
         self.changelogUrl = f'https://github.com/{repository}/commits/{self.branch}'
         self.currentVersion = self.payload['commit']['sha'][:7]
         self.uiVersion = None
