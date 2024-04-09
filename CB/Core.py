@@ -402,7 +402,7 @@ class Core:
         if os.path.isfile(Path('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip')):
             return False
         listofbackups = [Path(x) for x in glob.glob('WTF-Backup/*.zip')]
-        if len(listofbackups) == self.config['Backup']['Number']:
+        if len(listofbackups) >= self.config['Backup']['Number']:
             oldest_file = min(listofbackups, key=os.path.getctime)
             os.remove(oldest_file)
         return True
