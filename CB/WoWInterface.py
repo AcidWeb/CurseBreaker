@@ -1,22 +1,22 @@
 import os
 import io
 import re
+import httpx
 import zipfile
-import requests
-from . import retry, HEADERS
+from . import retry
 
 
 class WoWInterfaceAddon:
     @retry()
-    def __init__(self, url, checkcache):
+    def __init__(self, url, checkcache, http):
         project = re.findall(r'\d+', url)[0]
+        self.http = http
         if project in checkcache:
             self.payload = checkcache[project]
         else:
             try:
-                self.payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{project}.json',
-                                            headers=HEADERS, timeout=5).json()
-            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                self.payload = self.http.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{project}.json').json()
+            except httpx.RequestError as e:
                 raise RuntimeError(f'{url}\nWoWInterface API failed to respond.') from e
             if 'ERROR' in self.payload:
                 raise RuntimeError(f'{url}\nThis might be a temporary error or this project is not supported '
@@ -34,7 +34,7 @@ class WoWInterfaceAddon:
 
     @retry()
     def get_addon(self):
-        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS, timeout=5).content))
+        self.archive = zipfile.ZipFile(io.BytesIO(self.http.get(self.downloadUrl).content))
         for file in self.archive.namelist():
             if '/' not in os.path.dirname(file):
                 self.directories.append(os.path.dirname(file))

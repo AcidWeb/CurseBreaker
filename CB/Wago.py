@@ -1,14 +1,14 @@
 import os
 import re
+import httpx
 import shutil
 import bbcode
-import requests
 from io import StringIO, BytesIO
 from pathlib import Path
 from zipfile import ZipFile
 from markdown import Markdown
 from urllib.parse import quote_plus
-from . import retry, HEADERS
+from . import retry
 from .SLPP import loads
 
 
@@ -22,6 +22,16 @@ def markdown_unmark_element(element, stream=None):
     if element.tail:
         stream.write(element.tail)
     return stream.getvalue()
+
+
+class WagoAPIAuth(httpx.Auth):
+    def __init__(self, token):
+        self.token = token
+
+    def auth_flow(self, request):
+        if self.token != '':
+            request.headers['api-key'] = self.token
+        yield request
 
 
 class BaseParser:
@@ -91,7 +101,9 @@ class PlaterParser(BaseParser):
 
 class WagoUpdater:
     # noinspection PyTypeChecker
-    def __init__(self, config):
+    def __init__(self, config, http):
+        self.http = http
+        self.auth = WagoAPIAuth(config['WAAPIKey'])
         self.username = config['WAUsername']
         self.accountName = config['WAAccountName']
         self.stash = config['WAStash']
@@ -99,11 +111,8 @@ class WagoUpdater:
         Markdown.output_formats['plain'] = markdown_unmark_element
         self.mdParser = Markdown(output_format='plain')
         self.mdParser.stripTopLevelTags = False
-        self.headers = HEADERS
         if self.username == 'DISABLED':
             self.username = ''
-        if config['WAAPIKey'] != '':
-            self.headers = dict({'api-key': config['WAAPIKey']}, **HEADERS)
 
     def clean_string(self, s):
         return s.replace('"', '\\"')
@@ -112,8 +121,8 @@ class WagoUpdater:
     def check_updates(self, addon):
         output = [[], []]
         if len(addon.list) > 0:
-            payload = requests.post(f'https://data.wago.io/api/check/{addon.api}',
-                                    json={'ids': list(addon.list.keys())}, headers=self.headers, timeout=15).json()
+            payload = self.http.post(f'https://data.wago.io/api/check/{addon.api}',
+                                     json={'ids': list(addon.list.keys())}, auth=self.auth, timeout=15).json()
             if 'error' in payload or 'msg' in payload:
                 raise RuntimeError
             for entry in payload:
@@ -134,12 +143,12 @@ class WagoUpdater:
     def check_stash(self, wa, plater):
         output = []
         if len(self.stash) > 0:
-            payload = requests.post('https://data.wago.io/api/check/',
-                                    json={'ids': self.stash}, headers=self.headers, timeout=15).json()
+            payload = self.http.post('https://data.wago.io/api/check/',
+                                     json={'ids': self.stash}, auth=self.auth, timeout=15).json()
             for entry in payload:
                 output.append(entry['name'])
-                raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}',
-                                   headers=self.headers, timeout=15).text
+                raw = self.http.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}',
+                                    auth=self.auth, timeout=15).text
                 stash = f'        ["{entry["slug"]}"] = {{\n          name = [=[{entry["name"]}]=],\n          author' \
                         f' = [=[{entry["username"]}]=],\n          encoded = [=[{raw}]=],\n          wagoVersion = [=' \
                         f'[{entry["version"]}]=],\n          wagoSemver = [=[{entry["versionString"]}]=],\n          ' \
@@ -163,8 +172,8 @@ class WagoUpdater:
 
     @retry('Failed to parse Wago data. Wago might be down or provided API key is incorrect.')
     def update_entry(self, entry, addon):
-        raw = requests.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}', headers=self.headers,
-                           timeout=15).text
+        raw = self.http.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}',
+                            auth=self.auth, timeout=15).text
         slug = f'        ["{entry["slug"]}"] = {{\n          name = [=[{entry["name"]}]=],\n          author = [=[' \
                f'{entry["username"]}]=],\n          encoded = [=[{raw}]=],\n          wagoVersion = [=[' \
                f'{entry["version"]}]=],\n          wagoSemver = [=[{entry["versionString"]}]=],\n          source = [' \
@@ -198,8 +207,8 @@ class WagoUpdater:
         target_path = Path('Interface/AddOns/CurseBreakerCompanion')
         if not os.path.isdir(target_path) or force:
             shutil.rmtree(target_path, ignore_errors=True)
-            ZipFile(BytesIO(requests.get('https://cursebreaker.acidweb.dev/CurseBreakerCompanion.zip',
-                                         headers=HEADERS, timeout=5).content)).extractall(target_path / '..')
+            ZipFile(BytesIO(self.http.get('https://cursebreaker.acidweb.dev/CurseBreakerCompanion.zip')
+                            .content)).extractall(target_path / '..')
 
     def update(self):
         if os.path.isdir(Path('Interface/AddOns/WeakAuras')) and os.path.isfile(

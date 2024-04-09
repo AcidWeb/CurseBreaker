@@ -1,18 +1,19 @@
 import os
 import io
+import httpx
 import zipfile
-import requests
 from datetime import datetime
 from dateutil import parser
 from dateutil.tz import tzutc
 from json import JSONDecodeError
-from . import retry, HEADERS, APIAuth
+from . import retry, APIAuth
 
 
 class WagoAddonsAddon:
     @retry()
-    def __init__(self, url, checkcache, clienttype, allowdev, apikey):
+    def __init__(self, url, checkcache, clienttype, allowdev, apikey, http):
         project = url.replace('https://addons.wago.io/addons/', '')
+        self.http = http
         self.apiKey = apikey
         self.clientType = clienttype
         if project in checkcache:
@@ -24,10 +25,9 @@ class WagoAddonsAddon:
                 raise RuntimeError(f'{url}\nThe Wago Addons API key is missing. '
                                    f'It can be obtained here: https://addons.wago.io/patreon')
             try:
-                self.payload = requests.get(f'https://addons.wago.io/api/external/addons/{project}?game_version='
-                                            f'{self.clientType}', headers=HEADERS, auth=APIAuth('Bearer', self.apiKey),
-                                            timeout=5)
-            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                self.payload = self.http.get(f'https://addons.wago.io/api/external/addons/{project}?game_version='
+                                             f'{self.clientType}', auth=APIAuth('Bearer', self.apiKey))
+            except httpx.RequestError as e:
                 raise RuntimeError(f'{url}\nWago Addons API failed to respond.') from e
             if self.payload.status_code == 401:
                 raise RuntimeError(f'{url}\nWago Addons API key is missing or incorrect.')
@@ -92,8 +92,8 @@ class WagoAddonsAddon:
 
     @retry()
     def get_addon(self):
-        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS,
-                                                               auth=APIAuth('Bearer', self.apiKey), timeout=5).content))
+        self.archive = zipfile.ZipFile(io.BytesIO(self.http.get(self.downloadUrl, auth=APIAuth('Bearer', self.apiKey))
+                                                  .content))
         for file in self.archive.namelist():
             if '/' not in os.path.dirname(file):
                 self.directories.append(os.path.dirname(file))

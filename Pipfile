@@ -9,9 +9,9 @@ prompt-toolkit = "*"
 checksumdir = {ref = "replace-pkg-resources", git = "git+https://github.com/idahogray/checksumdir"}
 packaging = "*"
 pyperclip = "*"
-requests = "*"
 markdown = "*"
 bbcode = "*"
+httpx = {extras = ["http2", "brotli"]}
 rich = "*"
 
 [dev-packages]

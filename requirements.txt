@@ -3,7 +3,7 @@ prompt-toolkit
 checksumdir @ git+https://github.com/idahogray/checksumdir@replace-pkg-resources
 packaging
 pyperclip
-requests
 markdown
 bbcode
+httpx[http2,brotli]
 rich

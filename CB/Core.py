@@ -5,18 +5,18 @@ import sys
 import json
 import gzip
 import glob
+import httpx
 import shutil
 import zipfile
 import hashlib
 import datetime
-import requests
 from pathlib import Path
 from collections import Counter
 from checksumdir import dirhash
 from multiprocessing import Pool
 from urllib.parse import quote_plus
 from rich.progress import Progress, BarColumn
-from . import retry, HEADERS, APIAuth, __version__
+from . import retry, APIAuth, __version__
 from .Tukui import TukuiAddon
 from .GitHub import GitHubAddon, GitHubAddonRaw
 from .WagoAddons import WagoAddonsAddon
@@ -25,6 +25,8 @@ from .WoWInterface import WoWInterfaceAddon
 
 class Core:
     def __init__(self):
+        self.http = httpx.Client(headers={'User-Agent': f'CurseBreaker/{__version__}'},
+                                 timeout=10, http2=True, follow_redirects=True)
         self.path = Path('Interface/AddOns')
         self.configPath = Path('WTF/CurseBreaker.json')
         self.clientType = None
@@ -40,8 +42,7 @@ class Core:
     def init_master_config(self):
         try:
             self.masterConfig = json.load(gzip.open(io.BytesIO(
-                requests.get('https://cursebreaker.acidweb.dev/config-v2.json.gz', headers=HEADERS,
-                             timeout=5).content)))
+                self.http.get('https://cursebreaker.acidweb.dev/config-v2.json.gz').content)))
         except Exception:
             raise RuntimeError('Failed to fetch the master config file. '
                                'Check your connectivity to Google Cloud.') from None
@@ -196,21 +197,22 @@ class Core:
     def parse_url(self, url):
         if url.startswith('https://addons.wago.io/addons/'):
             return WagoAddonsAddon(url, self.wagoCache, 'retail' if url in self.config['IgnoreClientVersion'].keys()
-                                   else self.clientType, self.check_if_dev(url), self.config['WAAAPIKey'])
+                                   else self.clientType, self.check_if_dev(url), self.config['WAAAPIKey'], self.http)
         elif url.startswith('https://www.wowinterface.com/downloads/'):
-            return WoWInterfaceAddon(url, self.wowiCache)
+            return WoWInterfaceAddon(url, self.wowiCache, self.http)
         elif url.startswith('https://github.com/'):
-            return GitHubAddon(url, self.clientType, self.config['GHAPIKey'])
+            return GitHubAddon(url, self.clientType, self.config['GHAPIKey'], self.http)
         elif url.lower() == 'elvui':
             self.bulk_tukui_check()
             return TukuiAddon('elvui', self.tukuiCache,
-                              self.masterConfig['ClientTypes'][self.clientType]['CurrentVersion'])
+                              self.masterConfig['ClientTypes'][self.clientType]['CurrentVersion'], self.http)
         elif url.lower() == 'tukui':
             self.bulk_tukui_check()
             return TukuiAddon('tukui', self.tukuiCache,
-                              self.masterConfig['ClientTypes'][self.clientType]['CurrentVersion'])
+                              self.masterConfig['ClientTypes'][self.clientType]['CurrentVersion'], self.http)
         elif url.lower() in self.masterConfig['CustomRepository'].keys():
-            return GitHubAddonRaw(self.masterConfig['CustomRepository'][url.lower()], self.config['GHAPIKey'])
+            return GitHubAddonRaw(self.masterConfig['CustomRepository'][url.lower()], self.config['GHAPIKey'],
+                                  self.http)
         elif url.startswith('https://www.townlong-yak.com/addons/'):
             raise RuntimeError(f'{url}\nTownlong Yak is no longer supported by this application.')
         elif url.startswith('https://www.curseforge.com/wow/addons/'):
@@ -466,9 +468,8 @@ class Core:
             raise RuntimeError('This feature only searches the database of the Wago Addons. '
                                'So their API key is required.\n'
                                'It can be obtained here: https://addons.wago.io/patreon')
-        payload = requests.get(f'https://addons.wago.io/api/external/addons/_search?query={quote_plus(query.strip())}'
-                               f'&game_version={self.clientType}', headers=HEADERS,
-                               auth=APIAuth('Bearer', self.config['WAAAPIKey']), timeout=5)
+        payload = self.http.get(f'https://addons.wago.io/api/external/addons/_search?query={quote_plus(query.strip())}&'
+                                f'game_version={self.clientType}', auth=APIAuth('Bearer', self.config['WAAAPIKey']))
         self.parse_wagoaddons_error(payload.status_code)
         payload = payload.json()
         return [result['website_url'] for result in payload['data']]
@@ -500,9 +501,8 @@ class Core:
             raise RuntimeError('This feature requires the Wago Addons API key.\n'
                                'It can be obtained here: https://addons.wago.io/patreon')
         projectid = url.replace('wago-app://addons/', '')
-        payload = requests.get(f'https://addons.wago.io/api/external/addons/{projectid}?game_version='
-                               f'{self.clientType}', headers=HEADERS,
-                               auth=APIAuth('Bearer', self.config['WAAAPIKey']), timeout=5)
+        payload = self.http.get(f'https://addons.wago.io/api/external/addons/{projectid}?game_version='
+                                f'{self.clientType}', auth=APIAuth('Bearer', self.config['WAAAPIKey']))
         self.parse_wagoaddons_error(payload.status_code)
         payload = payload.json()
         return f'https://addons.wago.io/addons/{payload["slug"]}'
@@ -518,24 +518,23 @@ class Core:
                     addon['URL'] not in self.config['IgnoreClientVersion'].keys():
                 ids_wago.append({'slug': addon['URL'].replace('https://addons.wago.io/addons/', ''), 'id': ''})
         if ids_wowi:
-            payload = requests.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{",".join(ids_wowi)}.json',
-                                   headers=HEADERS, timeout=5).json()
+            payload = self.http.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{",".join(ids_wowi)}.json').json()
             if 'ERROR' not in payload:
                 for addon in payload:
                     self.wowiCache[str(addon['UID'])] = addon
         if ids_wago and self.config['WAAAPIKey'] != '':
             if not self.wagoIdCache:
-                self.wagoIdCache = requests.get(f'https://addons.wago.io/api/data/slugs?game_version={self.clientType}',
-                                                headers=HEADERS, timeout=5)
+                self.wagoIdCache = self.http.get(f'https://addons.wago.io/api/data/slugs?game_version='
+                                                 f'{self.clientType}')
                 self.parse_wagoaddons_error(self.wagoIdCache.status_code)
                 self.wagoIdCache = self.wagoIdCache.json()
             for addon in ids_wago:
                 if addon['slug'] in self.wagoIdCache['addons']:
                     addon['id'] = self.wagoIdCache['addons'][addon['slug']]['id']
-            payload = requests.post(f'https://addons.wago.io/api/external/addons/_recents?game_version='
-                                    f'{self.clientType}',
-                                    json={'addons': [addon["id"] for addon in ids_wago if addon["id"] != ""]},
-                                    headers=HEADERS, auth=APIAuth('Bearer', self.config['WAAAPIKey']), timeout=5)
+            payload = self.http.post(f'https://addons.wago.io/api/external/addons/_recents?game_version='
+                                     f'{self.clientType}',
+                                     json={'addons': [addon["id"] for addon in ids_wago if addon["id"] != ""]},
+                                     auth=APIAuth('Bearer', self.config['WAAAPIKey']))
             self.parse_wagoaddons_error(payload.status_code)
             payload = payload.json()
             for addonid in payload['addons']:
@@ -547,7 +546,7 @@ class Core:
     @retry(custom_error='Failed to parse Tukui API data')
     def bulk_tukui_check(self):
         if not self.tukuiCache:
-            self.tukuiCache = requests.get('https://api.tukui.org/v1/addons', headers=HEADERS, timeout=5).json()
+            self.tukuiCache = self.http.get('https://api.tukui.org/v1/addons').json()
 
     def detect_accounts(self):
         if not os.path.isdir(Path('WTF/Account')):
@@ -584,9 +583,8 @@ class Core:
                 directoryhash = WagoAddonsHasher(self.path / directory)
                 output.append({'name': directory, 'hash': directoryhash.get_hash()})
 
-        payload = requests.post(f'https://addons.wago.io/api/external/addons/_match?game_version='
-                                f'{self.clientType}', json={'addons': output}, headers=HEADERS,
-                                auth=APIAuth('Bearer', self.config['WAAAPIKey']), timeout=5)
+        payload = self.http.post(f'https://addons.wago.io/api/external/addons/_match?game_version={self.clientType}',
+                                 json={'addons': output}, auth=APIAuth('Bearer', self.config['WAAAPIKey']))
         self.parse_wagoaddons_error(payload.status_code)
         payload = payload.json()
         for addon in payload['addons']:

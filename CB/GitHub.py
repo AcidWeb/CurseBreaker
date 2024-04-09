@@ -1,22 +1,23 @@
 import os
 import io
+import httpx
 import shutil
 import zipfile
-import requests
-from . import retry, HEADERS, APIAuth
+from . import retry, APIAuth
 
 
 # noinspection PyTypeChecker
 class GitHubAddon:
     @retry()
-    def __init__(self, url, clienttype, apikey):
+    def __init__(self, url, clienttype, apikey, http):
         project = url.replace('https://github.com/', '')
+        self.http = http
         self.apiKey = apikey
         self.payloads = []
         try:
-            self.payload = requests.get(f'https://api.github.com/repos/{project}/releases', headers=HEADERS,
-                                        auth=APIAuth('token', self.apiKey), timeout=10)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+            self.payload = self.http.get(f'https://api.github.com/repos/{project}/releases',
+                                         auth=APIAuth('token', self.apiKey))
+        except httpx.RequestError as e:
             raise RuntimeError(f'{project}\nGitHub API failed to respond.') from e
         if self.payload.status_code == 401:
             raise RuntimeError(f'{project}\nIncorrect or expired GitHub API personal access token.')
@@ -63,9 +64,8 @@ class GitHubAddon:
     def parse_metadata(self):
         for release in self.payloads[self.releaseDepth]['assets']:
             if release['name'] and release['name'] == 'release.json':
-                self.metadata = requests.get(release['url'],
-                                             headers=dict({'Accept': 'application/octet-stream'}, **HEADERS),
-                                             auth=APIAuth('token', self.apiKey), timeout=10).json()
+                self.metadata = self.http.get(release['url'], headers={'Accept': 'application/octet-stream'},
+                                              auth=APIAuth('token', self.apiKey)).json()
                 break
         else:
             self.metadata = None
@@ -129,8 +129,8 @@ class GitHubAddon:
     @retry()
     def get_addon(self):
         self.archive = zipfile.ZipFile(io.BytesIO(
-            requests.get(self.downloadUrl, headers=dict({'Accept': 'application/octet-stream'}, **HEADERS),
-                         auth=APIAuth('token', self.apiKey), timeout=10).content))
+            self.http.get(self.downloadUrl, headers={'Accept': 'application/octet-stream'},
+                          auth=APIAuth('token', self.apiKey)).content))
         for file in self.archive.namelist():
             if file.lower().endswith('.toc') and '/' not in file:
                 raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
@@ -146,15 +146,16 @@ class GitHubAddon:
 
 class GitHubAddonRaw:
     @retry()
-    def __init__(self, addon, apikey):
+    def __init__(self, addon, apikey, http):
         repository = addon["Repository"]
+        self.http = http
         self.apiKey = apikey
         self.branch = addon["Branch"]
         self.name = addon["Name"]
         try:
-            self.payload = requests.get(f'https://api.github.com/repos/{repository}/branches/{self.branch}',
-                                        headers=HEADERS, auth=APIAuth('token', self.apiKey), timeout=10)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+            self.payload = self.http.get(f'https://api.github.com/repos/{repository}/branches/{self.branch}',
+                                         auth=APIAuth('token', self.apiKey))
+        except httpx.RequestError as e:
             raise RuntimeError(f'{self.name}\nGitHub API failed to respond.') from e
         if self.payload.status_code == 401:
             raise RuntimeError(f'{self.name}\nIncorrect or expired GitHub API personal access token.')
@@ -180,7 +181,7 @@ class GitHubAddonRaw:
 
     @retry()
     def get_addon(self):
-        self.archive = zipfile.ZipFile(io.BytesIO(requests.get(self.downloadUrl, headers=HEADERS, timeout=10).content))
+        self.archive = zipfile.ZipFile(io.BytesIO(self.http.get(self.downloadUrl).content))
 
     def install(self, path):
         for directory in self.directories:

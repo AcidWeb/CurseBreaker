@@ -1,4 +1,4 @@
-import requests
+import httpx
 from rich.terminal_theme import TerminalTheme
 
 __version__ = '4.6.0'
@@ -32,18 +32,17 @@ def retry(custom_error=False):
     return wraps
 
 
-class APIAuth(requests.auth.AuthBase):
+class APIAuth(httpx.Auth):
     def __init__(self, header, token):
         self.header = header
         self.token = token
 
-    def __call__(self, r):
+    def auth_flow(self, request):
         if self.token != '':
-            r.headers['Authorization'] = f'{self.header} {self.token}'
-        return r
+            request.headers['Authorization'] = f'{self.header} {self.token}'
+        yield request
 
 
-HEADERS = {'User-Agent': f'CurseBreaker/{__version__}'}
 HEADLESS_TERMINAL_THEME = TerminalTheme(
     (0, 0, 0),
     (255, 255, 255),

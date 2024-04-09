@@ -6,10 +6,10 @@ import time
 import gzip
 import glob
 import json
+import httpx
 import random
 import shutil
 import zipfile
-import requests
 import platform
 import pyperclip
 import subprocess
@@ -32,7 +32,7 @@ from prompt_toolkit import PromptSession, HTML
 from prompt_toolkit.shortcuts import confirm
 from prompt_toolkit.completion import WordCompleter, NestedCompleter
 from packaging.version import Version
-from CB import HEADERS, HEADLESS_TERMINAL_THEME, __version__
+from CB import HEADLESS_TERMINAL_THEME, __version__
 from CB.Core import Core
 from CB.Compat import pause, timeout, clear, set_terminal_title, set_terminal_size, KBHit
 from CB.Wago import WagoUpdater
@@ -102,8 +102,7 @@ class TUI:
                 self.c_install(sys.argv[1].strip())
             except Exception as e:
                 self.handle_exception(e)
-            timeout(self.headless)
-            sys.exit(0)
+            self.handle_shutdown()
         # Wago URI Support
         if len(sys.argv) == 2 and sys.argv[1].startswith('weakauras-companion://wago/push/'):
             try:
@@ -113,8 +112,7 @@ class TUI:
                 self.c_wago_update(_, flush=False)
             except Exception as e:
                 self.handle_exception(e)
-            timeout(self.headless)
-            sys.exit(0)
+            self.handle_shutdown()
         # CLI command
         if len(sys.argv) >= 2:
             command = ' '.join(sys.argv[1:]).split(' ', 1)
@@ -125,9 +123,11 @@ class TUI:
                     getattr(self, f'c_{command[0].lower()}')(command[1].strip() if len(command) > 1 else False)
                 except Exception as e:
                     self.handle_exception(e)
+                self.core.http.close()
                 sys.exit(0)
             else:
                 self.console.print('Command not found.')
+                self.core.http.close()
                 sys.exit(0)
         # Addons auto update
         if len(self.core.config['Addons']) > 0 and self.core.config['AutoUpdate']:
@@ -155,6 +155,7 @@ class TUI:
                 self.console.print('')
                 self.print_log()
                 if self.headless:
+                    self.core.http.close()
                     sys.exit(0)
                 else:
                     self.print_author_reminder()
@@ -162,8 +163,10 @@ class TUI:
                                        ' the application.')
                     keypress = self.handle_keypress(0)
                     if not keypress or keypress.lower() not in [b'i', 'i']:
+                        self.core.http.close()
                         sys.exit(0)
         if self.headless:
+            self.core.http.close()
             sys.exit(1)
         self.setup_completer()
         self.print_header()
@@ -188,6 +191,7 @@ class TUI:
             except KeyboardInterrupt:
                 continue
             except EOFError:
+                self.core.http.close()
                 break
             else:
                 command = command.split(' ', 1)
@@ -209,9 +213,8 @@ class TUI:
                 with suppress(PermissionError):
                     os.remove(f'{sys.executable}.old')
             try:
-                payload = requests.get('https://api.github.com/repos/AcidWeb/CurseBreaker/releases/latest',
-                                       headers=HEADERS, timeout=10).json()
-            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+                payload = self.core.http.get('https://api.github.com/repos/AcidWeb/CurseBreaker/releases/latest').json()
+            except httpx.RequestError:
                 return
             if 'name' in payload and 'body' in payload and 'assets' in payload:
                 remoteversion = payload['name']
@@ -226,7 +229,7 @@ class TUI:
                 if url and Version(remoteversion[1:]) > Version(__version__):
                     self.console.print('[green]Updating CurseBreaker...[/green]')
                     shutil.move(sys.executable, f'{sys.executable}.old')
-                    payload = requests.get(url, headers=HEADERS, timeout=10)
+                    payload = self.core.http.get(url)
                     if self.os == 'Darwin':
                         zipfile.ZipFile(io.BytesIO(payload.content)).extractall(path=os.path.dirname(
                             os.path.abspath(sys.executable)))
@@ -240,6 +243,7 @@ class TUI:
                     self.console.print(f'[bold green]Update complete! The application will be restarted now.'
                                        f'[/bold green]\n\n[green]Changelog:[/green]\n{changelog}\n')
                     self.print_log()
+                    self.core.http.close()
                     pause(self.headless)
                     subprocess.call([sys.executable] + sys.argv[1:])
                     sys.exit(0)
@@ -248,11 +252,12 @@ class TUI:
                 shutil.move(f'{sys.executable}.old', sys.executable)
             self.console.print(f'[bold red]Update failed!\n\nReason: {str(e)}[/bold red]\n')
             self.print_log()
+            self.core.http.close()
             pause(self.headless)
             sys.exit(1)
 
     def motd_parser(self):
-        payload = requests.get('https://cursebreaker.acidweb.dev/motd', headers=HEADERS, timeout=5)
+        payload = self.core.http.get('https://cursebreaker.acidweb.dev/motd')
         if payload.status_code == 200:
             self.console.print(Panel(payload.content.decode('UTF-8'), title=':warning: MOTD :warning:',
                                      border_style='red'))
@@ -293,10 +298,15 @@ class TUI:
             kb.set_normal_term()
         return keypress
 
-    def handle_shutdown(self, message):
-        self.console.print(message)
-        pause(self.headless)
-        sys.exit(1)
+    def handle_shutdown(self, message=''):
+        self.core.http.close()
+        if not message:
+            timeout(self.headless)
+            sys.exit(0)
+        else:
+            self.console.print(message)
+            pause(self.headless)
+            sys.exit(1)
 
     def print_header(self):
         if self.headless:
@@ -348,8 +358,7 @@ class TUI:
             # noinspection PyBroadException
             try:
                 self.slugs = json.load(gzip.open(io.BytesIO(
-                    requests.get('https://cursebreaker.acidweb.dev/slugs-v2.json.gz', headers=HEADERS,
-                                 timeout=5).content)))
+                    self.core.http.get('https://cursebreaker.acidweb.dev/slugs-v2.json.gz').content)))
             except Exception:
                 self.slugs = {'wa': [], 'wowi': [], 'gh': []}
         addons = []
@@ -809,7 +818,7 @@ class TUI:
             if flush and len(self.core.config['WAStash']) > 0:
                 self.core.config['WAStash'] = []
                 self.core.save_config()
-            wago = WagoUpdater(self.core.config)
+            wago = WagoUpdater(self.core.config, self.core.http)
             if Version(__version__) >= Version(self.core.masterConfig['ConfigVersion']) and \
                     self.core.masterConfig['CBCompanionVersion'] > self.core.config['CBCompanionVersion']:
                 self.core.config['CBCompanionVersion'] = self.core.masterConfig['CBCompanionVersion']
@@ -947,6 +956,7 @@ class TUI:
                            'hite] Tukui\n\t' + self.parse_custom_addons(), highlight=False)
 
     def c_exit(self, _):
+        self.core.http.close()
         sys.exit(0)
 
 
