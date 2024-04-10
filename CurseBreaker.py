@@ -27,7 +27,6 @@ from rich.console import Console, detect_legacy_windows
 from rich.control import Control
 from rich.progress import Progress, BarColumn
 from rich.traceback import Traceback, install
-from multiprocessing import freeze_support
 from prompt_toolkit import PromptSession, HTML
 from prompt_toolkit.shortcuts import confirm
 from prompt_toolkit.completion import WordCompleter, NestedCompleter
@@ -961,7 +960,6 @@ class TUI:
 
 
 if __name__ == '__main__':
-    freeze_support()
     if clientpath := os.environ.get('CURSEBREAKER_PATH'):
         os.chdir(clientpath)
     elif getattr(sys, 'frozen', False):

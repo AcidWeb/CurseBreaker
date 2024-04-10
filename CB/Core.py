@@ -10,10 +10,10 @@ import shutil
 import zipfile
 import hashlib
 import datetime
+import concurrent.futures
 from pathlib import Path
 from collections import Counter
 from checksumdir import dirhash
-from multiprocessing import Pool
 from urllib.parse import quote_plus
 from rich.progress import Progress, BarColumn
 from . import retry, APIAuth, __version__
@@ -296,7 +296,7 @@ class Core:
         if old['URL'] in self.checksumCache:
             modified = self.checksumCache[old['URL']]
         else:
-            modified = self.check_checksum(old, False)
+            modified = self.check_checksum(old)[1]
         if old['URL'].startswith(('https://www.townlong-yak.com/addons/',
                                   'https://www.curseforge.com/wow/addons/',
                                   'https://www.tukui.org/')):
@@ -322,29 +322,24 @@ class Core:
         return new.name, new.author, new.currentVersion, oldversion, new.uiVersion, modified, blocked, source, \
             sourceurl, new.changelogUrl, dev
 
-    def check_checksum(self, addon, bulk=True):
+    def check_checksum(self, addon, pbar=None):
         checksums = {}
         for directory in addon['Directories']:
             if os.path.isdir(self.path / directory):
                 checksums[directory] = dirhash(self.path / directory)
-        if bulk:
-            return [addon['URL'], len(checksums.items() & addon['Checksums'].items()) != len(addon['Checksums'])]
-        else:
-            return len(checksums.items() & addon['Checksums'].items()) != len(addon['Checksums'])
-
-    def bulk_check_checksum_callback(self, result):
-        self.checksumCache[result[0]] = result[1]
+        if pbar:
+            pbar.update(0, advance=0.5, refresh=True)
+        return addon['URL'], len(checksums.items() & addon['Checksums'].items()) != len(addon['Checksums'])
 
     def bulk_check_checksum(self, addons, pbar):
         self.checksumCache = {}
-        with Pool(processes=min(60, os.cpu_count() or 1)) as pool:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
             workers = []
             for addon in addons:
-                w = pool.apply_async(self.check_checksum, (addon, ), callback=self.bulk_check_checksum_callback)
-                workers.append(w)
-            for w in workers:
-                w.wait()
-                pbar.update(0, advance=0.5, refresh=True)
+                workers.append(executor.submit(self.check_checksum, addon, pbar))
+            for future in concurrent.futures.as_completed(workers):
+                output = future.result()
+                self.checksumCache[output[0]] = output[1]
 
     def dev_toggle(self, url):
         if url == 'global':
