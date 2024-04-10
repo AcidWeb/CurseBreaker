@@ -1,7 +1,7 @@
 import httpx
 from rich.terminal_theme import TerminalTheme
 
-__version__ = '4.6.0'
+__version__ = '4.7.0'
 __license__ = 'GPLv3'
 __copyright__ = '2019-2024, Paweł Jastrzębski <pawelj@iosphe.re>'
 __docformat__ = 'restructuredtext en'

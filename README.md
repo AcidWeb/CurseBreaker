@@ -4,7 +4,7 @@
 
 TUI/CLI addon updater for World of Warcraft.
 
-![Screenshot](https://i.imgur.com/A3DH1xf.png)
+![Screenshot](https://i.imgur.com/XI7vORk.png)
 
 ## DOWNLOAD
 The latest release can be found [here](https://github.com/AcidWeb/CurseBreaker/releases/latest).\
@@ -18,7 +18,7 @@ Read the instructions on the top of the screen.
 Already installed addons will not be recognized by **CurseBreaker** and they need to be reinstalled.\
 This process can be partially automated by using the `import` command.
 
-_Retail_, _WotLK Classic_ and _Classic_ clients are supported. The client version is detected automatically.\
+_Retail_, _Cataclysm Classic_ and _Classic_ clients are supported. The client version is detected automatically.\
 By default **CurseBreaker** will create backups of the entire `WTF` directory.
 
 ## TIPS & TRICKS
@@ -26,7 +26,7 @@ By default **CurseBreaker** will create backups of the entire `WTF` directory.
 - Many of the fields are links if used terminal emulator supports them. 
 - On Windows command `uri_integration` can be used to enable integration with the Wago Addons and Wago page.
 - Most of the commands support the space-separated list of addons.
-- `install` command have an optional `-i` flag that can be used to disable the client version check.
+- `install` command has an optional `-i` flag that can be used to disable the client version check.
 - Environment variable `CURSEBREAKER_PATH` can be used to set the custom location of WoW client.
 - The application can be run in non-interactive mode by providing commands directly as a parameter.
 - When the application is started with a `headless` parameter entire addon and Wago upgrade process plus WTF backup should be executed in the background. Log file _CurseBreaker.html_ will be created in the same directory as the application.
@@ -41,17 +41,17 @@ By default **CurseBreaker** will create backups of the entire `WTF` directory.
 
 ## WAGO ADDONS SUPPORT
 To use Wago Addons as addon source user needs to provide a personal API key. It is a paid feature.\
-The key can be obtained [here](https://addons.wago.io/patreon) and needs to be added to the application configuration by using `set wago_addons_api` command.
+The key can be obtained [here](https://addons.wago.io/patreon) and needs to be added to the application configuration by using the `set wago_addons_api` command.
 
 ## WEAKAURAS SUPPORT
-**CurseBreaker** by default will try to update all detected WeakAuras and Plater profiles/scripts. Process work the same as WeakAuras Companion.\
+**CurseBreaker** by default will try to update all detected WeakAuras and Plater profiles/scripts. The process works the same as WeakAuras Companion.\
 All updates will still need to be applied in-game in the WeakAuras/Plater option menu.\
 Command `toggle wago` can be used to set a single author name that will be ignored during the update.\
-Additionally Wago API key can be set with `set wa_api` command so non-public entries will also be upgradeable.
+Additionally Wago API key can be set with the `set wa_api` command so non-public entries will also be upgradeable.
 
 ## GITHUB SUPPORT
 When GitHub is frequently used as a source for addons there is the possibility of reaching a query limit.\
-If that occurs user must get a [personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token). And then add it to the application configuration by using `set gh_api` command.
+If that occurs user must get a [personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token). Then add it to the application configuration by using the `set gh_api` command.
 
 ## KNOWN ISSUES
 - Using WoWInterface projects that provide multiple addon releases ([example](https://www.wowinterface.com/downloads/info5086-BigWigsBossmods)) will always install a retail version of the addon. It can't be fixed as WoWInterface API doesn't support this type of project.
@@ -59,6 +59,6 @@ If that occurs user must get a [personal access token](https://docs.github.com/e
 - WoWInterface projects that need to install files outside the `Interface\AddOns` directory are not supported.
 
 ## COPYRIGHT
-**CurseBreaker** is a free software/open source, and is distributed under the GNU General Public License v3.
+**CurseBreaker** is a free software/open source and is distributed under the GNU General Public License v3.
 
 Icon made by [Nikita Golubev](https://www.flaticon.com/authors/nikita-golubev) is licensed by [CC 3.0 BY](http://creativecommons.org/licenses/by/3.0/).

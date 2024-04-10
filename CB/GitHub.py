@@ -72,12 +72,7 @@ class GitHubAddon:
 
     def get_latest_package(self):
         targetfile = None
-        if self.clientType == 'classic':
-            targetflavor = 'classic'
-        elif self.clientType == 'wotlk':
-            targetflavor = 'wrath'
-        else:
-            targetflavor = 'mainline'
+        targetflavor = 'mainline' if self.clientType == 'retail' else self.clientType
         for release in self.metadata['releases']:
             if not release['nolib']:
                 for flavor in release['metadata']:
@@ -103,25 +98,25 @@ class GitHubAddon:
     def get_latest_package_nometa(self):
         latest = None
         latestclassic = None
-        latestwrath = None
+        latestcata = None
         for release in self.payloads[self.releaseDepth]['assets']:
             if release['name'] and release['name'].endswith('.zip') and '-nolib' not in release['name'] \
                     and release['content_type'] in ['application/x-zip-compressed', 'application/zip', 'raw']:
-                if not latest and not release['name'].endswith(('-classic.zip', '-bc.zip', '-bcc.zip',
-                                                                '-wrath.zip')):
+                if not latest and not release['name'].endswith(('-classic.zip', '-bc.zip', '-bcc.zip', '-wrath.zip',
+                                                                '-cata.zip')):
                     latest = release['url']
                 elif not latestclassic and release['name'].endswith('-classic.zip'):
                     latestclassic = release['url']
-                elif not latestwrath and release['name'].endswith('-wrath.zip'):
-                    latestwrath = release['url']
+                elif not latestcata and release['name'].endswith('-cata.zip'):
+                    latestcata = release['url']
         if (self.clientType == 'retail' and latest) \
                 or (self.clientType == 'classic' and latest and not latestclassic) \
-                or (self.clientType == 'wotlk' and latest and not latestwrath):
+                or (self.clientType == 'cata' and latest and not latestcata):
             self.downloadUrl = latest
         elif self.clientType == 'classic' and latestclassic:
             self.downloadUrl = latestclassic
-        elif self.clientType == 'wotlk' and latestwrath:
-            self.downloadUrl = latestwrath
+        elif self.clientType == 'cata' and latestcata:
+            self.downloadUrl = latestcata
         else:
             self.releaseDepth += 1
             self.parse()
