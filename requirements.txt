@@ -1,5 +1,6 @@
 python-dateutil
 prompt-toolkit
+rich_pixels
 checksumdir @ git+https://github.com/idahogray/checksumdir@replace-pkg-resources
 packaging
 pyperclip

@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 python-dateutil = "*"
 prompt-toolkit = "*"
+rich_pixels = "*"
 checksumdir = {ref = "replace-pkg-resources", git = "git+https://github.com/idahogray/checksumdir"}
 packaging = "*"
 pyperclip = "*"

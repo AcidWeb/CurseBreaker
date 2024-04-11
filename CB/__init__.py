@@ -1,5 +1,4 @@
 import httpx
-from rich.terminal_theme import TerminalTheme
 
 __version__ = '4.7.0'
 __license__ = 'GPLv3'
@@ -41,29 +40,3 @@ class APIAuth(httpx.Auth):
         if self.token != '':
             request.headers['Authorization'] = f'{self.header} {self.token}'
         yield request
-
-
-HEADLESS_TERMINAL_THEME = TerminalTheme(
-    (0, 0, 0),
-    (255, 255, 255),
-    [
-        (0, 0, 0),
-        (128, 0, 0),
-        (0, 128, 0),
-        (128, 128, 0),
-        (0, 0, 128),
-        (128, 0, 128),
-        (0, 128, 128),
-        (192, 192, 192),
-    ],
-    [
-        (128, 128, 128),
-        (255, 0, 0),
-        (0, 255, 0),
-        (255, 255, 0),
-        (0, 0, 255),
-        (255, 0, 255),
-        (0, 255, 255),
-        (255, 255, 255),
-    ],
-)

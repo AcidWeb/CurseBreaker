@@ -2,39 +2,47 @@ import os
 import io
 import re
 import sys
+import math
 import time
 import gzip
 import glob
 import json
 import httpx
+import base64
 import random
 import shutil
 import zipfile
 import platform
 import pyperclip
 import subprocess
+from io import BytesIO
+from PIL import Image
 from csv import reader
 from shlex import split
 from pathlib import Path
 from datetime import datetime
 from contextlib import nullcontext, suppress
+from rich_pixels import Pixels
 from rich import box
 from rich.text import Text
 from rich.rule import Rule
+from rich.live import Live
+from rich.align import Align
 from rich.table import Table
 from rich.panel import Panel
+from rich.prompt import Confirm
 from rich.console import Console, detect_legacy_windows
 from rich.control import Control
 from rich.progress import Progress, BarColumn
 from rich.traceback import Traceback, install
 from prompt_toolkit import PromptSession, HTML
-from prompt_toolkit.shortcuts import confirm
 from prompt_toolkit.completion import WordCompleter, NestedCompleter
 from packaging.version import Version
-from CB import HEADLESS_TERMINAL_THEME, __version__
+from CB import __version__
 from CB.Core import Core
-from CB.Compat import pause, timeout, clear, set_terminal_title, set_terminal_size, KBHit
 from CB.Wago import WagoUpdater
+from CB.Compat import pause, timeout, clear, set_terminal_title, set_terminal_size, KBHit
+from CB.Resources import LOGO, HEADLESS_TERMINAL_THEME
 
 if platform.system() == 'Windows':
     from ctypes import windll, wintypes
@@ -132,9 +140,16 @@ class TUI:
         # Addons auto update
         if len(self.core.config['Addons']) > 0 and self.core.config['AutoUpdate']:
             if not self.headless and self.core.config['AutoUpdateDelay']:
-                self.console.print('Automatic update of all addons will start in 5 seconds.\n'
-                                   'Press any button to enter interactive mode.', highlight=False)
-            keypress = self.handle_keypress(5 if self.core.config['AutoUpdateDelay'] else -1)
+                if self.console.color_system == 'truecolor':
+                    with Image.open(BytesIO(base64.b64decode(LOGO))) as image:
+                        logo = Pixels.from_image(image, resize=(40, 40))
+                    self.console.print(Panel(Align.center(logo), border_style='yellow'))
+                    self.console.print('')
+                with Live(Text('Automatic update of all addons will start in 5 seconds.\nPress any button to enter inte'
+                               'ractive mode.'), console=self.console, refresh_per_second=2) as countdown:
+                    keypress = self.handle_keypress(5, countdown)
+            else:
+                keypress = False
             if not keypress:
                 if not self.headless:
                     self.print_header()
@@ -284,9 +299,12 @@ class TUI:
             self.console.print(Traceback.from_exception(exc_type=e.__class__, exc_value=e,
                                                         traceback=e.__traceback__, width=width))
 
-    def handle_keypress(self, wait):
-        if wait == -1 or self.headless:
-            return False
+    def handle_countdown(self, n):
+        msg = (f'Automatic update of all addons will start in {math.ceil(n)} seconds.\n'
+               f'Press any button to enter interactive mode.')
+        return Text(msg)
+
+    def handle_keypress(self, wait, countdown=None):
         kb = KBHit()
         starttime = time.time()
         keypress = None
@@ -296,6 +314,8 @@ class TUI:
                 break
             elif wait and time.time() - starttime > wait:
                 break
+            if countdown:
+                countdown.update(self.handle_countdown(wait - (time.time() - starttime)))
             time.sleep(0.01)
         kb.set_normal_term()
         return keypress
@@ -613,8 +633,7 @@ class TUI:
     def c_force_update(self, args):
         if args:
             self.c_update(args, False, True, True)
-        elif confirm(HTML('<ansibrightred>Execute a forced update of all addons and overwrite ALL local changes?</ansib'
-                          'rightred>')):
+        elif Confirm.ask('[bold red]Execute a forced update of all addons and overwrite ALL local changes?[/bold red]'):
             self.c_update(False, False, True, True)
 
     def c_status(self, args):
