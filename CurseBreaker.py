@@ -204,7 +204,7 @@ class TUI:
                 else:
                     self.console.print('Command not found.')
 
-    def auto_update(self):  # sourcery skip: extract-method
+    def auto_update(self):  # sourcery skip: extract-duplicate-method, extract-method
         if not getattr(sys, 'frozen', False) or 'CURSEBREAKER_VARDEXMODE' in os.environ:
             return
         try:
@@ -540,11 +540,12 @@ class TUI:
         exceptions = []
         if len(addons) > 0:
             with Progress('{task.completed:.0f}/{task.total}', '|', BarColumn(bar_width=None), '|',
-                          auto_refresh=False, console=None if self.headless else self.console) as progress:
-                task = progress.add_task('', total=len(addons))
+                          console=None if self.headless else self.console) as progress:
+                task = progress.add_task('', total=len(addons), start=bool(args))
                 if not args:
-                    with suppress(RuntimeError):
+                    with suppress(RuntimeError, httpx.RequestError):
                         self.core.bulk_check(addons)
+                    progress.start_task(task)
                     self.core.bulk_check_checksum(addons, progress)
                 while not progress.finished:
                     for addon in addons:
@@ -600,6 +601,9 @@ class TUI:
             if overlap := self.core.check_if_overlap():
                 self.console.print(f'\n[bold red]Detected addon directory overlap. This will cause issues. Affected add'
                                    f'ons:[/bold red]\n{overlap}')
+            if self.core.check_if_from_gh():
+                self.console.print('\n[bold red]Multiple addons acquired from GitHub have been detected. Providing a p'
+                                   'ersonal GitHub token is highly recommended.[/bold red]')
         else:
             self.console.print('Apparently there are no addons installed by CurseBreaker (or you provided incorrect add'
                                'on name).\nCommand [green]import[/green] might be used to detect already installed addo'

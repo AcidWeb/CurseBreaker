@@ -13,9 +13,9 @@ Windows 10+, Ubuntu 20.04+, Debian 11+ and macOS 11+ are supported.
 
 ## USAGE
 Place **CurseBreaker** binary inside the directory containing `Wow.exe`, `WowClassic.exe` or `World of Warcraft.app`.\
-Read the instructions on the top of the screen.
+Read the instructions at the top of the screen.
 
-Already installed addons will not be recognized by **CurseBreaker** and they need to be reinstalled.\
+Already installed addons will not be recognized by **CurseBreaker**, and they need to be reinstalled.\
 This process can be partially automated by using the `import` command.
 
 _Retail_, _Cataclysm Classic_ and _Classic_ clients are supported. The client version is detected automatically.\
@@ -43,15 +43,16 @@ By default **CurseBreaker** will create backups of the entire `WTF` directory.
 To use Wago Addons as addon source user needs to provide a personal API key. It is a paid feature.\
 The key can be obtained [here](https://addons.wago.io/patreon) and needs to be added to the application configuration by using the `set wago_addons_api` command.
 
+## GITHUB SUPPORT
+Providing [personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) **greatly** increase speed of bulk version check and solve possible issues with rate limiting.\
+Both classic and fine-grained tokens are supported. No additional permissions are required.\
+Token can be added to application by using the `set gh_api` command.
+
 ## WEAKAURAS SUPPORT
 **CurseBreaker** by default will try to update all detected WeakAuras and Plater profiles/scripts. The process works the same as WeakAuras Companion.\
 All updates will still need to be applied in-game in the WeakAuras/Plater option menu.\
 Command `toggle wago` can be used to set a single author name that will be ignored during the update.\
 Additionally Wago API key can be set with the `set wa_api` command so non-public entries will also be upgradeable.
-
-## GITHUB SUPPORT
-When GitHub is frequently used as a source for addons there is the possibility of reaching a query limit.\
-If that occurs user must get a [personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token). Then add it to the application configuration by using the `set gh_api` command.
 
 ## KNOWN ISSUES
 - Using WoWInterface projects that provide multiple addon releases ([example](https://www.wowinterface.com/downloads/info5086-BigWigsBossmods)) will always install a retail version of the addon. It can't be fixed as WoWInterface API doesn't support this type of project.

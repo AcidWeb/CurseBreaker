@@ -35,6 +35,8 @@ class Core:
         self.dirIndex = None
         self.wowiCache = {}
         self.wagoCache = {}
+        self.githubCache = {}
+        self.githubPackagerCache = {}
         self.wagoIdCache = None
         self.tukuiCache = None
         self.checksumCache = {}
@@ -191,6 +193,15 @@ class Core:
                 return addon['Development']
         return 0
 
+    def check_if_from_gh(self):  # sourcery skip: sum-comprehension
+        if self.config['GHAPIKey'] != '':
+            return False
+        count = 0
+        for addon in self.config['Addons']:
+            if addon['URL'].startswith('https://github.com/'):
+                count += 1
+        return count > 3
+
     def cleanup(self, directories):
         if len(directories) > 0:
             for directory in directories:
@@ -203,7 +214,8 @@ class Core:
         elif url.startswith('https://www.wowinterface.com/downloads/'):
             return WoWInterfaceAddon(url, self.wowiCache, self.http)
         elif url.startswith('https://github.com/'):
-            return GitHubAddon(url, self.clientType, self.config['GHAPIKey'], self.http)
+            return GitHubAddon(url, self.githubCache, self.githubPackagerCache, self.clientType,
+                               self.config['GHAPIKey'], self.http)
         elif url.lower() == 'elvui':
             self.bulk_tukui_check()
             return TukuiAddon('elvui', self.tukuiCache,
@@ -504,41 +516,82 @@ class Core:
         payload = payload.json()
         return f'https://addons.wago.io/addons/{payload["slug"]}'
 
-    # TODO Improve the check when Wago Addons API will be will be expanded
-    def bulk_check(self, addons):  # sourcery skip: extract-method
+    def bulk_check(self, addons):
         ids_wowi = []
         ids_wago = []
+        ids_gh = []
         for addon in addons:
             if addon['URL'].startswith('https://www.wowinterface.com/downloads/'):
                 ids_wowi.append(re.findall(r'\d+', addon['URL'])[0].strip())
             elif addon['URL'].startswith('https://addons.wago.io/addons/') and \
                     addon['URL'] not in self.config['IgnoreClientVersion'].keys():
                 ids_wago.append({'slug': addon['URL'].replace('https://addons.wago.io/addons/', ''), 'id': ''})
+            elif addon['URL'].startswith('https://github.com/'):
+                ids_gh.append(addon['URL'].replace('https://github.com/', ''))
         if ids_wowi:
-            payload = self.http.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{",".join(ids_wowi)}.json').json()
-            if 'ERROR' not in payload:
-                for addon in payload:
-                    self.wowiCache[str(addon['UID'])] = addon
+            self.bulk_wowi_check(ids_wowi)
         if ids_wago and self.config['WAAAPIKey'] != '':
-            if not self.wagoIdCache:
-                self.wagoIdCache = self.http.get(f'https://addons.wago.io/api/data/slugs?game_version='
-                                                 f'{self.clientType}')
-                self.parse_wagoaddons_error(self.wagoIdCache.status_code)
-                self.wagoIdCache = self.wagoIdCache.json()
-            for addon in ids_wago:
-                if addon['slug'] in self.wagoIdCache['addons']:
-                    addon['id'] = self.wagoIdCache['addons'][addon['slug']]['id']
-            payload = self.http.post(f'https://addons.wago.io/api/external/addons/_recents?game_version='
-                                     f'{self.clientType}',
-                                     json={'addons': [addon["id"] for addon in ids_wago if addon["id"] != ""]},
-                                     auth=APIAuth('Bearer', self.config['WAAAPIKey']))
-            self.parse_wagoaddons_error(payload.status_code)
-            payload = payload.json()
-            for addonid in payload['addons']:
-                for addon in ids_wago:
-                    if addon['id'] == addonid:
-                        self.wagoCache[addon['slug']] = payload['addons'][addonid]
-                        break
+            self.bulk_wago_check(ids_wago)
+        if ids_gh and self.config['GHAPIKey'] != '':
+            self.bulk_gh_check(ids_gh)
+
+    def bulk_wowi_check(self, ids):
+        payload = self.http.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{",".join(ids)}.json').json()
+        if 'ERROR' not in payload:
+            for addon in payload:
+                self.wowiCache[str(addon['UID'])] = addon
+
+    def bulk_wago_check(self, ids):
+        if not self.wagoIdCache:
+            self.wagoIdCache = self.http.get(f'https://addons.wago.io/api/data/slugs?game_version={self.clientType}')
+            self.parse_wagoaddons_error(self.wagoIdCache.status_code)
+            self.wagoIdCache = self.wagoIdCache.json()
+        for addon in ids:
+            if addon['slug'] in self.wagoIdCache['addons']:
+                addon['id'] = self.wagoIdCache['addons'][addon['slug']]['id']
+        payload = self.http.post(f'https://addons.wago.io/api/external/addons/_recents?game_version={self.clientType}',
+                                 json={'addons': [addon["id"] for addon in ids if addon["id"] != ""]},
+                                 auth=APIAuth('Bearer', self.config['WAAAPIKey']))
+        self.parse_wagoaddons_error(payload.status_code)
+        payload = payload.json()
+        for addonid in payload['addons']:
+            for addon in ids:
+                if addon['id'] == addonid:
+                    self.wagoCache[addon['slug']] = payload['addons'][addonid]
+                    break
+
+    def bulk_gh_check_worker(self, node_id, url):
+        return node_id, self.http.get(url, auth=APIAuth('token', self.config['GHAPIKey'])).json()
+
+    def bulk_gh_check(self, ids):
+        query = ('{\n  "query": "{ search( type: REPOSITORY query: \\"' + f'repo:{" repo:".join(ids)}' + '\\" first: 10'
+                 '0 ) { nodes { ... on Repository { nameWithOwner releases(first: 15) { nodes { tag_name: tagName name '
+                 'html_url: url draft: isDraft prerelease: isPrerelease assets: releaseAssets(first: 100) { nodes { nod'
+                 'e_id: id name content_type: contentType url } } } } } } }}"\n}')
+        payload = self.http.post('https://api.github.com/graphql', json=json.loads(query),
+                                 auth=APIAuth('bearer', self.config['GHAPIKey']))
+        if payload.status_code != 200:
+            return
+        payload = payload.json()
+        for addon in payload['data']['search']['nodes']:
+            self.githubCache[addon['nameWithOwner']] = addon['releases']['nodes']
+        for addon in self.githubCache:
+            for i in range(len(self.githubCache[addon])):
+                self.githubCache[addon][i]['assets'] = self.githubCache[addon][i]['assets']['nodes']
+            for release in self.githubCache[addon]:
+                if not release['draft'] and not release['prerelease']:
+                    for asset in release['assets']:
+                        if asset['name'] == 'release.json':
+                            self.githubPackagerCache[asset['node_id']] = asset['url']
+                            break
+                    break
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            workers = []
+            for node_id, url in self.githubPackagerCache.items():
+                workers.append(executor.submit(self.bulk_gh_check_worker, node_id, url))
+            for future in concurrent.futures.as_completed(workers):
+                output = future.result()
+                self.githubPackagerCache[output[0]] = output[1]
 
     @retry(custom_error='Failed to parse Tukui API data')
     def bulk_tukui_check(self):

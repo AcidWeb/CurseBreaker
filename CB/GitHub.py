@@ -9,34 +9,38 @@ from . import retry, APIAuth
 # noinspection PyTypeChecker
 class GitHubAddon:
     @retry()
-    def __init__(self, url, clienttype, apikey, http):
+    def __init__(self, url, checkcache, packagercache, clienttype, apikey, http):
         project = url.replace('https://github.com/', '')
         self.http = http
         self.apiKey = apikey
         self.payloads = []
-        try:
-            self.payload = self.http.get(f'https://api.github.com/repos/{project}/releases',
-                                         auth=APIAuth('token', self.apiKey))
-        except httpx.RequestError as e:
-            raise RuntimeError(f'{project}\nGitHub API failed to respond.') from e
-        if self.payload.status_code == 401:
-            raise RuntimeError(f'{project}\nIncorrect or expired GitHub API personal access token.')
-        elif self.payload.status_code == 403:
-            raise RuntimeError(f'{project}\nGitHub API rate limit exceeded. Try later or provide personal access '
-                               f'token.')
-        elif self.payload.status_code == 404:
-            raise RuntimeError(url)
+        self.packagerCache = packagercache
+        if project in checkcache:
+            self.payload = checkcache[project]
         else:
-            self.payload = self.payload.json()
-            for release in self.payload:
-                if release['assets'] and len(release['assets']) > 0 \
-                        and not release['draft'] and not release['prerelease']:
-                    self.payloads.append(release)
-                    if len(self.payloads) > 14:
-                        break
-            if not self.payloads:
-                raise RuntimeError(f'{url}\nThis integration supports only the projects that provide packaged'
-                                   f' releases.')
+            try:
+                self.payload = self.http.get(f'https://api.github.com/repos/{project}/releases',
+                                             auth=APIAuth('token', self.apiKey))
+            except httpx.RequestError as e:
+                raise RuntimeError(f'{project}\nGitHub API failed to respond.') from e
+            if self.payload.status_code == 401:
+                raise RuntimeError(f'{project}\nIncorrect or expired GitHub API personal access token.')
+            elif self.payload.status_code == 403:
+                raise RuntimeError(f'{project}\nGitHub API rate limit exceeded. Try later or provide personal access '
+                                   f'token.')
+            elif self.payload.status_code == 404:
+                raise RuntimeError(url)
+            else:
+                self.payload = self.payload.json()
+        for release in self.payload:
+            if release['assets'] and len(release['assets']) > 0 \
+                    and not release['draft'] and not release['prerelease']:
+                self.payloads.append(release)
+                if len(self.payloads) > 14:
+                    break
+        if not self.payloads:
+            raise RuntimeError(f'{url}\nThis integration supports only the projects that provide packaged'
+                               f' releases.')
         self.name = project.split('/')[1]
         self.clientType = clienttype
         self.currentVersion = None
@@ -64,8 +68,11 @@ class GitHubAddon:
     def parse_metadata(self):
         for release in self.payloads[self.releaseDepth]['assets']:
             if release['name'] and release['name'] == 'release.json':
-                self.metadata = self.http.get(release['url'], headers={'Accept': 'application/octet-stream'},
-                                              auth=APIAuth('token', self.apiKey)).json()
+                if release['node_id'] in self.packagerCache:
+                    self.metadata = self.packagerCache[release['node_id']]
+                else:
+                    self.metadata = self.http.get(release['url'], headers={'Accept': 'application/octet-stream'},
+                                                  auth=APIAuth('token', self.apiKey)).json()
                 break
         else:
             self.metadata = None
