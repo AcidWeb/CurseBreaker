@@ -9,6 +9,7 @@ rule_settings:
   disable:
   - list-comprehension
   - dict-comprehension
+  - sum-comprehension
   - for-append-to-extend
   - use-next
   rule_types:

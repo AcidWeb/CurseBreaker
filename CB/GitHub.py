@@ -6,7 +6,6 @@ import zipfile
 from . import retry, APIAuth
 
 
-# noinspection PyTypeChecker
 class GitHubAddon:
     @retry()
     def __init__(self, url, checkcache, packagercache, clienttype, apikey, http):
@@ -33,8 +32,7 @@ class GitHubAddon:
             else:
                 self.payload = self.payload.json()
         for release in self.payload:
-            if release['assets'] and len(release['assets']) > 0 \
-                    and not release['draft'] and not release['prerelease']:
+            if release['assets'] and len(release['assets']) > 0 and not release['draft'] and not release['prerelease']:
                 self.payloads.append(release)
                 if len(self.payloads) > 14:
                     break
@@ -149,11 +147,11 @@ class GitHubAddon:
 class GitHubAddonRaw:
     @retry()
     def __init__(self, addon, apikey, http):
-        repository = addon["Repository"]
+        repository = addon['Repository']
         self.http = http
         self.apiKey = apikey
-        self.branch = addon["Branch"]
-        self.name = addon["Name"]
+        self.branch = addon['Branch']
+        self.name = addon['Name']
         try:
             self.payload = self.http.get(f'https://api.github.com/repos/{repository}/branches/{self.branch}',
                                          auth=APIAuth('token', self.apiKey))
@@ -178,8 +176,8 @@ class GitHubAddonRaw:
         self.currentVersion = self.payload['commit']['sha'][:7]
         self.uiVersion = None
         self.archive = None
-        self.directories = addon["Directories"]
-        self.author = addon["Authors"]
+        self.directories = addon['Directories']
+        self.author = addon['Authors']
 
     @retry()
     def get_addon(self):

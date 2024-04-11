@@ -45,9 +45,9 @@ class Core:
         try:
             self.masterConfig = json.load(gzip.open(io.BytesIO(
                 self.http.get('https://cursebreaker.acidweb.dev/config-v2.json.gz').content)))
-        except Exception:
+        except (StopIteration, UnicodeDecodeError, json.JSONDecodeError, httpx.RequestError) as e:
             raise RuntimeError('Failed to fetch the master config file. '
-                               'Check your connectivity to Google Cloud.') from None
+                               'Check your connectivity to Google Cloud.') from e
 
     def init_config(self):
         if os.path.isfile('CurseBreaker.json'):
@@ -193,14 +193,14 @@ class Core:
                 return addon['Development']
         return 0
 
-    def check_if_from_gh(self):  # sourcery skip: sum-comprehension
+    def check_if_from_gh(self):
         if self.config['GHAPIKey'] != '':
             return False
         count = 0
         for addon in self.config['Addons']:
             if addon['URL'].startswith('https://github.com/'):
                 count += 1
-        return count > 3
+        return count > 4
 
     def cleanup(self, directories):
         if len(directories) > 0:
@@ -301,7 +301,7 @@ class Core:
             return old['Name'], old['Version']
         return False, False
 
-    def update_addon(self, url, update, force):  # sourcery skip: extract-method
+    def update_addon(self, url, update, force):
         if not (old := self.check_if_installed(url)):
             return url, [], False, False, None, False, False, '?', None, None, None
         dev = self.check_if_dev(old['URL'])
@@ -394,16 +394,6 @@ class Core:
             self.save_config()
             return not state
         return None
-
-    def generic_toggle(self, option, inside=None):
-        if inside:
-            self.config[option][inside] = not self.config[option][inside]
-            self.save_config()
-            return self.config[option][inside]
-        else:
-            self.config[option] = not self.config[option]
-            self.save_config()
-            return self.config[option]
 
     def backup_check(self):
         if not self.config['Backup']['Enabled']:

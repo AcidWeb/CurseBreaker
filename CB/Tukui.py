@@ -1,6 +1,5 @@
 import os
 import io
-import httpx
 import zipfile
 from . import retry
 
