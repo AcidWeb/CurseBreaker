@@ -130,10 +130,10 @@ class TUI:
                 sys.exit(0)
         # Addons auto update
         if len(self.core.config['Addons']) > 0 and self.core.config['AutoUpdate']:
-            if not self.headless:
+            if not self.headless and self.core.config['AutoUpdateDelay']:
                 self.console.print('Automatic update of all addons will start in 5 seconds.\n'
                                    'Press any button to enter interactive mode.', highlight=False)
-            keypress = self.handle_keypress(5)
+            keypress = self.handle_keypress(5 if self.core.config['AutoUpdateDelay'] else -1)
             if not keypress:
                 if not self.headless:
                     self.print_header()
@@ -280,6 +280,8 @@ class TUI:
 
     # noinspection PyUnboundLocalVariable
     def handle_keypress(self, wait):
+        if wait == -1:
+            return False
         if not self.headless:
             kb = KBHit()
         starttime = time.time()
@@ -388,6 +390,7 @@ class TUI:
             'export': None,
             'toggle': {'authors': None,
                        'autoupdate': None,
+                       'autoupdate_delay': None,
                        'backup': None,
                        'channel': WordCompleter(addons + ['global'], ignore_case=True, sentence=True),
                        'compact_mode': None,
@@ -709,6 +712,10 @@ class TUI:
                 status = self.core.generic_toggle('ShowAuthors')
                 self.console.print('The authors listing is on now:',
                                    '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
+            elif args.startswith('autoupdate_delay'):
+                status = self.core.generic_toggle('AutoUpdateDelay')
+                self.console.print('The timeout before the automatic addon update on startup is now:',
+                                   '[green]ENABLED[/green]' if status else '[red]DISABLED[/red]')
             elif args.startswith('autoupdate'):
                 status = self.core.generic_toggle('AutoUpdate')
                 self.console.print('The automatic addon update on startup is now:',
@@ -730,16 +737,17 @@ class TUI:
         else:
             self.console.print('[green]Usage:[/green]\n\t[green]toggle authors[/green]\n\t\tEnables/disables the displa'
                                'y of addon author names in the table.\n\t[green]toggle autoupdate[/green]\n\t\tEnables/'
-                               'disables the automatic addon update on startup.\n\t[green]toggle backup[/green]\n\t\tEn'
-                               'ables/disables automatic daily backup of WTF directory.\n\t[green]toggle channel [Name]'
-                               '[/green]\n\t\tCommand accepts an addon name (or "global") as argument.\n\t\tPrioritizes'
-                               ' alpha/beta versions for the provided addon.\n\t[green]toggle compact_mode [/green]\n\t'
-                               '\tEnables/disables compact table mode that hides entries of up-to-date addons.\n\t[gree'
-                               'n]toggle pinning [Name][/green]\n\t\tCommand accepts an addon name as argument.\n\t\tBl'
-                               'ocks/unblocks updating of the provided addon.\n\t[green]toggle sources[/green]\n\t\tEna'
-                               'bles/disables the source column in the status table.\n\t[green]toggle wago [Username][/'
-                               'green]\n\t\tEnables/disables automatic Wago updates.\n\t\tIf a username is provided che'
-                               'ck will start to ignore the specified author.', highlight=False)
+                               'disables the automatic addon update on startup.\n\t[green]toggle autoupdate_delay[/gree'
+                               'n]\n\t\tEnables/disables the timeout before the automatic addon update.\n\t[green]toggl'
+                               'e backup[/green]\n\t\tEnables/disables automatic daily backup of WTF directory.\n\t[gre'
+                               'en]toggle channel [Name][/green]\n\t\tCommand accepts an addon name (or "global") as ar'
+                               'gument.\n\t\tPrioritizes alpha/beta versions for the provided addon.\n\t[green]toggle c'
+                               'ompact_mode [/green]\n\t\tEnables/disables compact table mode that hides entries of up-'
+                               'to-date addons.\n\t[green]toggle pinning [Name][/green]\n\t\tCommand accepts an addon n'
+                               'ame as argument.\n\t\tBlocks/unblocks updating of the provided addon.\n\t[green]toggle '
+                               'sources[/green]\n\t\tEnables/disables the source column in the status table.\n\t[green]'
+                               'toggle wago [Username][/green]\n\t\tEnables/disables automatic Wago updates.\n\t\tIf a '
+                               'username is provided check will start to ignore the specified author.', highlight=False)
 
     def _c_set_parse(self, msg, key, value):
         self.console.print(msg)
@@ -926,6 +934,8 @@ class TUI:
                            'table.\n'
                            '[green]toggle autoupdate[/green]\n\tEnables/disables the automatic addon update on startup'
                            '.\n'
+                           '[green]toggle autoupdate_delay[/green]\n\tEnables/disables the timeout before the automatic'
+                           ' addon update.\n'
                            '[green]toggle backup[/green]\n\tEnables/disables automatic daily backup of WTF directory.\n'
                            '[green]toggle channel [Name][/green]\n\tCommand accepts an addon name (or "global") as argu'
                            'ment.\n\tPrioritizes alpha/beta versions for the provided addon.\n'
