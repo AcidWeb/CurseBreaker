@@ -50,7 +50,7 @@ class WeakAuraParser(BaseParser):
         self.parse_storage()
 
     def parse_storage(self):
-        with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua'), 'r', encoding='utf-8',
+        with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua'), encoding='utf-8',
                   errors='ignore') as file:
             data = file.read().replace('WeakAurasSaved = {', '{')
         wadata = loads(data)
@@ -81,7 +81,7 @@ class PlaterParser(BaseParser):
                     self.list[search.group(1)] = int(search.group(2))
 
     def parse_storage(self):
-        with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/Plater.lua'), 'r', encoding='utf-8',
+        with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/Plater.lua'), encoding='utf-8',
                   errors='ignore') as file:
             data = file.read()
         platerdata = loads(re.search(r'PlaterDB = {\n.*?}\n', data, re.DOTALL).group().replace('PlaterDB = {', '{', 1))
@@ -184,24 +184,24 @@ class WagoUpdater:
 
     def install_data(self, wadata, platerdata):
         with open(Path('Interface/AddOns/CurseBreakerCompanion/Data.lua'), 'w', newline='\n', encoding='utf-8') as out:
-            out.write(('CurseBreakerCompanion = {\n'
-                       '  WeakAuras = {\n'
-                       '    slugs = {\n'
-                       f'{"".join(str(x) for x in wadata["slugs"])}'
-                       '    },\n'
-                       '    stash = {\n'
-                       f'{"".join(str(x) for x in wadata["stash"])}'
-                       '    },\n'
-                       '  },\n'
-                       '  Plater = {\n'
-                       '    slugs = {\n'
-                       f'{"".join(str(x) for x in platerdata["slugs"])}'
-                       '    },\n'
-                       '    stash = {\n'
-                       f'{"".join(str(x) for x in platerdata["stash"])}'
-                       '    },\n'
-                       '  },\n'
-                       '}'))
+            out.write('CurseBreakerCompanion = {\n'
+                      '  WeakAuras = {\n'
+                      '    slugs = {\n'
+                      f'{"".join(str(x) for x in wadata["slugs"])}'
+                      '    },\n'
+                      '    stash = {\n'
+                      f'{"".join(str(x) for x in wadata["stash"])}'
+                      '    },\n'
+                      '  },\n'
+                      '  Plater = {\n'
+                      '    slugs = {\n'
+                      f'{"".join(str(x) for x in platerdata["slugs"])}'
+                      '    },\n'
+                      '    stash = {\n'
+                      f'{"".join(str(x) for x in platerdata["stash"])}'
+                      '    },\n'
+                      '  },\n'
+                      '}')
 
     def install_companion(self, force):
         target_path = Path('Interface/AddOns/CurseBreakerCompanion')

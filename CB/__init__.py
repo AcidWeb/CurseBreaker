@@ -10,7 +10,7 @@ def retry(custom_error=False):
     def wraps(func):
         def inner(*args, **kwargs):
             description = None
-            for i in range(2):
+            for _ in range(2):
                 try:
                     result = func(*args, **kwargs)
                 except KeyboardInterrupt:

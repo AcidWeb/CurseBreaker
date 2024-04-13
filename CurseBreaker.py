@@ -93,7 +93,7 @@ class TUI:
             with open('PermissionTest', 'w') as _:
                 pass
             os.remove('PermissionTest')
-        except IOError:
+        except OSError:
             self.handle_shutdown('[bold red]CurseBreaker doesn\'t have write rights for the current directory.\nTry sta'
                                  'rting it with administrative privileges.[/bold red]\n')
         # Application auto update and initialization
@@ -272,7 +272,7 @@ class TUI:
         except Exception as e:
             if os.path.isfile(f'{sys.executable}.old'):
                 shutil.move(f'{sys.executable}.old', sys.executable)
-            self.console.print(f'[bold red]Update failed!\n\nReason: {str(e)}[/bold red]\n')
+            self.console.print(f'[bold red]Update failed!\n\nReason: {e!s}[/bold red]\n')
             self._auto_update_cleanup()
             sys.exit(1)
 
@@ -365,9 +365,8 @@ class TUI:
     def setup_console(self):
         if self.headless:
             self.console = Console(record=True)
-            if self.os == 'Windows':
-                if window := windll.kernel32.GetConsoleWindow():
-                    windll.user32.ShowWindow(window, 0)
+            if self.os == 'Windows' and (window := windll.kernel32.GetConsoleWindow()):
+                windll.user32.ShowWindow(window, 0)
         elif detect_legacy_windows():
             set_terminal_size(100, 50)
             windll.kernel32.SetConsoleScreenBufferSize(windll.kernel32.GetStdHandle(-11), wintypes._COORD(100, 200))
@@ -412,7 +411,7 @@ class TUI:
                        'autoupdate': None,
                        'autoupdate_delay': None,
                        'backup': None,
-                       'channel': WordCompleter(addons + ['global'], ignore_case=True, sentence=True),
+                       'channel': WordCompleter([*addons, 'global'], ignore_case=True, sentence=True),
                        'compact_mode': None,
                        'pinning': WordCompleter(addons, ignore_case=True, sentence=True),
                        'sources': None,
@@ -489,12 +488,12 @@ class TUI:
             optignore = True
             args = args.replace('-i', '', 1)
         args = re.sub(r'([a-zA-Z0-9_:])( +)([a-zA-Z0-9_:])', r'\1,\3', args)
-        addons = [re.sub(r'[\[\]]', '', addon).strip() for addon in list(reader([args], skipinitialspace=True))[0]]
+        addons = [re.sub(r'[\[\]]', '', addon).strip() for addon in next(iter(reader([args], skipinitialspace=True)))]
         exceptions = []
         if addons:
             if self.core.clientType != 'retail':
                 for addon in addons:
-                    if addon.startswith('https://www.wowinterface.com/downloads/') or addon.startswith('wowi:'):
+                    if addon.startswith(('https://www.wowinterface.com/downloads/', 'wowi:')):
                         self.console.print('[yellow][WARNING][/yellow] WoWInterface support for non-retail clients is l'
                                            'imited. If the selected project offers multiple downloads this application '
                                            'will always install the retail version of the addon.')
@@ -550,10 +549,7 @@ class TUI:
     def _c_update_process(self, addon, update, force, compact, compacted, provider):  # sourcery skip: low-code-quality
         name, authors, versionnew, versionold, uiversion, modified, blocked, source, sourceurl, changelog, dstate \
             = self.core.update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
-        if source == 'Unsupported' and not provider:
-            additionalstatus = f' [bold red]{source.upper()}[/bold red]'
-        else:
-            additionalstatus = ''
+        additionalstatus = f' [bold red]{source.upper()}[/bold red]' if source == 'Unsupported' and not provider else ''
         if versionold:
             payload = [self.parse_link(name, sourceurl, authors=authors),
                        self.parse_link(versionold, changelog, dstate, uiversion=uiversion)]

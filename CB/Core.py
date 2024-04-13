@@ -55,7 +55,7 @@ class Core:
         if os.path.isfile(Path('WTF/CurseBreaker.cache')):
             os.remove(Path('WTF/CurseBreaker.cache'))
         if os.path.isfile(self.configPath):
-            with open(self.configPath, 'r') as f:
+            with open(self.configPath) as f:
                 try:
                     self.config = json.load(f)
                 except (StopIteration, UnicodeDecodeError, json.JSONDecodeError) as e:
@@ -155,7 +155,7 @@ class Core:
 
     def check_if_installed(self, url):
         for addon in self.config['Addons']:
-            if addon['URL'] == url or addon['Name'] == url:
+            if url in (addon['URL'], addon['Name']):
                 return addon
 
     def check_if_installed_dirs(self, directories):
@@ -307,10 +307,7 @@ class Core:
         dev = self.check_if_dev(old['URL'])
         blocked = self.check_if_blocked(old)
         oldversion = old['Version']
-        if old['URL'] in self.checksumCache:
-            modified = self.checksumCache[old['URL']]
-        else:
-            modified = self.check_checksum(old)[1]
+        modified = self.checksumCache[old['URL']] if old['URL'] in self.checksumCache else self.check_checksum(old)[1]
         if old['URL'].startswith(('https://www.townlong-yak.com/addons/',
                                   'https://www.curseforge.com/wow/addons/',
                                   'https://www.tukui.org/')):
@@ -454,7 +451,7 @@ class Core:
                 elif directory not in ignored:
                     orphanedaddon.append(directory)
         directories += directoriesspecial + orphanedaddon
-        for root, dirs, files in os.walk('WTF/', followlinks=True):
+        for root, _, files in os.walk('WTF/', followlinks=True):
             for f in files:
                 if 'Blizzard_' not in f and f.endswith('.lua'):
                     name = os.path.splitext(f)[0]
@@ -684,7 +681,7 @@ class WagoAddonsHasher:
             if f.is_file():
                 self.filesToHash.append(f)
                 if not f.name.lower().endswith('.lua'):
-                    with open(f, 'r', encoding='utf-8', errors='ignore') as g:
+                    with open(f, encoding='utf-8', errors='ignore') as g:
                         newfilestoparse = None
                         data = g.read()
                         if f.name.lower().endswith('.toc'):
