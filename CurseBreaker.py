@@ -41,7 +41,7 @@ from packaging.version import Version
 from CB import __version__
 from CB.Core import Core
 from CB.Wago import WagoUpdater
-from CB.Compat import pause, timeout, clear, set_terminal_title, set_terminal_size, KBHit
+from CB.Compat import clear, set_terminal_title, set_terminal_size, KBHit
 from CB.Resources import LOGO, HEADLESS_TERMINAL_THEME
 
 if platform.system() == 'Windows':
@@ -145,9 +145,8 @@ class TUI:
                         logo = Pixels.from_image(image, resize=(40, 40))
                     self.console.print(Panel(Align.center(logo), border_style='yellow'))
                     self.console.print('')
-                with Live(Text('Automatic update of all addons will start in 5 seconds.\nPress any button to enter inte'
-                               'ractive mode.'), console=self.console, refresh_per_second=2) as countdown:
-                    keypress = self.handle_keypress(5, countdown)
+                keypress = self.handle_keypress('Automatic update of all addons will start in {} seconds.\nPress any bu'
+                                                'tton to enter interactive mode.', 5, True)
             else:
                 keypress = False
             if not keypress:
@@ -174,9 +173,8 @@ class TUI:
                     sys.exit(0)
                 else:
                     self.print_author_reminder()
-                    self.console.print('Press [bold]I[/bold] to enter interactive mode or any other button to close'
-                                       ' the application.')
-                    keypress = self.handle_keypress(0)
+                    keypress = self.handle_keypress('Press [bold]I[/bold] to enter interactive mode or any other button'
+                                                    ' to close the application.', 0, False)
                     if not keypress or keypress.lower() not in [b'i', 'i']:
                         self.core.http.close()
                         sys.exit(0)
@@ -224,7 +222,7 @@ class TUI:
     def _auto_update_cleanup(self):
         self.print_log()
         self.core.http.close()
-        pause(self.headless)
+        self.handle_keypress('Press any button to continue...', 0, False)
 
     def _auto_update_install(self, url, changelog):
         self.console.print('[green]Updating CurseBreaker...[/green]')
@@ -284,7 +282,7 @@ class TUI:
         else:
             payload = self.core.http.get('https://cursebreaker.acidweb.dev/motd')
             if payload.status_code == 200:
-                self.console.print(Panel(payload.content.decode('UTF-8'), title=':warning: MOTD :warning:',
+                self.console.print(Panel(payload.content.decode('UTF-8'), title=':megaphone: MOTD :megaphone:',
                                          border_style='red'))
                 self.console.print('')
 
@@ -304,35 +302,41 @@ class TUI:
             self.console.print(Traceback.from_exception(exc_type=e.__class__, exc_value=e,
                                                         traceback=e.__traceback__, width=width))
 
-    def handle_countdown(self, n):
-        msg = (f'Automatic update of all addons will start in {math.ceil(n)} seconds.\n'
-               f'Press any button to enter interactive mode.')
-        return Text(msg)
-
-    def handle_keypress(self, wait, countdown=None):
+    def _handle_keypress_console(self, count, msg, countdown=None):
         kb = KBHit()
         starttime = time.time()
-        keypress = None
+        keypress = False
         while True:
             if kb.kbhit():
                 keypress = kb.getch()
                 break
-            elif wait and time.time() - starttime > wait:
+            elif count and time.time() - starttime > count:
                 break
             if countdown:
-                countdown.update(self.handle_countdown(wait - (time.time() - starttime)))
+                countdown.update(Text(msg.format(math.ceil(count - (time.time() - starttime)))))
             time.sleep(0.01)
         kb.set_normal_term()
+        return keypress
+
+    def handle_keypress(self, msg, count, live):
+        if self.headless:
+            return False
+        if live:
+            with Live(Text(msg.format(count)), console=self.console, refresh_per_second=2) as countdown:
+                keypress = self._handle_keypress_console(count, msg, countdown)
+        else:
+            self.console.print(msg)
+            keypress = self._handle_keypress_console(count, msg)
         return keypress
 
     def handle_shutdown(self, message=''):
         self.core.http.close()
         if not message:
-            timeout(self.headless)
+            self.handle_keypress('\nWaiting for {} seconds, press any button to continue...', 5, True)
             sys.exit(0)
         else:
             self.console.print(message)
-            pause(self.headless)
+            self.handle_keypress('\nPress any button to continue...', 0, False)
             sys.exit(1)
 
     def print_header(self):
