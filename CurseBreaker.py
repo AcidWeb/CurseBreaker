@@ -277,11 +277,16 @@ class TUI:
             sys.exit(1)
 
     def motd_parser(self):
-        payload = self.core.http.get('https://cursebreaker.acidweb.dev/motd')
-        if payload.status_code == 200:
-            self.console.print(Panel(payload.content.decode('UTF-8'), title=':warning: MOTD :warning:',
-                                     border_style='red'))
+        if detect_legacy_windows():
+            self.console.print(Panel('The old Windows terminal was detected. Use of the new Windows Terminal is highly '
+                                     'recommended. https://aka.ms/terminal', title='WARNING', border_style='red'))
             self.console.print('')
+        else:
+            payload = self.core.http.get('https://cursebreaker.acidweb.dev/motd')
+            if payload.status_code == 200:
+                self.console.print(Panel(payload.content.decode('UTF-8'), title=':warning: MOTD :warning:',
+                                         border_style='red'))
+                self.console.print('')
 
     def handle_exception(self, e, table=True):
         if self.table.row_count > 1 and table:
