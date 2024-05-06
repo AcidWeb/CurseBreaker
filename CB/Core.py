@@ -434,9 +434,8 @@ class Core:
         orphaneconfig = []
         directories = []
         directoriesspecial = []
-        ignored = ['.DS_Store']
-        special = ['+Wowhead_Looter', 'CurseBreakerCompanion', 'SharedMedia_MyMedia', 'WeakAurasCompanion',
-                   'TradeSkillMaster_AppHelper']
+        ignored = ['.DS_Store', '.git']
+        special = ['+Wowhead_Looter', 'CurseBreakerCompanion', 'SharedMedia_MyMedia', 'TradeSkillMaster_AppHelper']
         for addon in self.config['Addons']:
             for directory in addon['Directories']:
                 directories.append(directory)
@@ -596,6 +595,7 @@ class Core:
                 accounts_processed.append(account)
         return accounts_processed
 
+    # TODO: Refactor to be smarter
     def detect_addons(self):
         if self.config['WAAAPIKey'] == '':
             raise RuntimeError('This feature only matches addons that are in the database of the Wago Addons. Other sou'
@@ -609,7 +609,7 @@ class Core:
         output = []
         ignored = ['ElvUI_OptionsUI', 'ElvUI_Options', 'ElvUI_Libraries', 'Tukui_Config', '+Wowhead_Looter',
                    'WeakAurasCompanion', 'CurseBreakerCompanion', 'SharedMedia_MyMedia', 'TradeSkillMaster_AppHelper',
-                   '.DS_Store']
+                   'WagoAnalytics', 'WagoAppCompanion', 'Details_Streamer', 'Details_Vanguard', '.DS_Store', '.git']
         specialcases = ['ElvUI', 'Tukui']
 
         addon_dirs = os.listdir(self.path)

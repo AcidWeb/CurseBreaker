@@ -336,7 +336,7 @@ class TUI:
             sys.exit(0)
         else:
             self.console.print(message)
-            self.handle_keypress('\nPress any button to continue...', 0, False)
+            self.handle_keypress('Press any button to continue...', 0, False)
             sys.exit(1)
 
     def print_header(self):
