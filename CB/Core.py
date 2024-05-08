@@ -664,7 +664,7 @@ class Core:
             raise RuntimeError('Provided Wago Addons API key is expired. Please acquire a new one.')
         elif code == 423:
             raise RuntimeError('Provided Wago Addons API key is blocked. Please acquire a new one.')
-        elif code in [429, 500]:
+        elif code in [429, 500, 502, 504]:
             raise RuntimeError('Temporary Wago Addons API issue. Please try later.')
 
 
