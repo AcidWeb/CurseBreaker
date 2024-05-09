@@ -209,8 +209,10 @@ class Core:
 
     def parse_url(self, url):
         if url.startswith('https://addons.wago.io/addons/'):
-            return WagoAddonsAddon(url, self.wagoCache, 'retail' if url in self.config['IgnoreClientVersion'].keys()
-                                   else self.clientType, self.check_if_dev(url), self.config['WAAAPIKey'], self.http)
+            return WagoAddonsAddon(url, self.wagoCache,
+                                   'retail' if url in self.config['IgnoreClientVersion'].keys() else self.clientType,
+                                   self.masterConfig['ClientTypes'][self.clientType]['CurrentVersion'],
+                                   self.check_if_dev(url), self.config['WAAAPIKey'], self.http)
         elif url.startswith('https://www.wowinterface.com/downloads/'):
             return WoWInterfaceAddon(url, self.wowiCache, self.http)
         elif url.startswith('https://github.com/'):

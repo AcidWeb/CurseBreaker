@@ -11,11 +11,12 @@ from . import retry, APIAuth
 
 class WagoAddonsAddon:
     @retry()
-    def __init__(self, url, checkcache, clienttype, allowdev, apikey, http):
+    def __init__(self, url, checkcache, clienttype, clientversion, allowdev, apikey, http):
         project = url.replace('https://addons.wago.io/addons/', '')
         self.http = http
         self.apiKey = apikey
         self.clientType = clienttype
+        self.clientVersion = clientversion
         if project in checkcache:
             self.payload = checkcache[project]
             self.payload['display_name'] = self.payload['name']
@@ -88,7 +89,9 @@ class WagoAddonsAddon:
         release = self.payload['recent_release'][max(release, key=release.get)]
 
         self.downloadUrl = release['download_link'] if 'download_link' in release else release['link']
-        self.uiVersion = release['patch'] if 'patch' in release else release[f'supported_{self.clientType}_patch']
+        patches = release['supported_patches'] if 'supported_patches' in release \
+            else release[f'supported_{self.clientType}_patches']
+        self.uiVersion = self.clientVersion if self.clientVersion in patches else patches[0]
         self.changelogUrl = f'{self.payload["website_url"]}/versions'
         self.currentVersion = release['label']
 
