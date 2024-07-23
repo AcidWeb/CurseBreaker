@@ -524,14 +524,16 @@ class Core:
             self.bulk_gh_check(ids_gh)
 
     def bulk_wowi_check(self, ids):
-        payload = self.http.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{",".join(ids)}.json').json()
+        payload = self.http.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{",".join(ids)}.json',
+                                timeout=15).json()
         if 'ERROR' not in payload:
             for addon in payload:
                 self.wowiCache[str(addon['UID'])] = addon
 
     def bulk_wago_check(self, ids):
         if not self.wagoIdCache:
-            self.wagoIdCache = self.http.get(f'https://addons.wago.io/api/data/slugs?game_version={self.clientType}')
+            self.wagoIdCache = self.http.get(f'https://addons.wago.io/api/data/slugs?game_version={self.clientType}',
+                                             timeout=15)
             self.parse_wagoaddons_error(self.wagoIdCache.status_code)
             self.wagoIdCache = self.wagoIdCache.json()
         for addon in ids:
@@ -539,7 +541,7 @@ class Core:
                 addon['id'] = self.wagoIdCache['addons'][addon['slug']]['id']
         payload = self.http.post(f'https://addons.wago.io/api/external/addons/_recents?game_version={self.clientType}',
                                  json={'addons': [addon["id"] for addon in ids if addon["id"] != ""]},
-                                 auth=APIAuth('Bearer', self.config['WAAAPIKey']))
+                                 auth=APIAuth('Bearer', self.config['WAAAPIKey']), timeout=15)
         self.parse_wagoaddons_error(payload.status_code)
         payload = payload.json()
         for addonid in payload['addons']:
@@ -549,7 +551,8 @@ class Core:
                     break
 
     def bulk_gh_check_worker(self, node_id, url):
-        return node_id, self.http.get(url, auth=APIAuth('token', self.config['GHAPIKey'])).json()
+        return node_id, self.http.get(url, headers={'Accept': 'application/octet-stream'},
+                                      auth=APIAuth('token', self.config['GHAPIKey'])).json()
 
     def bulk_gh_check(self, ids):
         query = ('{\n  "query": "{ search( type: REPOSITORY query: \\"' + f'repo:{" repo:".join(ids)}' + ' fork:true\\"'
@@ -557,10 +560,11 @@ class Core:
                  'Name name html_url: url draft: isDraft prerelease: isPrerelease assets: releaseAssets(first: 100) { n'
                  'odes { node_id: id name content_type: contentType url } } } } } } }}"\n}')
         payload = self.http.post('https://api.github.com/graphql', json=json.loads(query),
-                                 auth=APIAuth('bearer', self.config['GHAPIKey']))
+                                 auth=APIAuth('bearer', self.config['GHAPIKey']), timeout=15)
         if payload.status_code != 200:
             return
         payload = payload.json()
+        packager_cache = {}
         for addon in payload['data']['search']['nodes']:
             self.githubCache[addon['nameWithOwner']] = addon['releases']['nodes']
         for addon in self.githubCache:
@@ -570,16 +574,20 @@ class Core:
                 if not release['draft'] and not release['prerelease']:
                     for asset in release['assets']:
                         if asset['name'] == 'release.json':
-                            self.githubPackagerCache[asset['node_id']] = asset['url']
+                            packager_cache[asset['node_id']] = asset['url']
                             break
                     break
         with concurrent.futures.ThreadPoolExecutor() as executor:
             workers = []
-            for node_id, url in self.githubPackagerCache.items():
+            for node_id, url in packager_cache.items():
                 workers.append(executor.submit(self.bulk_gh_check_worker, node_id, url))
             for future in concurrent.futures.as_completed(workers):
-                output = future.result()
-                self.githubPackagerCache[output[0]] = output[1]
+                try:
+                    output = future.result()
+                except (httpx.RequestError, json.JSONDecodeError):
+                    pass
+                else:
+                    self.githubPackagerCache[output[0]] = output[1]
 
     @retry(custom_error='Failed to parse Tukui API data')
     def bulk_tukui_check(self):
