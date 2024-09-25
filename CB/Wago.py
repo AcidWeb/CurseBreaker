@@ -57,8 +57,8 @@ class WeakAuraParser(BaseParser):
         for wa in wadata['displays']:
             if 'url' in wadata['displays'][wa]:
                 search = self.urlParser.search(wadata['displays'][wa]['url'])
-                if (search is not None and search.group(1) and search.group(2) and
-                        'parent' not in wadata['displays'][wa] and 'ignoreWagoUpdate' not in wadata['displays'][wa]):
+                if (search is not None and search.group(1) and search.group(2) and search.group(1) not in self.list
+                        and 'ignoreWagoUpdate' not in wadata['displays'][wa]):
                     if 'skipWagoUpdate' in wadata['displays'][wa]:
                         self.ignored[search.group(1)] = int(wadata['displays'][wa]['skipWagoUpdate'])
                     self.list[search.group(1)] = int(search.group(2))
