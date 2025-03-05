@@ -40,7 +40,7 @@ def clear():
     if system == 'Windows':
         os.system('cls')
     else:
-        os.system('clear')
+        print('\033c', end='')
 
 
 def set_terminal_title(title):
