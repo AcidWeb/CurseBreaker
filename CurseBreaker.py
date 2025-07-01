@@ -68,7 +68,7 @@ class TUI:
         self.print_header()
         self.core.init_master_config()
         # Check if executable is in good location
-        if not glob.glob('World*.app') and not glob.glob('Wow*.exe') or \
+        if (not glob.glob('World*.app') and not glob.glob('Wow*.exe')) or \
                 not os.path.isdir(Path('Interface/AddOns')) or not os.path.isdir('WTF'):
             self.handle_shutdown('[bold red]This executable should be placed in the same directory where Wow.exe, WowCl'
                                  'assic.exe or World of Warcraft.app is located. Additionally, make sure that this WoW '
@@ -241,7 +241,7 @@ class TUI:
         self.console.print(f'[bold green]Update complete! The application will be restarted now.[/bold green]\n\n'
                            f'[green]Changelog:[/green]\n{changelog}\n')
         self._auto_update_cleanup()
-        subprocess.call([sys.executable] + sys.argv[1:])
+        subprocess.call([sys.executable, *sys.argv[1:]], env={**os.environ, "PYINSTALLER_RESET_ENVIRONMENT": "1"})
         sys.exit(0)
 
     def auto_update(self):
