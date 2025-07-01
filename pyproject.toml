@@ -1,0 +1,25 @@
+[project]
+name = "CurseBreaker"
+version = "4.7.3"
+readme = "README.md"
+license = {file = "LICENSE.txt"}
+requires-python = ">=3.13"
+dependencies = [
+    "bbcode>=1.1.0",
+    "checksumdir>=1.2.0",
+    "httpx[brotli,http2]>=0.28.1",
+    "markdown>=3.7",
+    "packaging>=24.2",
+    "prompt-toolkit>=3.0.48",
+    "pyperclip>=1.9.0",
+    "python-dateutil>=2.9.0.post0",
+    "rich>=13.9.4",
+    "rich-pixels>=3.0.1",
+]
+
+[dependency-groups]
+dev = [
+    "certifi>=2025.1.31",
+    "pyinstaller>=6.12.0",
+    "ruff>=0.8.4",
+]
