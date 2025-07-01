@@ -81,8 +81,8 @@ class TUI:
         if flavor in {'_retail_', '_ptr_', '_ptr2_', '_beta_', '_xptr_'}:
             self.core.clientType = 'retail'
         elif flavor in {'_classic_', '_classic_ptr_', '_classic_beta_'}:
-            self.core.clientType = 'cata'
-            set_terminal_title(f'CurseBreaker v{__version__} - Cataclysm Classic')
+            self.core.clientType = 'mop'
+            set_terminal_title(f'CurseBreaker v{__version__} - Mists of Pandaria Classic')
         elif flavor in {'_classic_era_', '_classic_era_ptr_'}:
             self.core.clientType = 'classic'
             set_terminal_title(f'CurseBreaker v{__version__} - Classic')

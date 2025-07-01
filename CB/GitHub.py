@@ -77,7 +77,12 @@ class GitHubAddon:
 
     def get_latest_package(self):
         targetfile = None
-        targetflavor = 'mainline' if self.clientType == 'retail' else self.clientType
+        if self.clientType == 'retail':
+            targetflavor = 'mainline'
+        elif self.clientType == 'mop':
+            targetflavor = 'mists'
+        else:
+            targetflavor = self.clientType
         for release in self.metadata['releases']:
             if not release['nolib']:
                 for flavor in release['metadata']:
@@ -103,25 +108,25 @@ class GitHubAddon:
     def get_latest_package_nometa(self):
         latest = None
         latestclassic = None
-        latestcata = None
+        latestmop = None
         for release in self.payloads[self.releaseDepth]['assets']:
             if release['name'] and release['name'].endswith('.zip') and '-nolib' not in release['name'] \
                     and release['content_type'] in ['application/x-zip-compressed', 'application/zip', 'raw']:
                 if not latest and not release['name'].endswith(('-classic.zip', '-bc.zip', '-bcc.zip', '-wrath.zip',
-                                                                '-cata.zip')):
+                                                                '-cata.zip', '-mists.zip')):
                     latest = release['url']
                 elif not latestclassic and release['name'].endswith('-classic.zip'):
                     latestclassic = release['url']
-                elif not latestcata and release['name'].endswith('-cata.zip'):
-                    latestcata = release['url']
+                elif not latestmop and release['name'].endswith('-mists.zip'):
+                    latestmop = release['url']
         if (self.clientType == 'retail' and latest) \
                 or (self.clientType == 'classic' and latest and not latestclassic) \
-                or (self.clientType == 'cata' and latest and not latestcata):
+                or (self.clientType == 'mop' and latest and not latestmop):
             self.downloadUrl = latest
         elif self.clientType == 'classic' and latestclassic:
             self.downloadUrl = latestclassic
-        elif self.clientType == 'cata' and latestcata:
-            self.downloadUrl = latestcata
+        elif self.clientType == 'mop' and latestmop:
+            self.downloadUrl = latestmop
         else:
             self.releaseDepth += 1
             self.parse()
