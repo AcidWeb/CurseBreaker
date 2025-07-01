@@ -6,7 +6,7 @@ license = {file = "LICENSE.txt"}
 requires-python = ">=3.13"
 dependencies = [
     "bbcode>=1.1.0",
-    "checksumdir>=1.2.0",
+    "checksumdir",
     "httpx[brotli,http2]>=0.28.1",
     "markdown>=3.7",
     "packaging>=24.2",
@@ -23,3 +23,6 @@ dev = [
     "pyinstaller>=6.12.0",
     "ruff>=0.8.4",
 ]
+
+[tool.uv.sources]
+checksumdir = { git = "https://github.com/idahogray/checksumdir", branch = "replace-pkg-resources" }

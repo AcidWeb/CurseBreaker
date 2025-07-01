@@ -103,12 +103,8 @@ wheels = [
 
 [[package]]
 name = "checksumdir"
-version = "1.2.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b5/bc/7446a3877cae4638c93531239736ca3ee7933bd3f775db325bb1a1d5102c/checksumdir-1.2.0.tar.gz", hash = "sha256:10bfd7518da5a14b0e9ac03e9ad105f0e70f58bba52b6e9aa2f21a3f73c7b5a8", size = 4116, upload-time = "2020-06-21T19:59:44.372Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/1f/75/cc1e76d4957ef6852ef9a49c3f75794a2952d0af3d2482dc7d19f659fa42/checksumdir-1.2.0-py3-none-any.whl", hash = "sha256:77687e16da95970c94061c74ef2e13666c4b6e0e8c90a5eaf0c8f7591332cf01", size = 5342, upload-time = "2020-06-21T19:59:43.353Z" },
-]
+version = "0.0.0"
+source = { git = "https://github.com/idahogray/checksumdir?branch=replace-pkg-resources#d493ef3f81f46f65919916184ca7908bd644a57f" }
 
 [[package]]
 name = "cursebreaker"
@@ -137,7 +133,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "bbcode", specifier = ">=1.1.0" },
-    { name = "checksumdir", specifier = ">=1.2.0" },
+    { name = "checksumdir", git = "https://github.com/idahogray/checksumdir?branch=replace-pkg-resources" },
     { name = "httpx", extras = ["brotli", "http2"], specifier = ">=0.28.1" },
     { name = "markdown", specifier = ">=3.7" },
     { name = "packaging", specifier = ">=24.2" },
