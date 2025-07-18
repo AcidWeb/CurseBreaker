@@ -36,6 +36,7 @@ class Core:
         self.wowiCache = {}
         self.wagoCache = {}
         self.githubCache = {}
+        self.githubPackagerCache = {}
         self.wagoIdCache = None
         self.tukuiCache = None
         self.checksumCache = {}
@@ -215,7 +216,8 @@ class Core:
         elif url.startswith('https://www.wowinterface.com/downloads/'):
             return WoWInterfaceAddon(url, self.wowiCache, self.http)
         elif url.startswith('https://github.com/'):
-            return GitHubAddon(url, self.githubCache, self.clientType, self.config['GHAPIKey'], self.http)
+            return GitHubAddon(url, self.githubCache, self.githubPackagerCache, self.clientType,
+                               self.config['GHAPIKey'], self.http)
         elif url.lower() == 'elvui':
             self.bulk_tukui_check()
             return TukuiAddon('elvui', self.tukuiCache,
@@ -548,6 +550,10 @@ class Core:
                     self.wagoCache[addon['slug']] = payload['addons'][addonid]
                     break
 
+    def bulk_gh_check_worker(self, node_id, url):
+        return node_id, self.http.get(url, headers={'Accept': 'application/octet-stream'},
+                                      auth=APIAuth('token', self.config['GHAPIKey'])).json()
+
     def bulk_gh_check(self, ids):
         query = ('{\n  "query": "{ search( type: REPOSITORY query: \\"' + f'repo:{" repo:".join(ids)}' + ' fork:true\\"'
                  ' first: 100 ) { nodes { ... on Repository { nameWithOwner releases(first: 15) { nodes { tag_name: tag'
@@ -558,11 +564,30 @@ class Core:
         if payload.status_code != 200:
             return
         payload = payload.json()
+        packager_cache = {}
         for addon in payload['data']['search']['nodes']:
             self.githubCache[addon['nameWithOwner']] = addon['releases']['nodes']
         for addon in self.githubCache:
             for i in range(len(self.githubCache[addon])):
                 self.githubCache[addon][i]['assets'] = self.githubCache[addon][i]['assets']['nodes']
+            for release in self.githubCache[addon]:
+                if not release['draft'] and not release['prerelease']:
+                    for asset in release['assets']:
+                        if asset['name'] == 'release.json':
+                            packager_cache[asset['node_id']] = asset['url']
+                            break
+                    break
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            workers = []
+            for node_id, url in packager_cache.items():
+                workers.append(executor.submit(self.bulk_gh_check_worker, node_id, url))
+            for future in concurrent.futures.as_completed(workers):
+                try:
+                    output = future.result()
+                except (httpx.RequestError, json.JSONDecodeError):
+                    pass
+                else:
+                    self.githubPackagerCache[output[0]] = output[1]
 
     @retry(custom_error='Failed to parse Tukui API data')
     def bulk_tukui_check(self):

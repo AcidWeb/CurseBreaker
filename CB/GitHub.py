@@ -8,11 +8,12 @@ from . import retry, APIAuth
 
 class GitHubAddon:
     @retry()
-    def __init__(self, url, checkcache, clienttype, apikey, http):
+    def __init__(self, url, checkcache, packagercache, clienttype, apikey, http):
         project = url.replace('https://github.com/', '')
         self.http = http
         self.apiKey = apikey
         self.payloads = []
+        self.packagerCache = packagercache
         if project in checkcache:
             self.payload = checkcache[project]
         else:
@@ -65,7 +66,11 @@ class GitHubAddon:
     def parse_metadata(self):
         for release in self.payloads[self.releaseDepth]['assets']:
             if release['name'] and release['name'] == 'release.json':
-                self.metadata = self.http.get(release['url'], headers={'Accept': 'application/octet-stream'}).json()
+                if release['node_id'] in self.packagerCache:
+                    self.metadata = self.packagerCache[release['node_id']]
+                else:
+                    self.metadata = self.http.get(release['url'], headers={'Accept': 'application/octet-stream'},
+                                                  auth=APIAuth('token', self.apiKey)).json()
                 break
         else:
             self.metadata = None
@@ -129,7 +134,8 @@ class GitHubAddon:
     @retry()
     def get_addon(self):
         self.archive = zipfile.ZipFile(io.BytesIO(
-            self.http.get(self.downloadUrl, headers={'Accept': 'application/octet-stream'}).content))
+            self.http.get(self.downloadUrl, headers={'Accept': 'application/octet-stream'},
+                          auth=APIAuth('token', self.apiKey)).content))
         for file in self.archive.namelist():
             if file.lower().endswith('.toc') and '/' not in file:
                 raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
