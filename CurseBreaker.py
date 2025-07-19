@@ -12,6 +12,7 @@ import base64
 import random
 import shutil
 import zipfile
+import logging
 import platform
 import pyperclip
 import subprocess
@@ -31,6 +32,7 @@ from rich.align import Align
 from rich.table import Table
 from rich.panel import Panel
 from rich.prompt import Confirm
+from rich.logging import RichHandler
 from rich.console import Console, detect_legacy_windows
 from rich.control import Control
 from rich.progress import Progress, BarColumn
@@ -50,6 +52,8 @@ if platform.system() == 'Windows':
 
 class TUI:
     def __init__(self):
+        if 'CURSEBREAKER_DEBUG' in os.environ:
+            logging.basicConfig(level=logging.INFO, format='%(message)s', datefmt='[%X]', handlers=[RichHandler()])
         self.core = Core()
         self.session = PromptSession(reserve_space_for_menu=6, complete_in_thread=True)
         self.headless = False
