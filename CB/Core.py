@@ -552,15 +552,16 @@ class Core:
 
     def bulk_gh_check_worker(self, node_id, url):
         return node_id, self.http.get(url, headers={'Accept': 'application/octet-stream'},
-                                      auth=APIAuth('token', self.config['GHAPIKey'])).json()
+                                      auth=APIAuth('Bearer', self.config['GHAPIKey'])).json()
 
     def bulk_gh_check(self, ids):
         query = ('{\n  "query": "{ search( type: REPOSITORY query: \\"' + f'repo:{" repo:".join(ids)}' + ' fork:true\\"'
                  ' first: 100 ) { nodes { ... on Repository { nameWithOwner releases(first: 15) { nodes { tag_name: tag'
                  'Name name html_url: url draft: isDraft prerelease: isPrerelease assets: releaseAssets(first: 100) { n'
-                 'odes { node_id: id name content_type: contentType url } } } } } } }}"\n}')
+                 'odes { node_id: id name content_type: contentType browser_download_url: downloadUrl } } } } } } }}"\n'
+                 '}')
         payload = self.http.post('https://api.github.com/graphql', json=json.loads(query),
-                                 auth=APIAuth('bearer', self.config['GHAPIKey']), timeout=15)
+                                 auth=APIAuth('Bearer', self.config['GHAPIKey']), timeout=15)
         if payload.status_code != 200:
             return
         payload = payload.json()
@@ -574,7 +575,7 @@ class Core:
                 if not release['draft'] and not release['prerelease']:
                     for asset in release['assets']:
                         if asset['name'] == 'release.json':
-                            packager_cache[asset['node_id']] = asset['url']
+                            packager_cache[asset['node_id']] = asset['browser_download_url']
                             break
                     break
         with concurrent.futures.ThreadPoolExecutor() as executor:

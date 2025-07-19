@@ -19,7 +19,7 @@ class GitHubAddon:
         else:
             try:
                 self.payload = self.http.get(f'https://api.github.com/repos/{project}/releases',
-                                             auth=APIAuth('token', self.apiKey))
+                                             auth=APIAuth('Bearer', self.apiKey))
             except httpx.RequestError as e:
                 raise RuntimeError(f'{project}\nGitHub API failed to respond.') from e
             if self.payload.status_code == 401:
@@ -69,8 +69,9 @@ class GitHubAddon:
                 if release['node_id'] in self.packagerCache:
                     self.metadata = self.packagerCache[release['node_id']]
                 else:
-                    self.metadata = self.http.get(release['url'], headers={'Accept': 'application/octet-stream'},
-                                                  auth=APIAuth('token', self.apiKey)).json()
+                    self.metadata = self.http.get(release['browser_download_url'],
+                                                  headers={'Accept': 'application/octet-stream'},
+                                                  auth=APIAuth('Bearer', self.apiKey)).json()
                 break
         else:
             self.metadata = None
@@ -99,7 +100,7 @@ class GitHubAddon:
             self.parse()
         for release in self.payloads[self.releaseDepth]['assets']:
             if release['name'] and release['name'] == targetfile:
-                self.downloadUrl = release['url']
+                self.downloadUrl = release['browser_download_url']
                 break
         if not self.downloadUrl:
             self.releaseDepth += 1
@@ -114,11 +115,11 @@ class GitHubAddon:
                     and release['content_type'] in ['application/x-zip-compressed', 'application/zip', 'raw']:
                 if not latest and not release['name'].endswith(('-classic.zip', '-bc.zip', '-bcc.zip', '-wrath.zip',
                                                                 '-cata.zip', '-mists.zip')):
-                    latest = release['url']
+                    latest = release['browser_download_url']
                 elif not latestclassic and release['name'].endswith('-classic.zip'):
-                    latestclassic = release['url']
+                    latestclassic = release['browser_download_url']
                 elif not latestmop and release['name'].endswith('-mists.zip'):
-                    latestmop = release['url']
+                    latestmop = release['browser_download_url']
         if (self.clientType == 'retail' and latest) \
                 or (self.clientType == 'classic' and latest and not latestclassic) \
                 or (self.clientType == 'mop' and latest and not latestmop):
@@ -135,7 +136,7 @@ class GitHubAddon:
     def get_addon(self):
         self.archive = zipfile.ZipFile(io.BytesIO(
             self.http.get(self.downloadUrl, headers={'Accept': 'application/octet-stream'},
-                          auth=APIAuth('token', self.apiKey)).content))
+                          auth=APIAuth('Bearer', self.apiKey)).content))
         for file in self.archive.namelist():
             if file.lower().endswith('.toc') and '/' not in file:
                 raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
@@ -159,7 +160,7 @@ class GitHubAddonRaw:
         self.name = addon['Name']
         try:
             self.payload = self.http.get(f'https://api.github.com/repos/{repository}/branches/{self.branch}',
-                                         auth=APIAuth('token', self.apiKey))
+                                         auth=APIAuth('Bearer', self.apiKey))
         except httpx.RequestError as e:
             raise RuntimeError(f'{self.name}\nGitHub API failed to respond.') from e
         if self.payload.status_code == 401:
