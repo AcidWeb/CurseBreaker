@@ -558,7 +558,7 @@ class Core:
         query = ('{\n  "query": "{ search( type: REPOSITORY query: \\"' + f'repo:{" repo:".join(ids)}' + ' fork:true\\"'
                  ' first: 100 ) { nodes { ... on Repository { nameWithOwner releases(first: 15) { nodes { tag_name: tag'
                  'Name name html_url: url draft: isDraft prerelease: isPrerelease assets: releaseAssets(first: 100) { n'
-                 'odes { node_id: id name content_type: contentType browser_download_url: downloadUrl } } } } } } }}"\n'
+                 'odes { node_id: id name content_type: contentType url } } } } } } }}"\n'
                  '}')
         payload = self.http.post('https://api.github.com/graphql', json=json.loads(query),
                                  auth=APIAuth('Bearer', self.config['GHAPIKey']), timeout=15)
@@ -575,7 +575,7 @@ class Core:
                 if not release['draft'] and not release['prerelease']:
                     for asset in release['assets']:
                         if asset['name'] == 'release.json':
-                            packager_cache[asset['node_id']] = asset['browser_download_url']
+                            packager_cache[asset['node_id']] = asset['url']
                             break
                     break
         with concurrent.futures.ThreadPoolExecutor() as executor:

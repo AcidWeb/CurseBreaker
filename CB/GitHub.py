@@ -69,8 +69,7 @@ class GitHubAddon:
                 if release['node_id'] in self.packagerCache:
                     self.metadata = self.packagerCache[release['node_id']]
                 else:
-                    self.metadata = self.http.get(release['browser_download_url'],
-                                                  headers={'Accept': 'application/octet-stream'},
+                    self.metadata = self.http.get(release['url'], headers={'Accept': 'application/octet-stream'},
                                                   auth=APIAuth('Bearer', self.apiKey)).json()
                 break
         else:
@@ -100,7 +99,7 @@ class GitHubAddon:
             self.parse()
         for release in self.payloads[self.releaseDepth]['assets']:
             if release['name'] and release['name'] == targetfile:
-                self.downloadUrl = release['browser_download_url']
+                self.downloadUrl = release['url']
                 break
         if not self.downloadUrl:
             self.releaseDepth += 1
@@ -115,11 +114,11 @@ class GitHubAddon:
                     and release['content_type'] in ['application/x-zip-compressed', 'application/zip', 'raw']:
                 if not latest and not release['name'].endswith(('-classic.zip', '-bc.zip', '-bcc.zip', '-wrath.zip',
                                                                 '-cata.zip', '-mists.zip')):
-                    latest = release['browser_download_url']
+                    latest = release['url']
                 elif not latestclassic and release['name'].endswith('-classic.zip'):
-                    latestclassic = release['browser_download_url']
+                    latestclassic = release['url']
                 elif not latestmop and release['name'].endswith('-mists.zip'):
-                    latestmop = release['browser_download_url']
+                    latestmop = release['url']
         if (self.clientType == 'retail' and latest) \
                 or (self.clientType == 'classic' and latest and not latestclassic) \
                 or (self.clientType == 'mop' and latest and not latestmop):
