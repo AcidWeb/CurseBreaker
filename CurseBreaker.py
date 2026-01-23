@@ -396,7 +396,7 @@ class TUI:
                 self.slugs = json.load(gzip.open(io.BytesIO(
                     self.core.http.get('https://cursebreaker.acidweb.dev/slugs-v2.json.gz').content)))
             except (StopIteration, UnicodeDecodeError, json.JSONDecodeError, httpx.RequestError):
-                self.slugs = {'wa': [], 'wowi': [], 'gh': []}
+                self.slugs = {'wa': [], 'wowi': [], 'gh': [], 'custom': []}
         addons = []
         for addon in sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower()):
             addons.append(addon['Name'])
