@@ -86,9 +86,9 @@ class PlaterParser(BaseParser):
             data = file.read()
         platerdata = loads(re.search(r'PlaterDB = {\n.*?}\n', data, re.DOTALL).group().replace('PlaterDB = {', '{', 1))
         for profile in platerdata['profiles']:
-            if data := platerdata['profiles'][profile]['script_data']:
+            if data := platerdata['profiles'][profile].get('script_data'):
                 self.parse_storage_internal(data)
-            if data := platerdata['profiles'][profile]['hook_data']:
+            if data := platerdata['profiles'][profile].get('hook_data'):
                 self.parse_storage_internal(data)
             if 'url' in platerdata['profiles'][profile]:
                 search = self.urlParser.search(platerdata['profiles'][profile]['url'])
