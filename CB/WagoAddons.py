@@ -2,9 +2,7 @@ import os
 import io
 import httpx
 import zipfile
-from datetime import datetime
 from dateutil import parser
-from dateutil.tz import tzutc
 from json import JSONDecodeError
 from . import retry, APIAuth
 
@@ -62,28 +60,16 @@ class WagoAddonsAddon:
         if len(self.payload['recent_release']) == 0:
             raise RuntimeError(f'{self.name}.\nFailed to find release for your client version.')
 
-        empty = datetime(1, 1, 1, 0, 1, tzinfo=tzutc())
-        release = {'stable': datetime(1, 1, 1, 0, 0, tzinfo=tzutc()),
-                   'beta': datetime(1, 1, 1, 0, 0, tzinfo=tzutc()),
-                   'alpha': datetime(1, 1, 1, 0, 0, tzinfo=tzutc())}
-        for channel in ['stable', 'beta', 'alpha']:
-            if channel in self.payload['recent_release']:
-                release[channel] = parser.isoparse(self.payload['recent_release'][channel]['created_at'])
+        release = {channel: parser.isoparse(self.payload['recent_release'][channel]['created_at'])
+                   for channel in ('stable', 'beta', 'alpha') if channel in self.payload['recent_release']}
         if self.allowDev == 1:
             release.pop('alpha', None)
         elif self.allowDev == 0:
-            if release['stable'] == empty:
-                release.pop('stable', None)
-                if release['beta'] != empty:
-                    release.pop('alpha', None)
-                elif release['alpha'] != empty:
-                    release.pop('beta', None)
-                else:
-                    release.pop('alpha', None)
-                    release.pop('beta', None)
-            else:
-                release.pop('alpha', None)
+            if 'stable' in release:
                 release.pop('beta', None)
+                release.pop('alpha', None)
+            elif 'beta' in release:
+                release.pop('alpha', None)
         if not release:
             raise RuntimeError(f'{self.name}.\nFailed to find release for your client version.')
         release = self.payload['recent_release'][max(release, key=release.get)]
