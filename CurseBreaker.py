@@ -612,14 +612,13 @@ class TUI:
                 with suppress(RuntimeError, httpx.RequestError):
                     self.core.bulk_check(addons)
                 progress.start_task(task)
-                self.core.bulk_check_checksum(addons, progress)
             while not progress.finished:
                 for addon in addons:
                     try:
                         compacted = self._c_update_process(addon, update, force, compact, compacted, provider)
                     except Exception as e:
                         exceptions.append(e)
-                    progress.update(task, advance=1 if args else 0.5, refresh=True)
+                    progress.update(task, advance=1, refresh=True)
         if addline:
             self.console.print('')
         self.console.print(self.table)

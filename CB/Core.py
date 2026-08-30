@@ -39,7 +39,6 @@ class Core:
         self.githubPackagerCache = {}
         self.wagoIdCache = None
         self.tukuiCache = None
-        self.checksumCache = {}
 
     def init_master_config(self):
         try:
@@ -309,7 +308,7 @@ class Core:
         dev = self.check_if_dev(old['URL'])
         blocked = self.check_if_blocked(old)
         oldversion = old['Version']
-        modified = self.checksumCache[old['URL']] if old['URL'] in self.checksumCache else self.check_checksum(old)[1]
+        modified = self.check_checksum(old)
         if old['URL'].startswith(('https://www.townlong-yak.com/addons/',
                                   'https://www.curseforge.com/wow/addons/',
                                   'https://www.tukui.org/')):
@@ -335,24 +334,12 @@ class Core:
         return new.name, new.author, new.currentVersion, oldversion, new.uiVersion, modified, blocked, source, \
             sourceurl, new.changelogUrl, dev
 
-    def check_checksum(self, addon, pbar=None):
+    def check_checksum(self, addon):
         checksums = {}
         for directory in addon['Directories']:
             if os.path.isdir(self.path / directory):
                 checksums[directory] = dirhash(self.path / directory)
-        if pbar:
-            pbar.update(0, advance=0.5, refresh=True)
-        return addon['URL'], len(checksums.items() & addon['Checksums'].items()) != len(addon['Checksums'])
-
-    def bulk_check_checksum(self, addons, pbar):
-        self.checksumCache = {}
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            workers = []
-            for addon in addons:
-                workers.append(executor.submit(self.check_checksum, addon, pbar))
-            for future in concurrent.futures.as_completed(workers):
-                output = future.result()
-                self.checksumCache[output[0]] = output[1]
+        return len(checksums.items() & addon['Checksums'].items()) != len(addon['Checksums'])
 
     def dev_toggle(self, url):
         if url == 'global':
