@@ -8,7 +8,6 @@ import gzip
 import glob
 import json
 import httpx
-import base64
 import random
 import shutil
 import zipfile
@@ -16,14 +15,11 @@ import logging
 import platform
 import pyperclip
 import subprocess
-from io import BytesIO
-from PIL import Image
 from csv import reader
 from shlex import split
 from pathlib import Path
 from datetime import datetime
 from contextlib import nullcontext, suppress
-from rich_pixels import Pixels
 from rich import box
 from rich.text import Text
 from rich.rule import Rule
@@ -148,9 +144,7 @@ class TUI:
         if len(self.core.config['Addons']) > 0 and self.core.config['AutoUpdate']:
             if not self.headless and self.core.config['AutoUpdateDelay']:
                 if self.console.color_system == 'truecolor':
-                    with Image.open(BytesIO(base64.b64decode(LOGO))) as image:
-                        logo = Pixels.from_image(image, resize=(40, 40))
-                    self.console.print(Panel(Align.center(logo), border_style='yellow'))
+                    self.console.print(Panel(Align.center(Text.from_markup(LOGO)), border_style='yellow'))
                     self.console.print('')
                 keypress = self.handle_keypress('Automatic update of all addons will start in {} seconds.\nPress any bu'
                                                 'tton to enter interactive mode.', 5, True)
