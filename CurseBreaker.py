@@ -457,6 +457,11 @@ class TUI:
                 args = args.replace(addon['Name'], '', 1)
         return sorted(parsed)
 
+    def parse_flags(self, args, flags):
+        pargs = split(args.replace("'", "\\'"))
+        detected = [flag for flag in flags if flag in pargs]
+        return ' '.join(parg for parg in pargs if parg not in detected).strip(), detected
+
     def parse_link(self, text, link, dev=None, authors=None, uiversion=None):
         if dev == 1:
             dev = ' [bold][B][/bold]'
@@ -498,11 +503,8 @@ class TUI:
                                'username]/\\[repository_name]\n\tElvUI [bold white]|[/bold white] Tukui\n\t' +
                                self.parse_custom_addons(), highlight=False)
             return
-        optignore = False
-        pargs = split(args.replace("'", "\\'"))
-        if '-i' in pargs:
-            optignore = True
-            args = args.replace('-i', '', 1)
+        args, flags = self.parse_flags(args, ('-i',))
+        optignore = '-i' in flags
         args = re.sub(r'([a-zA-Z0-9_:])( +)([a-zA-Z0-9_:])', r'\1,\3', args)
         addons = [re.sub(r'[\[\]]', '', addon).strip() for addon in next(iter(reader([args], skipinitialspace=True)))]
         exceptions = []
@@ -540,11 +542,8 @@ class TUI:
                                'full links as an argument.\n\t[bold white]Flags:[/bold white]\n\t\t[bold white]-k[/bold'
                                ' white] - Keep the addon files after uninstalling.', highlight=False)
             return
-        optkeep = False
-        pargs = split(args.replace("'", "\\'"))
-        if '-k' in pargs:
-            optkeep = True
-            args = args.replace('-k', '', 1)
+        args, flags = self.parse_flags(args, ('-k',))
+        optkeep = '-k' in flags
         addons = self.parse_args(args)
         if len(addons) > 0:
             with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|', auto_refresh=False,
@@ -651,14 +650,9 @@ class TUI:
         optsource = False
         optcompact = False
         if args:
-            pargs = split(args.replace("'", "\\'"))
-            if '-s' in pargs:
-                optsource = True
-                args = args.replace('-s', '', 1)
-            if '-a' in pargs:
-                optcompact = True
-                args = args.replace('-a', '', 1)
-            args = args.strip()
+            args, flags = self.parse_flags(args, ('-s', '-a'))
+            optsource = '-s' in flags
+            optcompact = '-a' in flags
         self.c_update(args, False, False, False, optsource, optcompact)
 
     def c_orphans(self, _):
