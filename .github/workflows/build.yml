@@ -10,9 +10,9 @@ jobs:
     name: Windows
     runs-on: windows-2022
     steps:
-    - uses: actions/checkout@v4
-    - uses: astral-sh/setup-uv@v5
-    - uses: actions/setup-python@v5
+    - uses: actions/checkout@v7
+    - uses: astral-sh/setup-uv@v10
+    - uses: actions/setup-python@v7
       with:
         python-version-file: ".python-version"
     - name: Install dependencies
@@ -22,7 +22,7 @@ jobs:
     - name: Build binary
       run: uv run pyinstaller CurseBreaker.spec
     - name: Upload binary
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: Windows
         path: dist/CurseBreaker.exe
@@ -31,9 +31,9 @@ jobs:
     name: Linux
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v4
-    - uses: astral-sh/setup-uv@v5
-    - uses: actions/setup-python@v5
+    - uses: actions/checkout@v7
+    - uses: astral-sh/setup-uv@v10
+    - uses: actions/setup-python@v7
       with:
         python-version-file: ".python-version"
     - name: Install dependencies
@@ -41,18 +41,18 @@ jobs:
     - name: Build binary
       run: uv run pyinstaller CurseBreaker.spec
     - name: Upload binary
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: Linux
         path: dist/CurseBreaker
 
   macos:
     name: macOS
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
-    - uses: actions/checkout@v4
-    - uses: astral-sh/setup-uv@v5
-    - uses: actions/setup-python@v5
+    - uses: actions/checkout@v7
+    - uses: astral-sh/setup-uv@v10
+    - uses: actions/setup-python@v7
       with:
         python-version-file: ".python-version"
     - name: Install dependencies
@@ -60,7 +60,7 @@ jobs:
     - name: Build binary
       run: uv run pyinstaller CurseBreaker.spec
     - name: Upload binary
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: macOS
         path: dist/CurseBreaker

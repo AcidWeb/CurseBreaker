@@ -1,8 +1,8 @@
 import httpx
 
-__version__ = '4.8.4'
+__version__ = '4.9.0'
 __license__ = 'GPLv3'
-__copyright__ = '2019-2025, Paweł Jastrzębski <pawelj@iosphe.re>'
+__copyright__ = '2019-2026, Paweł Jastrzębski <pawelj@iosphe.re>'
 __docformat__ = 'restructuredtext en'
 
 

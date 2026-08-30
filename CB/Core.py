@@ -606,7 +606,6 @@ class Core:
                 accounts_processed.append(account)
         return accounts_processed
 
-    # TODO: Refactor to be smarter
     def detect_addons(self):
         if self.config['WAAAPIKey'] == '':
             raise RuntimeError('This feature only matches addons that are in the database of the Wago Addons. Other sou'

@@ -97,7 +97,7 @@ class TUI:
             self.handle_shutdown('[bold red]This client release is currently unsupported by CurseBreaker.[/bold red]\n')
         # Check if client have write access
         try:
-            with open('PermissionTest', 'w') as _:
+            with open('PermissionTest', 'w'):
                 pass
             os.remove('PermissionTest')
         except OSError:
@@ -124,7 +124,7 @@ class TUI:
                 self.core.config['WAStash'].append(sys.argv[1].strip().replace('weakauras-companion://wago/push/', ''))
                 self.core.config['WAStash'] = list(set(self.core.config['WAStash']))
                 self.core.save_config()
-                self.c_wago_update(_, flush=False)
+                self.c_wago_update(None, flush=False)
             except Exception as e:
                 self.handle_exception(e)
             self.handle_shutdown()
@@ -641,7 +641,6 @@ class TUI:
         if exceptions:
             self.handle_exception(exceptions, False)
 
-    # noinspection PyTypeChecker
     def c_force_update(self, args):
         if args:
             self.c_update(args, False, True, True)

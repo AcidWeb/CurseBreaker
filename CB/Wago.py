@@ -100,7 +100,6 @@ class PlaterParser(BaseParser):
 
 
 class WagoUpdater:
-    # noinspection PyTypeChecker
     def __init__(self, config, http):
         self.http = http
         self.auth = WagoAPIAuth(config['WAAPIKey'])
