@@ -619,6 +619,8 @@ class TUI:
                     except Exception as e:
                         exceptions.append(e)
                     progress.update(task, advance=1, refresh=True)
+        if self.core.configDirty:
+            self.core.save_config()
         if addline:
             self.console.print('')
         self.console.print(self.table)

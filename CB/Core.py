@@ -39,6 +39,7 @@ class Core:
         self.githubPackagerCache = {}
         self.wagoIdCache = None
         self.tukuiCache = None
+        self.configDirty = False
 
     def init_master_config(self):
         try:
@@ -84,6 +85,7 @@ class Core:
     def save_config(self):
         with open(self.configPath, 'w') as outfile:
             json.dump(self.config, outfile, sort_keys=True, indent=4, separators=(',', ': '))
+        self.configDirty = False
 
     def update_config(self):
         if 'Version' in self.config.keys() and self.config['Version'] == __version__:
@@ -262,14 +264,13 @@ class Core:
             return False, addon['Name'], addon['Version']
         self.cleanup(new.directories)
         new.install(self.path)
-        checksums = {}
-        for directory in new.directories:
-            checksums[directory] = dirhash(self.path / directory)
+        checksums, signatures = self.directory_checksums(new.directories)
         self.config['Addons'].append({'Name': new.name,
                                       'URL': url,
                                       'Version': new.currentVersion,
                                       'Directories': new.directories,
-                                      'Checksums': checksums})
+                                      'Checksums': checksums,
+                                      'Signatures': signatures})
         self.save_config()
         return True, new.name, new.currentVersion
 
@@ -320,13 +321,12 @@ class Core:
             new.get_addon()
             self.cleanup(old['Directories'])
             new.install(self.path)
-            checksums = {}
-            for directory in new.directories:
-                checksums[directory] = dirhash(self.path / directory)
+            checksums, signatures = self.directory_checksums(new.directories)
             old['Name'] = new.name
             old['Version'] = new.currentVersion
             old['Directories'] = new.directories
             old['Checksums'] = checksums
+            old['Signatures'] = signatures
             self.save_config()
         if force:
             modified = False
@@ -334,12 +334,48 @@ class Core:
         return new.name, new.author, new.currentVersion, oldversion, new.uiVersion, modified, blocked, source, \
             sourceurl, new.changelogUrl, dev
 
+    def directory_signature(self, directory):
+        hasher = hashlib.md5()
+        entries = []
+        root = str(directory)
+        prefix = len(root) + 1
+        stack = [root]
+        while stack:
+            for item in os.scandir(stack.pop()):
+                if item.is_dir(follow_symlinks=False):
+                    stack.append(item.path)
+                elif item.is_file(follow_symlinks=False):
+                    info = item.stat()
+                    entries.append(f'{item.path[prefix:]}|{info.st_size}|{info.st_mtime_ns}')
+        for entry in sorted(entries):
+            hasher.update(entry.encode('utf-8'))
+        return hasher.hexdigest()
+
+    def directory_checksums(self, directories):
+        checksums = {}
+        signatures = {}
+        for directory in directories:
+            checksums[directory] = dirhash(self.path / directory)
+            signatures[directory] = self.directory_signature(self.path / directory)
+        return checksums, signatures
+
     def check_checksum(self, addon):
         checksums = {}
+        signatures = {}
+        stored = addon.get('Signatures', {})
         for directory in addon['Directories']:
             if os.path.isdir(self.path / directory):
-                checksums[directory] = dirhash(self.path / directory)
-        return len(checksums.items() & addon['Checksums'].items()) != len(addon['Checksums'])
+                signature = self.directory_signature(self.path / directory)
+                signatures[directory] = signature
+                if stored.get(directory) == signature and directory in addon['Checksums']:
+                    checksums[directory] = addon['Checksums'][directory]
+                else:
+                    checksums[directory] = dirhash(self.path / directory)
+        modified = len(checksums.items() & addon['Checksums'].items()) != len(addon['Checksums'])
+        if not modified and signatures != stored:
+            addon['Signatures'] = signatures
+            self.configDirty = True
+        return modified
 
     def dev_toggle(self, url):
         if url == 'global':
