@@ -116,8 +116,24 @@ class WagoUpdater:
         if self.username == 'DISABLED':
             self.username = ''
 
-    def clean_string(self, s):
-        return s.replace('"', '\\"')
+    def escape_lua(self, value):
+        value = str(value)
+        level = '='
+        while f']{level}]' in value:
+            level += '='
+        return f'[{level}[{value}]{level}]'
+
+    def build_entry(self, entry, raw, note):
+        return (f'        [ {self.escape_lua(entry["slug"])} ] = {{\n'
+                f'          name = {self.escape_lua(entry["name"])},\n'
+                f'          author = {self.escape_lua(entry["username"])},\n'
+                f'          encoded = {self.escape_lua(raw)},\n'
+                f'          wagoVersion = {self.escape_lua(entry["version"])},\n'
+                f'          wagoSemver = {self.escape_lua(entry["versionString"])},\n'
+                f'          source = [=[Wago]=],\n'
+                f'          logo = [=[Interface\\AddOns\\CurseBreakerCompanion\\LogoWA.tga]=],\n'
+                f'          versionNote = {self.escape_lua(note)},\n'
+                f'        }},\n')
 
     @retry('Failed to parse Wago data. Wago might be down or provided API key is incorrect.')
     def check_updates(self, addon):
@@ -151,12 +167,7 @@ class WagoUpdater:
                 output.append(entry['name'])
                 raw = self.http.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}',
                                     auth=self.auth, timeout=15).text
-                stash = f'        ["{entry["slug"]}"] = {{\n          name = [=[{entry["name"]}]=],\n          author' \
-                        f' = [=[{entry["username"]}]=],\n          encoded = [=[{raw}]=],\n          wagoVersion = [=' \
-                        f'[{entry["version"]}]=],\n          wagoSemver = [=[{entry["versionString"]}]=],\n          ' \
-                        f'source = [=[Wago]=],\n          logo = [=[Interface\\AddOns\\CurseBreakerCompanion\\LogoWA.' \
-                        f'tga]=],\n          versionNote = [=[]=],\n        }}' \
-                        f',\n'
+                stash = self.build_entry(entry, raw, '')
                 if entry['type'] == 'WEAKAURA':
                     wa.data['stash'].append(stash)
                 elif entry['type'] == 'PLATER':
@@ -176,13 +187,7 @@ class WagoUpdater:
     def update_entry(self, entry, addon):
         raw = self.http.get(f'https://data.wago.io/api/raw/encoded?id={quote_plus(entry["slug"])}',
                             auth=self.auth, timeout=15).text
-        slug = f'        ["{entry["slug"]}"] = {{\n          name = [=[{entry["name"]}]=],\n          author = [=[' \
-               f'{entry["username"]}]=],\n          encoded = [=[{raw}]=],\n          wagoVersion = [=[' \
-               f'{entry["version"]}]=],\n          wagoSemver = [=[{entry["versionString"]}]=],\n          source = [' \
-               f'=[Wago]=],\n          logo = [=[Interface\\AddOns\\CurseBreakerCompanion\\LogoWA.tga]=],\n          ' \
-               f'versionNote = [=[{self.parse_changelog(entry)}]=],\n' \
-               f'        }},\n'
-        addon.data['slugs'].append(slug)
+        addon.data['slugs'].append(self.build_entry(entry, raw, self.parse_changelog(entry)))
 
     def install_data(self, wadata, platerdata):
         with open(Path('Interface/AddOns/CurseBreakerCompanion/Data.lua'), 'w', newline='\n', encoding='utf-8') as out:
