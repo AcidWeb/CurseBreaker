@@ -60,7 +60,7 @@ class TUI:
         self.os = platform.system()
         install()
 
-    def start(self):  # sourcery skip: low-code-quality
+    def start(self):
         # Check if headless mode was requested
         if len(sys.argv) == 2 and sys.argv[1].lower() == 'headless':
             self.headless = True
@@ -389,7 +389,8 @@ class TUI:
             try:
                 self.slugs = json.load(gzip.open(io.BytesIO(
                     self.core.http.get('https://cursebreaker.acidweb.dev/slugs-v2.json.gz').content)))
-            except (StopIteration, UnicodeDecodeError, json.JSONDecodeError, httpx.RequestError):
+            except (StopIteration, UnicodeDecodeError, json.JSONDecodeError, httpx.RequestError,
+                    gzip.BadGzipFile, EOFError):
                 self.slugs = {'wa': [], 'wowi': [], 'gh': [], 'custom': []}
         addons = []
         for addon in sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower()):
@@ -555,7 +556,7 @@ class TUI:
                         progress.update(task, advance=1, refresh=True)
             self.console.print(self.table)
 
-    def _c_update_process(self, addon, update, force, compact, compacted, provider):  # sourcery skip: low-code-quality
+    def _c_update_process(self, addon, update, force, compact, compacted, provider):
         name, authors, versionnew, versionold, uiversion, modified, blocked, source, sourceurl, changelog, dstate \
             = self.core.update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
         additionalstatus = f' [bold red]{source.upper()}[/bold red]' if source == 'Unsupported' and not provider else ''
@@ -673,7 +674,7 @@ class TUI:
             self.console.print('This feature is available only on Windows.')
 
     def _c_toggle_channel(self, args):
-        if args := args[8:]:
+        if args:
             status = self.core.dev_toggle(args)
             if status is None:
                 self.console.print('[bold red]This addon doesn\'t exist or it is not installed yet.[/bold red]')
@@ -697,7 +698,7 @@ class TUI:
                                't.', highlight=False)
 
     def _c_toggle_pinning(self, args):
-        if args := args[8:]:
+        if args:
             status = self.core.block_toggle(args)
             if status is None:
                 self.console.print('[bold red]This addon does not exist or it is not installed yet.[/bold red]')
@@ -709,7 +710,7 @@ class TUI:
             self.console.print('[green]Usage:[/green]\n\tThis command accepts an addon name as an argument.')
 
     def _c_toggle_wago(self, args):
-        if args := args[5:]:
+        if args:
             if args == self.core.config['WAUsername']:
                 self.console.print(f'Wago version check is now: [green]ENABLED[/green]\nEntries created by [bold white]'
                                    f'{self.core.config["WAUsername"]}[/bold white] are now included.')
@@ -723,7 +724,7 @@ class TUI:
             self.console.print('Wago version check is now: [green]ENABLED[/green]')
         else:
             self.core.config['WAUsername'] = 'DISABLED'
-            shutil.rmtree(Path('Interface/AddOns/WeakAurasCompanion'), ignore_errors=True)
+            shutil.rmtree(Path('Interface/AddOns/CurseBreakerCompanion'), ignore_errors=True)
             self.console.print('Wago version check is now: [red]DISABLED[/red]')
         self.core.save_config()
 
@@ -754,12 +755,14 @@ class TUI:
                                'username is provided check will start to ignore the specified author.', highlight=False)
             return
         args = args.strip()
-        if args.startswith('channel'):
-            self._c_toggle_channel(args)
-        elif args.startswith('pinning'):
-            self._c_toggle_pinning(args)
-        elif args.startswith('wago'):
-            self._c_toggle_wago(args)
+        option, _, value = args.partition(' ')
+        value = value.strip()
+        if option == 'channel':
+            self._c_toggle_channel(value)
+        elif option == 'pinning':
+            self._c_toggle_pinning(value)
+        elif option == 'wago':
+            self._c_toggle_wago(value)
         elif args == 'authors':
             status = self._c_toggle_parse('ShowAuthors')
             self.console.print('The authors listing is on now:',
@@ -804,35 +807,35 @@ class TUI:
                                'count.\n\t[green]set gh_api [API key][/green]\n\t\tSets GitHub API key. Might be needed'
                                ' to get around API rate limits.', highlight=False)
             return
-        args = args.strip()
-        if args.startswith('wago_addons_api'):
-            if args := args[16:]:
-                self._c_set_parse('Wago Addons API key is now set.', 'WAAAPIKey', args)
+        option, _, value = args.strip().partition(' ')
+        value = value.strip()
+        if option == 'wago_addons_api':
+            if value:
+                self._c_set_parse('Wago Addons API key is now set.', 'WAAAPIKey', value)
             elif self.core.config['WAAAPIKey'] != '':
                 self._c_set_parse('Wago Addons API key is now removed.', 'WAAAPIKey', '')
             else:
                 self.console.print('[green]Usage:[/green]\n\tThis command accepts API key as an argument.')
-        elif args.startswith('wago_api'):
-            if args := args[9:]:
-                self._c_set_parse('Wago API key is now set.', 'WAAPIKey', args)
+        elif option == 'wago_api':
+            if value:
+                self._c_set_parse('Wago API key is now set.', 'WAAPIKey', value)
             elif self.core.config['WAAPIKey'] != '':
                 self._c_set_parse('Wago API key is now removed.', 'WAAPIKey', '')
             else:
                 self.console.print('[green]Usage:[/green]\n\tThis command accepts API key as an argument.')
-        elif args.startswith('gh_api'):
-            if args := args[7:]:
-                self._c_set_parse('GitHub API key is now set.', 'GHAPIKey', args)
+        elif option == 'gh_api':
+            if value:
+                self._c_set_parse('GitHub API key is now set.', 'GHAPIKey', value)
             elif self.core.config['GHAPIKey'] != '':
                 self._c_set_parse('GitHub API key is now removed.', 'GHAPIKey', '')
             else:
                 self.console.print('[green]Usage:[/green]\n\tThis command accepts API key as an argument.')
-        elif args.startswith('wago_wow_account'):
-            if args := args[17:]:
-                args = args.strip()
-                if os.path.isfile(Path(f'WTF/Account/{args}/SavedVariables/WeakAuras.lua')) or \
-                        os.path.isfile(Path(f'WTF/Account/{args}/SavedVariables/Plater.lua')):
-                    self.console.print(f'WoW account name set to: [bold white]{args}[/bold white]')
-                    self.core.config['WAAccountName'] = args
+        elif option == 'wago_wow_account':
+            if value:
+                if os.path.isfile(Path(f'WTF/Account/{value}/SavedVariables/WeakAuras.lua')) or \
+                        os.path.isfile(Path(f'WTF/Account/{value}/SavedVariables/Plater.lua')):
+                    self.console.print(f'WoW account name set to: [bold white]{value}[/bold white]')
+                    self.core.config['WAAccountName'] = value
                     self.core.save_config()
                 else:
                     self.console.print('Incorrect WoW account name.')
@@ -847,7 +850,7 @@ class TUI:
         if self.core.config['WAAccountName'] != '' and self.core.config['WAAccountName'] not in accounts:
             self.core.config['WAAccountName'] = ''
         if len(accounts) == 0:
-            return
+            return True
         elif len(accounts) > 1 and self.core.config['WAAccountName'] == '':
             if verbose:
                 self.console.print('More than one WoW account detected.\nPlease use [bold white]set wago_wow_accoun'
@@ -855,13 +858,14 @@ class TUI:
             else:
                 self.console.print('\n[green]More than one WoW account detected.[/green]\nPlease use [bold white]se'
                                    't wago_wow_account[/bold white] command to set the correct account name.')
-            return
+            return False
         elif len(accounts) == 1 and self.core.config['WAAccountName'] == '':
             self.core.config['WAAccountName'] = accounts[0]
             self.core.save_config()
         if flush and len(self.core.config['WAStash']) > 0:
             self.core.config['WAStash'] = []
             self.core.save_config()
+        return True
 
     def _c_wago_update_status(self, addon, status):
         self.console.print(f'[green]Outdated {addon}:[/green]')
@@ -876,7 +880,8 @@ class TUI:
             if verbose:
                 self.console.print('No compatible addon is installed.')
             return
-        self._c_wago_update_init(flush, verbose)
+        if not self._c_wago_update_init(flush, verbose):
+            return
         wago = WagoUpdater(self.core.config, self.core.http)
         if Version(__version__) >= Version(self.core.masterConfig['ConfigVersion']) and \
                 self.core.masterConfig['CBCompanionVersion'] > self.core.config['CBCompanionVersion']:

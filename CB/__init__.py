@@ -1,9 +1,14 @@
 import httpx
+import string
 
 __version__ = '4.9.0'
 __license__ = 'GPLv3'
 __copyright__ = '2019-2026, Paweł Jastrzębski <pawelj@iosphe.re>'
 __docformat__ = 'restructuredtext en'
+
+
+def clean_name(name):
+    return name.strip(f'{string.whitespace}​')
 
 
 def retry(custom_error=False):

@@ -1,7 +1,7 @@
 import os
 import io
 import zipfile
-from . import retry
+from . import clean_name, retry
 
 
 class TukuiAddon:
@@ -14,7 +14,7 @@ class TukuiAddon:
         else:
             raise RuntimeError(f'{slug}\nProject not found.')
         self.http = http
-        self.name = self.payload['name'].strip().strip('\u200b')
+        self.name = clean_name(self.payload['name'])
         self.downloadUrl = self.payload['url']
         self.currentVersion = self.payload['version']
         self.uiVersion = clientversion if clientversion in self.payload['patch'] else self.payload['patch'][0]

@@ -3,7 +3,7 @@ import io
 import re
 import httpx
 import zipfile
-from . import retry
+from . import clean_name, retry
 
 
 class WoWInterfaceAddon:
@@ -23,7 +23,7 @@ class WoWInterfaceAddon:
                                    f'by WoWInterface API.')
             else:
                 self.payload = self.payload[0]
-        self.name = self.payload['UIName'].strip().strip('\u200b')
+        self.name = clean_name(self.payload['UIName'])
         self.downloadUrl = self.payload['UIDownload']
         self.changelogUrl = f'{url}#changelog'
         self.currentVersion = self.payload['UIVersion']

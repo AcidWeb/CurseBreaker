@@ -176,12 +176,14 @@ class WagoUpdater:
         return output
 
     def parse_changelog(self, entry):
-        if 'changelog' not in entry or 'text' not in entry['changelog']:
+        if 'changelog' not in entry or 'text' not in entry['changelog'] or 'format' not in entry['changelog']:
             return ''
         if entry['changelog']['format'] == 'bbcode':
             return self.bbParser.strip(entry['changelog']['text'])
         elif entry['changelog']['format'] == 'markdown':
             return self.mdParser.convert(entry['changelog']['text'])
+        else:
+            return ''
 
     @retry('Failed to parse Wago data. Wago might be down or provided API key is incorrect.')
     def update_entry(self, entry, addon):

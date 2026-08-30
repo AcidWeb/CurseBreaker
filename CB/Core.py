@@ -45,7 +45,8 @@ class Core:
         try:
             self.masterConfig = json.load(gzip.open(io.BytesIO(
                 self.http.get('https://cursebreaker.acidweb.dev/config-v2.json.gz').content)))
-        except (StopIteration, UnicodeDecodeError, json.JSONDecodeError, httpx.RequestError) as e:
+        except (StopIteration, UnicodeDecodeError, json.JSONDecodeError, httpx.RequestError,
+                gzip.BadGzipFile, EOFError) as e:
             raise RuntimeError('Failed to fetch the master config file. '
                                'Check your connectivity to Google Cloud.') from e
 
@@ -247,7 +248,10 @@ class Core:
         elif url.startswith('https://github.com/'):
             return 'GitHub', url
         elif url.lower().endswith(':dev'):
-            return 'GitHub', f'https://github.com/{self.masterConfig["CustomRepository"][url.lower()]["Repository"]}'
+            custom = self.masterConfig['CustomRepository'].get(url.lower())
+            if custom:
+                return 'GitHub', f'https://github.com/{custom["Repository"]}'
+            return '?', None
         elif url.lower().startswith('elvui'):
             return 'Tukui', 'https://www.tukui.org/download.php?ui=elvui'
         elif url.lower().startswith('tukui'):

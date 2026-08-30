@@ -4,7 +4,7 @@ import httpx
 import zipfile
 from dateutil import parser
 from json import JSONDecodeError
-from . import retry, APIAuth
+from . import clean_name, retry, APIAuth
 
 
 class WagoAddonsAddon:
@@ -45,7 +45,7 @@ class WagoAddonsAddon:
                     self.payload = self.payload.json()
                 except (StopIteration, JSONDecodeError) as e:
                     raise RuntimeError(f'{url}\nThis might be a temporary issue with Wago Addons API.') from e
-        self.name = self.payload['display_name'].strip().strip('\u200b')
+        self.name = clean_name(self.payload['display_name'])
         self.allowDev = allowdev
         self.downloadUrl = None
         self.changelogUrl = None
