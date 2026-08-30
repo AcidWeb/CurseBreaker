@@ -1,9 +1,8 @@
-import os
 import io
 import httpx
 import shutil
 import zipfile
-from . import retry, APIAuth
+from . import parse_directories, retry, APIAuth
 
 
 class GitHubAddon:
@@ -147,9 +146,7 @@ class GitHubAddon:
         for file in self.archive.namelist():
             if file.lower().endswith('.toc') and '/' not in file:
                 raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
-            if '/' not in os.path.dirname(file):
-                self.directories.append(os.path.dirname(file))
-        self.directories = list(filter(None, set(self.directories)))
+        self.directories = parse_directories(self.archive.namelist())
         if not self.directories:
             raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
 

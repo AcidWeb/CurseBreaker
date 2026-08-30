@@ -1,10 +1,9 @@
-import os
 import io
 import httpx
 import zipfile
 from dateutil import parser
 from json import JSONDecodeError
-from . import clean_name, retry, APIAuth
+from . import clean_name, parse_directories, retry, APIAuth
 
 
 class WagoAddonsAddon:
@@ -85,10 +84,7 @@ class WagoAddonsAddon:
     def get_addon(self):
         self.archive = zipfile.ZipFile(io.BytesIO(self.http.get(self.downloadUrl, auth=APIAuth('Bearer', self.apiKey))
                                                   .content))
-        for file in self.archive.namelist():
-            if '/' not in os.path.dirname(file):
-                self.directories.append(os.path.dirname(file))
-        self.directories = list(filter(None, set(self.directories)))
+        self.directories = parse_directories(self.archive.namelist())
         if not self.directories:
             raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
 

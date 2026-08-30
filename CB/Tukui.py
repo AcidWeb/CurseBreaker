@@ -1,7 +1,6 @@
-import os
 import io
 import zipfile
-from . import clean_name, retry
+from . import clean_name, parse_directories, retry
 
 
 class TukuiAddon:
@@ -26,10 +25,7 @@ class TukuiAddon:
     @retry()
     def get_addon(self):
         self.archive = zipfile.ZipFile(io.BytesIO(self.http.get(self.downloadUrl).content))
-        for file in self.archive.namelist():
-            if '/' not in os.path.dirname(file):
-                self.directories.append(os.path.dirname(file))
-        self.directories = list(filter(None, set(self.directories)))
+        self.directories = parse_directories(self.archive.namelist(), self.directories)
         if not self.directories:
             raise RuntimeError(f'{self.name}.\nProject package is corrupted or incorrectly packaged.')
 

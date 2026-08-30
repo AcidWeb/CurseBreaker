@@ -1,3 +1,4 @@
+import os
 import httpx
 import string
 
@@ -9,6 +10,19 @@ __docformat__ = 'restructuredtext en'
 
 def clean_name(name):
     return name.strip(f'{string.whitespace}​')
+
+
+def is_addon_directory(name):
+    return bool(name) and name not in ('.', '..') and os.path.basename(name) == name
+
+
+def parse_directories(names, known=()):
+    directories = {name for name in known if is_addon_directory(name)}
+    for name in names:
+        directory = os.path.dirname(name)
+        if is_addon_directory(directory):
+            directories.add(directory)
+    return sorted(directories)
 
 
 def retry(custom_error=False):

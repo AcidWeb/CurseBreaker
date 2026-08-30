@@ -16,7 +16,7 @@ from collections import Counter
 from checksumdir import dirhash
 from urllib.parse import quote_plus
 from rich.progress import Progress, BarColumn
-from . import retry, APIAuth, __version__
+from . import is_addon_directory, retry, APIAuth, __version__
 from .Tukui import TukuiAddon
 from .GitHub import GitHubAddon, GitHubAddonRaw
 from .WagoAddons import WagoAddonsAddon
@@ -205,8 +205,8 @@ class Core:
         return count > 4
 
     def cleanup(self, directories):
-        if len(directories) > 0:
-            for directory in directories:
+        for directory in directories:
+            if is_addon_directory(directory):
                 shutil.rmtree(self.path / directory, ignore_errors=True)
 
     def parse_url(self, url):
