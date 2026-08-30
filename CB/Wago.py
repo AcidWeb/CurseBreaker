@@ -84,8 +84,11 @@ class PlaterParser(BaseParser):
         with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/Plater.lua'), encoding='utf-8',
                   errors='ignore') as file:
             data = file.read()
-        platerdata = loads(re.search(r'PlaterDB = {\n.*?}\n', data, re.DOTALL).group().replace('PlaterDB = {', '{', 1))
-        for profile in platerdata['profiles']:
+        storage = re.search(r'PlaterDB = {\n.*?}\n', data, re.DOTALL)
+        if not storage:
+            return
+        platerdata = loads(storage.group().replace('PlaterDB = {', '{', 1))
+        for profile in platerdata.get('profiles', {}):
             if data := platerdata['profiles'][profile].get('script_data'):
                 self.parse_storage_internal(data)
             if data := platerdata['profiles'][profile].get('hook_data'):
