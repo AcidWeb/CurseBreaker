@@ -443,7 +443,7 @@ class Core:
             files = [f for f in files if f[0] != '.']
             filecount += len(files)
         if filecount > 0:
-            with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|', auto_refresh=False,
+            with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|',
                           console=console) as progress:
                 task = progress.add_task('', total=filecount)
                 while not progress.finished:
@@ -451,7 +451,7 @@ class Core:
                         files = [f for f in files if f[0] != '.']
                         for f in files:
                             zipf.write(Path(root, f))
-                            progress.update(task, advance=1, refresh=True)
+                            progress.update(task, advance=1)
         zipf.close()
 
     def find_orphans(self):
