@@ -593,9 +593,11 @@ class Core:
             return
         payload = payload.json()
         packager_cache = {}
+        fetched = []
         for addon in payload['data']['search']['nodes']:
             self.githubCache[addon['nameWithOwner']] = addon['releases']['nodes']
-        for addon in self.githubCache:
+            fetched.append(addon['nameWithOwner'])
+        for addon in fetched:
             for i in range(len(self.githubCache[addon])):
                 self.githubCache[addon][i]['assets'] = self.githubCache[addon][i]['assets']['nodes']
             for release in self.githubCache[addon]:
