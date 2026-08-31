@@ -53,6 +53,7 @@ class WagoAddonsAddon:
         self.archive = None
         self.directories = []
         self.author = self.payload['authors']
+        self.ignoreUpdate = False
         self.get_current_version()
 
     def get_current_version(self):

@@ -557,8 +557,8 @@ class TUI:
             self.console.print(self.table)
 
     def _c_update_process(self, addon, update, force, compact, compacted, provider):
-        name, authors, versionnew, versionold, uiversion, modified, blocked, source, sourceurl, changelog, dstate \
-            = self.core.update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
+        name, authors, versionnew, versionold, uiversion, modified, blocked, source, sourceurl, changelog, dstate, \
+            pending = self.core.update_addon(addon if isinstance(addon, str) else addon['URL'], update, force)
         additionalstatus = f' [bold red]{source.upper()}[/bold red]' if source == 'Unsupported' and not provider else ''
         if versionold:
             payload = [self.parse_link(name, sourceurl, authors=authors),
@@ -566,6 +566,8 @@ class TUI:
             if versionold == versionnew:
                 if modified:
                     payload.insert(0, f'[bold red]Modified[/bold red]{additionalstatus}')
+                elif pending:
+                    payload.insert(0, f'[bold yellow]Pending approval[/bold yellow]{additionalstatus}')
                 elif compact and compacted > -1 and source != 'Unsupported':
                     payload = None
                     compacted += 1
@@ -573,6 +575,8 @@ class TUI:
                     payload.insert(0, f'[green]Up-to-date[/green]{additionalstatus}')
             elif modified or blocked:
                 payload.insert(0, f'[bold red]Update suppressed[/bold red]{additionalstatus}')
+            elif pending:
+                payload.insert(0, f'[bold yellow]Pending approval[/bold yellow]{additionalstatus}')
             else:
                 version = self.parse_link(versionnew, changelog, dstate, uiversion=uiversion)
                 version.stylize('yellow')

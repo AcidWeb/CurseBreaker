@@ -30,6 +30,7 @@ class WoWInterfaceAddon:
         self.archive = None
         self.directories = []
         self.author = [self.payload['UIAuthorName']]
+        self.ignoreUpdate = self.payload['UIPending'] == "1"
 
     @retry()
     def get_addon(self):

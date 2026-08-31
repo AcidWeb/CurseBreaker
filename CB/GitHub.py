@@ -48,6 +48,7 @@ class GitHubAddon:
         self.metadata = None
         self.directories = []
         self.author = [project.split('/')[0]]
+        self.ignoreUpdate = False
         self.releaseDepth = 0
         self.parse()
 
@@ -188,6 +189,7 @@ class GitHubAddonRaw:
         self.archive = None
         self.directories = addon['Directories']
         self.author = addon['Authors']
+        self.ignoreUpdate = False
 
     @retry()
     def get_addon(self):

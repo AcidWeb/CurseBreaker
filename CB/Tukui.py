@@ -20,6 +20,7 @@ class TukuiAddon:
         self.archive = None
         self.directories = self.payload['directories']
         self.author = [self.payload['author']]
+        self.ignoreUpdate = False
         self.changelogUrl = self.payload['changelog_url']
 
     @retry()

@@ -263,6 +263,8 @@ class Core:
         if ignore:
             self.config['IgnoreClientVersion'][url] = True
         new = self.parse_url(url)
+        if new.ignoreUpdate:
+            raise RuntimeError(f'{new.name}.\nThe newest file is still awaiting approval on WoWInterface.')
         new.get_addon()
         if addon := self.check_if_installed_dirs(new.directories):
             return False, addon['Name'], addon['Version']
@@ -309,7 +311,7 @@ class Core:
 
     def update_addon(self, url, update, force):
         if not (old := self.check_if_installed(url)):
-            return url, [], False, False, None, False, False, '?', None, None, None
+            return url, [], False, False, None, False, False, '?', None, None, None, False
         dev = self.check_if_dev(old['URL'])
         blocked = self.check_if_blocked(old)
         oldversion = old['Version']
@@ -318,10 +320,11 @@ class Core:
                                   'https://www.curseforge.com/wow/addons/',
                                   'https://www.tukui.org/')):
             return old['Name'], [], oldversion, oldversion, None, modified, blocked, 'Unsupported', old['URL'], \
-                       None, dev
+                       None, dev, False
         source, sourceurl = self.parse_url_source(old['URL'])
         new = self.parse_url(old['URL'])
-        if force or (new.currentVersion != old['Version'] and update and not modified and not blocked):
+        if not new.ignoreUpdate and (force or (new.currentVersion != old['Version'] and update
+                                               and not modified and not blocked)):
             new.get_addon()
             self.cleanup(old['Directories'])
             new.install(self.path)
@@ -336,7 +339,7 @@ class Core:
             modified = False
             blocked = False
         return new.name, new.author, new.currentVersion, oldversion, new.uiVersion, modified, blocked, source, \
-            sourceurl, new.changelogUrl, dev
+            sourceurl, new.changelogUrl, dev, new.ignoreUpdate
 
     def directory_signature(self, directory):
         hasher = hashlib.md5()
