@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-2022
     steps:
     - uses: actions/checkout@v7
-    - uses: astral-sh/setup-uv@v10
+    - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
     - uses: actions/setup-python@v7
       with:
         python-version-file: ".python-version"
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v7
-    - uses: astral-sh/setup-uv@v10
+    - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
     - uses: actions/setup-python@v7
       with:
         python-version-file: ".python-version"
@@ -51,7 +51,7 @@ jobs:
     runs-on: macos-15
     steps:
     - uses: actions/checkout@v7
-    - uses: astral-sh/setup-uv@v10
+    - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
     - uses: actions/setup-python@v7
       with:
         python-version-file: ".python-version"
