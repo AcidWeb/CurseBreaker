@@ -89,6 +89,9 @@ class TUI:
         elif flavor in {'_anniversary_'}:
             self.core.clientType = 'bc'
             set_terminal_title(f'CurseBreaker v{__version__} - Anniversary')
+        elif flavor in {'_forever_'}:
+            self.core.clientType = 'forever'
+            set_terminal_title(f'CurseBreaker v{__version__} - Forever')
         else:
             self.handle_shutdown('[bold red]This client release is currently unsupported by CurseBreaker.[/bold red]\n')
         # Check if client have write access

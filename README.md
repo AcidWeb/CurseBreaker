@@ -18,7 +18,7 @@ Read the instructions at the top of the screen.
 Already installed addons will not be recognized by **CurseBreaker**, and they need to be reinstalled.\
 This process can be partially automated by using the `import` command.
 
-_Retail_, _Mists of Pandaria Classic_, _Classic_ and _Anniversary_ clients are supported. The client version is detected automatically.\
+_Retail_, _Forever_, _Mists of Pandaria Classic_, _Classic_ and _Anniversary_ clients are supported. The client version is detected automatically.\
 By default **CurseBreaker** will create backups of the entire `WTF` directory.
 
 ## TIPS & TRICKS

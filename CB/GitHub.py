@@ -112,11 +112,12 @@ class GitHubAddon:
         latestclassic = None
         latestmop = None
         latestbc = None
+        latestforever = None
         for release in self.payloads[self.releaseDepth]['assets']:
             if release['name'] and release['name'].endswith('.zip') and '-nolib' not in release['name'] \
                     and release['content_type'] in ['application/x-zip-compressed', 'application/zip', 'raw']:
                 if not latest and not release['name'].endswith(('-classic.zip', '-bc.zip', '-bcc.zip', '-wrath.zip',
-                                                                '-cata.zip', '-mists.zip')):
+                                                                '-cata.zip', '-mists.zip', '-forever.zip')):
                     latest = release['url']
                 elif not latestclassic and release['name'].endswith('-classic.zip'):
                     latestclassic = release['url']
@@ -124,10 +125,13 @@ class GitHubAddon:
                     latestmop = release['url']
                 elif not latestbc and release['name'].endswith('-bcc.zip'):
                     latestbc = release['url']
+                elif not latestforever and release['name'].endswith('-forever.zip'):
+                    latestforever = release['url']
         if (self.clientType == 'retail' and latest) \
                 or (self.clientType == 'classic' and latest and not latestclassic) \
                 or (self.clientType == 'mop' and latest and not latestmop) \
-                or (self.clientType == 'bc' and latest and not latestbc):
+                or (self.clientType == 'bc' and latest and not latestbc) \
+                or (self.clientType == 'forever' and latest and not latestforever):
             self.downloadUrl = latest
         elif self.clientType == 'classic' and latestclassic:
             self.downloadUrl = latestclassic
@@ -135,6 +139,8 @@ class GitHubAddon:
             self.downloadUrl = latestmop
         elif self.clientType == 'bc' and latestbc:
             self.downloadUrl = latestbc
+        elif self.clientType == 'forever' and latestforever:
+            self.downloadUrl = latestforever
         else:
             self.releaseDepth += 1
             self.parse()
