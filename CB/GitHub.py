@@ -30,7 +30,14 @@ class GitHubAddon:
                 raise RuntimeError(url)
             else:
                 self.payload = self.payload.json()
-        for release in self.payload:
+                latest = self.http.get(f'https://api.github.com/repos/{project}/releases/latest',
+                                       auth=APIAuth('Bearer', self.apiKey))
+                if latest.status_code == 200:
+                    for release in self.payload:
+                        release['isLatest'] = release['id'] == latest.json()['id']
+        # Skip releases newer than the one marked Latest, e.g. tools or libraries published from the same repo
+        start = next((i for i, release in enumerate(self.payload) if release.get('isLatest')), 0)
+        for release in self.payload[start:]:
             if release['assets'] and len(release['assets']) > 0 and not release['draft'] and not release['prerelease']:
                 self.payloads.append(release)
                 if len(self.payloads) > 14:
