@@ -18,7 +18,7 @@ from urllib.parse import quote_plus
 from rich.progress import Progress, BarColumn
 from . import is_addon_directory, retry, APIAuth, __version__
 from .Tukui import TukuiAddon
-from .GitHub import GitHubAddon, GitHubAddonRaw
+from .GitHub import GitHubAddon, GitHubAddonRaw, prefer_latest
 from .WagoAddons import WagoAddonsAddon
 from .WoWInterface import WoWInterfaceAddon
 
@@ -585,10 +585,11 @@ class Core:
                                       auth=APIAuth('Bearer', self.config['GHAPIKey'])).json()
 
     def bulk_gh_check(self, ids):
+        release = ('tag_name: tagName name html_url: url draft: isDraft prerelease: isPrerelease assets: releaseAssets('
+                   'first: 100) { nodes { node_id: id name content_type: contentType url } }')
         query = ('{\n  "query": "{ search( type: REPOSITORY query: \\"' + f'repo:{" repo:".join(ids)}' + ' fork:true\\"'
-                 ' first: 100 ) { nodes { ... on Repository { nameWithOwner releases(first: 15) { nodes { tag_name: tag'
-                 'Name name html_url: url draft: isDraft prerelease: isPrerelease assets: releaseAssets(first: 100) { n'
-                 'odes { node_id: id name content_type: contentType url } } } } } } }}"\n'
+                 ' first: 100 ) { nodes { ... on Repository { nameWithOwner releases(first: 15) { nodes { ' + release +
+                 ' } } latestRelease { ' + release + ' } } } } }"\n'
                  '}')
         payload = self.http.post('https://api.github.com/graphql', json=json.loads(query),
                                  auth=APIAuth('Bearer', self.config['GHAPIKey']), timeout=15)
@@ -598,11 +599,14 @@ class Core:
         packager_cache = {}
         fetched = []
         for addon in payload['data']['search']['nodes']:
-            self.githubCache[addon['nameWithOwner']] = addon['releases']['nodes']
+            releases = addon['releases']['nodes']
+            latest = addon['latestRelease']
+            for release in [*releases, *([latest] if latest else [])]:
+                if isinstance(release['assets'], dict):
+                    release['assets'] = release['assets']['nodes']
+            self.githubCache[addon['nameWithOwner']] = prefer_latest(releases, latest)
             fetched.append(addon['nameWithOwner'])
         for addon in fetched:
-            for i in range(len(self.githubCache[addon])):
-                self.githubCache[addon][i]['assets'] = self.githubCache[addon][i]['assets']['nodes']
             for release in self.githubCache[addon]:
                 if not release['draft'] and not release['prerelease']:
                     for asset in release['assets']:

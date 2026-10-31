@@ -5,6 +5,17 @@ import zipfile
 from . import parse_directories, retry, APIAuth
 
 
+def prefer_latest(releases, latest):
+    # Repositories that publish several products (an addon plus tools or libraries) can have newer releases
+    # than the one the maintainer marked as "Latest". Start from the marked one so those are skipped.
+    if not latest:
+        return releases
+    for i, release in enumerate(releases):
+        if release['html_url'] == latest['html_url']:
+            return releases[i:]
+    return [latest, *releases]
+
+
 class GitHubAddon:
     @retry()
     def __init__(self, url, checkcache, packagercache, clienttype, apikey, http):
@@ -29,7 +40,7 @@ class GitHubAddon:
             elif self.payload.status_code == 404:
                 raise RuntimeError(url)
             else:
-                self.payload = self.payload.json()
+                self.payload = prefer_latest(self.payload.json(), self.get_latest_release(project))
         for release in self.payload:
             if release['assets'] and len(release['assets']) > 0 and not release['draft'] and not release['prerelease']:
                 self.payloads.append(release)
@@ -51,6 +62,11 @@ class GitHubAddon:
         self.ignoreUpdate = False
         self.releaseDepth = 0
         self.parse()
+
+    def get_latest_release(self, project):
+        payload = self.http.get(f'https://api.github.com/repos/{project}/releases/latest',
+                                auth=APIAuth('Bearer', self.apiKey))
+        return payload.json() if payload.status_code == 200 else None
 
     def parse(self):
         if self.releaseDepth >= len(self.payloads):
