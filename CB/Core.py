@@ -4,7 +4,6 @@ import io
 import sys
 import json
 import gzip
-import glob
 import httpx
 import shutil
 import zipfile
@@ -23,23 +22,15 @@ from .WagoAddons import WagoAddonsAddon
 from .WoWInterface import WoWInterfaceAddon
 
 
-class Core:
+class Shared:
     def __init__(self):
         self.http = httpx.Client(headers={'User-Agent': f'CurseBreaker/{__version__}'},
                                  timeout=10, http2=True, follow_redirects=True)
-        self.path = Path('Interface/AddOns')
-        self.configPath = Path('WTF/CurseBreaker.json')
-        self.clientType = None
-        self.config = None
         self.masterConfig = None
-        self.dirIndex = None
         self.wowiCache = {}
-        self.wagoCache = {}
         self.githubCache = {}
         self.githubPackagerCache = {}
-        self.wagoIdCache = None
         self.tukuiCache = None
-        self.configDirty = False
 
     def init_master_config(self):
         try:
@@ -50,11 +41,34 @@ class Core:
             raise RuntimeError('Failed to fetch the master config file. '
                                'Check your connectivity to Google Cloud.') from e
 
+
+class Core:
+    def __init__(self, shared, root, clienttype):
+        self.shared = shared
+        self.http = shared.http
+        self.root = Path(root)
+        self.path = self.root / 'Interface' / 'AddOns'
+        self.wtfPath = self.root / 'WTF'
+        self.backupPath = self.root / 'WTF-Backup'
+        self.configPath = self.wtfPath / 'CurseBreaker.json'
+        self.clientType = clienttype
+        self.config = None
+        self.wowiCache = shared.wowiCache
+        self.wagoCache = {}
+        self.githubCache = shared.githubCache
+        self.githubPackagerCache = shared.githubPackagerCache
+        self.wagoIdCache = None
+        self.configDirty = False
+
+    @property
+    def masterConfig(self):
+        return self.shared.masterConfig
+
     def init_config(self):
-        if os.path.isfile('CurseBreaker.json'):
-            shutil.move('CurseBreaker.json', 'WTF')
-        if os.path.isfile(Path('WTF/CurseBreaker.cache')):
-            os.remove(Path('WTF/CurseBreaker.cache'))
+        if os.path.isfile(self.root / 'CurseBreaker.json'):
+            shutil.move(self.root / 'CurseBreaker.json', self.wtfPath)
+        if os.path.isfile(self.wtfPath / 'CurseBreaker.cache'):
+            os.remove(self.wtfPath / 'CurseBreaker.cache')
         if os.path.isfile(self.configPath):
             with open(self.configPath) as f:
                 try:
@@ -79,8 +93,8 @@ class Core:
                            'ShowSources': False,
                            'AutoUpdateDelay': True}
             self.save_config()
-        if not os.path.isdir('WTF-Backup') and self.config['Backup']['Enabled']:
-            os.mkdir('WTF-Backup')
+        if not os.path.isdir(self.backupPath) and self.config['Backup']['Enabled']:
+            os.mkdir(self.backupPath)
         self.update_config()
 
     def save_config(self):
@@ -94,8 +108,8 @@ class Core:
         urlupdate = {'elvui-classic': 'elvui', 'elvui-classic:dev': 'elvui:dev', 'tukui-classic': 'tukui',
                      'sle:dev': 'shadow&light:dev', 'elvui:beta': 'elvui:dev'}
         # 4.0.0
-        if 'WACompanionVersion' in self.config and os.path.isdir(Path('Interface/AddOns/WeakAurasCompanion')):
-            shutil.rmtree(Path('Interface/AddOns/WeakAurasCompanion'), ignore_errors=True)
+        if 'WACompanionVersion' in self.config and os.path.isdir(self.path / 'WeakAurasCompanion'):
+            shutil.rmtree(self.path / 'WeakAurasCompanion', ignore_errors=True)
         for addon in self.config['Addons']:
             # 1.1.0
             if 'Checksums' not in addon.keys():
@@ -222,11 +236,11 @@ class Core:
                                self.config['GHAPIKey'], self.http)
         elif url.lower() == 'elvui':
             self.bulk_tukui_check()
-            return TukuiAddon('elvui', self.tukuiCache,
+            return TukuiAddon('elvui', self.shared.tukuiCache,
                               self.masterConfig['ClientTypes'][self.clientType]['CurrentVersion'], self.http)
         elif url.lower() == 'tukui':
             self.bulk_tukui_check()
-            return TukuiAddon('tukui', self.tukuiCache,
+            return TukuiAddon('tukui', self.shared.tukuiCache,
                               self.masterConfig['ClientTypes'][self.clientType]['CurrentVersion'], self.http)
         elif url.lower() in self.masterConfig['CustomRepository'].keys():
             return GitHubAddonRaw(self.masterConfig['CustomRepository'][url.lower()], self.config['GHAPIKey'],
@@ -427,26 +441,27 @@ class Core:
     def backup_check(self):
         if not self.config['Backup']['Enabled']:
             return False
-        if os.path.isfile(Path('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip')):
+        if os.path.isfile(self.backupPath / f'{datetime.datetime.now().strftime("%d%m%y")}.zip'):
             return False
-        listofbackups = [Path(x) for x in glob.glob('WTF-Backup/*.zip')]
+        listofbackups = list(self.backupPath.glob('*.zip'))
         if len(listofbackups) >= self.config['Backup']['Number']:
             oldest_file = min(listofbackups, key=os.path.getctime)
             os.remove(oldest_file)
         return True
 
     def backup_wtf(self, console):
-        archive = Path('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}.zip')
+        os.makedirs(self.backupPath, exist_ok=True)
+        archive = self.backupPath / f'{datetime.datetime.now().strftime("%d%m%y")}.zip'
         if os.path.isfile(archive):
             suffix = 1
             while True:
-                archive = Path('WTF-Backup', f'{datetime.datetime.now().strftime("%d%m%y")}-{suffix}.zip')
+                archive = self.backupPath / f'{datetime.datetime.now().strftime("%d%m%y")}-{suffix}.zip'
                 if not os.path.isfile(archive):
                     break
                 suffix += 1
         zipf = zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED)
         filecount = 0
-        for _, _, files in os.walk('WTF/', topdown=True, followlinks=True):
+        for _, _, files in os.walk(self.wtfPath, topdown=True, followlinks=True):
             files = [f for f in files if f[0] != '.']
             filecount += len(files)
         if filecount > 0:
@@ -454,10 +469,10 @@ class Core:
                           console=console) as progress:
                 task = progress.add_task('', total=filecount)
                 while not progress.finished:
-                    for root, _, files in os.walk('WTF/', topdown=True, followlinks=True):
+                    for root, _, files in os.walk(self.wtfPath, topdown=True, followlinks=True):
                         files = [f for f in files if f[0] != '.']
                         for f in files:
-                            zipf.write(Path(root, f))
+                            zipf.write(Path(root, f), arcname=Path(root, f).relative_to(self.root))
                             progress.update(task, advance=1)
         zipf.close()
 
@@ -482,12 +497,12 @@ class Core:
                 elif directory not in ignored:
                     orphanedaddon.append(directory)
         directories += directoriesspecial + orphanedaddon
-        for root, _, files in os.walk('WTF/', followlinks=True):
+        for root, _, files in os.walk(self.wtfPath, followlinks=True):
             for f in files:
                 if 'Blizzard_' not in f and f.endswith('.lua'):
                     name = os.path.splitext(f)[0]
                     if name not in directories:
-                        orphaneconfig.append(str(Path(root, f))[4:])
+                        orphaneconfig.append(str(Path(root, f).relative_to(self.wtfPath)))
         return orphanedaddon, orphaneconfig
 
     def search(self, query):
@@ -624,19 +639,22 @@ class Core:
 
     @retry(custom_error='Failed to parse Tukui API data')
     def bulk_tukui_check(self):
-        if not self.tukuiCache:
-            self.tukuiCache = self.http.get('https://api.tukui.org/v1/addons').json()
+        if not self.shared.tukuiCache:
+            self.shared.tukuiCache = self.http.get('https://api.tukui.org/v1/addons').json()
 
     def detect_accounts(self):
-        if not os.path.isdir(Path('WTF/Account')):
+        if not os.path.isdir(self.wtfPath / 'Account'):
             return []
-        accounts = os.listdir(Path('WTF/Account'))
+        accounts = os.listdir(self.wtfPath / 'Account')
         accounts_processed = []
         for account in accounts:
-            if os.path.isfile(Path(f'WTF/Account/{account}/SavedVariables/WeakAuras.lua')) or \
-                        os.path.isfile(Path(f'WTF/Account/{account}/SavedVariables/Plater.lua')):
+            if self.is_wago_account(account):
                 accounts_processed.append(account)
         return accounts_processed
+
+    def is_wago_account(self, account):
+        variables = self.wtfPath / 'Account' / account / 'SavedVariables'
+        return os.path.isfile(variables / 'WeakAuras.lua') or os.path.isfile(variables / 'Plater.lua')
 
     def detect_addons(self):
         if self.config['WAAAPIKey'] == '':

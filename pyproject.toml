@@ -1,6 +1,6 @@
 [project]
 name = "CurseBreaker"
-version = "4.9.1"
+version = "5.0.0"
 readme = "README.md"
 license = {file = "LICENSE.txt"}
 requires-python = ">=3.14"

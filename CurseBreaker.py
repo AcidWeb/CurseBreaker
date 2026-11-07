@@ -2,6 +2,7 @@ import os
 import io
 import re
 import sys
+import copy
 import math
 import time
 import gzip
@@ -27,7 +28,7 @@ from rich.live import Live
 from rich.align import Align
 from rich.table import Table
 from rich.panel import Panel
-from rich.prompt import Confirm
+from rich.prompt import Confirm, Prompt
 from rich.logging import RichHandler
 from rich.console import Console, detect_legacy_windows
 from rich.control import Control
@@ -36,8 +37,8 @@ from rich.traceback import Traceback, install
 from prompt_toolkit import PromptSession, HTML
 from prompt_toolkit.completion import WordCompleter, NestedCompleter
 from packaging.version import Version
-from CB import __version__
-from CB.Core import Core
+from CB import __version__, FLAVORS, SHARED_KEYS, API_KEYS
+from CB.Core import Core, Shared
 from CB.Wago import WagoUpdater
 from CB.Compat import clear, set_terminal_title, set_terminal_size, KBHit
 from CB.Resources import LOGO, HEADLESS_TERMINAL_THEME
@@ -45,12 +46,21 @@ from CB.Resources import LOGO, HEADLESS_TERMINAL_THEME
 if platform.system() == 'Windows':
     from ctypes import windll, wintypes
 
+ALL_CLIENTS_COMMANDS = ('update', 'status', 'orphans', 'backup', 'wago_update')
+
 
 class TUI:
     def __init__(self):
         if 'CURSEBREAKER_DEBUG' in os.environ:
             logging.basicConfig(level=logging.INFO, format='%(message)s', datefmt='[%X]', handlers=[RichHandler()])
-        self.core = Core()
+        self.shared = Shared()
+        self.core = None
+        self.cores = {}
+        self.activeClient = None
+        self.detected = []
+        self.rootMode = False
+        self.args = []
+        self.clientArg = None
         self.session = PromptSession(reserve_space_for_menu=6, complete_in_thread=True)
         self.headless = False
         self.console = None
@@ -61,66 +71,38 @@ class TUI:
         install()
 
     def start(self):
+        self.parse_cli()
         # Check if headless mode was requested
-        if len(sys.argv) == 2 and sys.argv[1].lower() == 'headless':
+        if len(self.args) == 1 and self.args[0].lower() == 'headless':
             self.headless = True
         self.setup_console()
         self.print_header()
-        self.core.init_master_config()
-        # Check if executable is in good location
-        if (not glob.glob('World*.app') and not glob.glob('Wow*.exe')) or \
-                not os.path.isdir(Path('Interface/AddOns')) or not os.path.isdir('WTF'):
-            self.handle_shutdown('[bold red]This executable should be placed in the same directory where Wow.exe, WowCl'
-                                 'assic.exe or World of Warcraft.app is located. Additionally, make sure that this WoW '
-                                 'installation was started at least once.[/bold red]\n')
-        # Detect client flavor
-        if 'CURSEBREAKER_FLAVOR' in os.environ:
-            flavor = os.environ.get('CURSEBREAKER_FLAVOR')
-        else:
-            flavor = os.path.basename(os.getcwd())
-        if flavor in {'_retail_', '_ptr_', '_ptr2_', '_beta_', '_xptr_'}:
-            self.core.clientType = 'retail'
-        elif flavor in {'_classic_', '_classic_ptr_', '_classic_beta_'}:
-            self.core.clientType = 'mop'
-            set_terminal_title(f'CurseBreaker v{__version__} - Mists of Pandaria Classic')
-        elif flavor in {'_classic_era_', '_classic_era_ptr_'}:
-            self.core.clientType = 'classic'
-            set_terminal_title(f'CurseBreaker v{__version__} - Classic')
-        elif flavor in {'_anniversary_'}:
-            self.core.clientType = 'bc'
-            set_terminal_title(f'CurseBreaker v{__version__} - Anniversary')
-        elif flavor in {'_forever_'}:
-            self.core.clientType = 'forever'
-            set_terminal_title(f'CurseBreaker v{__version__} - Forever')
-        else:
-            self.handle_shutdown('[bold red]This client release is currently unsupported by CurseBreaker.[/bold red]\n')
+        self.shared.init_master_config()
+        # Detect client flavor or clients managed from the main WoW directory
+        self.detect_clients()
         # Check if client have write access
-        try:
-            with open('PermissionTest', 'w'):
-                pass
-            os.remove('PermissionTest')
-        except OSError:
-            self.handle_shutdown('[bold red]CurseBreaker doesn\'t have write rights for the current directory.\nTry sta'
-                                 'rting it with administrative privileges.[/bold red]\n')
+        self.check_write_access([Path.cwd(), *(core.root for core in self.cores.values())])
         # Application auto update and initialization
         self.auto_update()
-        try:
-            self.core.init_config()
-        except RuntimeError:
-            self.handle_shutdown('[bold red]The config file is corrupted. Restore the earlier version from backup.[/bol'
-                                 'd red]\n')
+        if self.rootMode and not self.cores:
+            self.add_default_clients()
+        self.init_configs()
         self.setup_table()
         # Wago Addons URI Support
-        if len(sys.argv) == 2 and sys.argv[1].startswith('wago-app://addons/'):
+        if len(self.args) == 1 and self.args[0].startswith('wago-app://addons/'):
             try:
-                self.c_install(sys.argv[1].strip())
+                self.select_client(list(self.cores))
+                self.c_install(self.args[0].strip())
             except Exception as e:
                 self.handle_exception(e)
             self.handle_shutdown()
         # Wago URI Support
-        if len(sys.argv) == 2 and sys.argv[1].startswith('weakauras-companion://wago/push/'):
+        if len(self.args) == 1 and self.args[0].startswith('weakauras-companion://wago/push/'):
             try:
-                self.core.config['WAStash'].append(sys.argv[1].strip().replace('weakauras-companion://wago/push/', ''))
+                self.select_client([flavor for flavor, core in self.cores.items()
+                                    if os.path.isdir(core.path / 'WeakAuras') or os.path.isdir(core.path / 'Plater')]
+                                   or list(self.cores))
+                self.core.config['WAStash'].append(self.args[0].strip().replace('weakauras-companion://wago/push/', ''))
                 self.core.config['WAStash'] = list(set(self.core.config['WAStash']))
                 self.core.save_config()
                 self.c_wago_update(None, flush=False)
@@ -128,23 +110,27 @@ class TUI:
                 self.handle_exception(e)
             self.handle_shutdown()
         # CLI command
-        if len(sys.argv) >= 2:
-            command = ' '.join(sys.argv[1:]).split(' ', 1)
+        if len(self.args) >= 1:
+            command = ' '.join(self.args).split(' ', 1)
             if command[0].lower() == 'headless':
                 pass
             elif getattr(self, f'c_{command[0].lower()}', False):
-                try:
-                    getattr(self, f'c_{command[0].lower()}')(command[1].strip() if len(command) > 1 else False)
-                except Exception as e:
-                    self.handle_exception(e)
-                self.core.http.close()
+                if self.rootMode and not self.clientArg and command[0].lower() in ALL_CLIENTS_COMMANDS:
+                    clients = list(self.cores)
+                else:
+                    clients = [self.activeClient]
+                self.run_for_clients(clients, lambda: getattr(self, f'c_{command[0].lower()}')(
+                    command[1].strip() if len(command) > 1 else False))
+                self.shared.http.close()
                 sys.exit(0)
             else:
                 self.console.print('Command not found.')
-                self.core.http.close()
+                self.shared.http.close()
                 sys.exit(0)
         # Addons auto update
-        if len(self.core.config['Addons']) > 0 and self.core.config['AutoUpdate']:
+        clients = [self.activeClient] if self.clientArg else list(self.cores)
+        autoclients = [flavor for flavor in clients if len(self.cores[flavor].config['Addons']) > 0]
+        if autoclients and self.core.config['AutoUpdate']:
             if not self.headless and self.core.config['AutoUpdateDelay']:
                 if self.console.color_system == 'truecolor':
                     self.console.print(Panel(Align.center(Text.from_markup(LOGO)), border_style='yellow'))
@@ -158,32 +144,23 @@ class TUI:
                     self.print_header()
                 try:
                     self.motd_parser()
-                    self.c_update(None, True)
-                    if self.core.backup_check():
-                        self.setup_table()
-                        self.console.print(f'\n[green]Backing up WTF directory{"!" if self.headless else ":"}[/green]')
-                        self.core.backup_wtf(None if self.headless else self.console)
-                    if self.core.config['WAUsername'] != 'DISABLED':
-                        self.console.print('')
-                        with nullcontext() if self.headless else self.console.status('Processing Wago data'):
-                            self.setup_table()
-                            self.c_wago_update(None, False)
                 except Exception as e:
                     self.handle_exception(e)
+                self.run_for_clients(autoclients, self._auto_update_client)
                 self.console.print('')
                 self.print_log()
                 if self.headless:
-                    self.core.http.close()
+                    self.shared.http.close()
                     sys.exit(0)
                 else:
                     self.print_author_reminder()
                     keypress = self.handle_keypress('Press [bold]I[/bold] to enter interactive mode or any other button'
                                                     ' to close the application.', 0, False)
                     if not keypress or keypress.lower() not in [b'i', 'i']:
-                        self.core.http.close()
+                        self.shared.http.close()
                         sys.exit(0)
         if self.headless:
-            self.core.http.close()
+            self.shared.http.close()
             sys.exit(1)
         # Interactive mode initialization
         self.setup_completer()
@@ -191,6 +168,11 @@ class TUI:
         self.console.print('Use command [green]help[/green] or press [green]TAB[/green] to see a list of available comm'
                            'ands.\nCommand [green]exit[/green] or pressing [green]CTRL+D[/green] will close the applica'
                            'tion.\n')
+        if self.rootMode:
+            self.console.print(f'Managed clients: [bold white]'
+                               f'{", ".join(FLAVORS[flavor][1] for flavor in self.cores)}[/bold white]\nCommand [green]'
+                               f'client[/green] can be used to switch the active client or to manage additional one'
+                               f's.\n', highlight=False)
         if len(self.core.config['Addons']) == 0:
             self.console.print('To enable Wago Addons support API key needs to be provided.\nIt can be obtained here: ['
                                'link=https://addons.wago.io/patreon]https://addons.wago.io/patreon[/link]\nAfter that i'
@@ -198,18 +180,20 @@ class TUI:
                                'n] command.\nCommand [green]import[/green] might be used to detect already installed ad'
                                'dons.')
         self.motd_parser()
-        if self.core.backup_check():
-            self.console.print('[green]Backing up WTF directory:[/green]')
-            self.core.backup_wtf(self.console)
-            self.console.print('')
+        for flavor in clients:
+            if self.cores[flavor].backup_check():
+                name = f' of {FLAVORS[flavor][1]}' if self.rootMode else ''
+                self.console.print(f'[green]Backing up WTF directory{name}:[/green]')
+                self.cores[flavor].backup_wtf(self.console)
+                self.console.print('')
         # Prompt session
         while True:
             try:
-                command = self.session.prompt(HTML('<ansibrightgreen>CB></ansibrightgreen> '), completer=self.completer)
+                command = self.session.prompt(self.prompt_message(), completer=self.completer)
             except KeyboardInterrupt:
                 continue
             except EOFError:
-                self.core.http.close()
+                self.shared.http.close()
                 break
             else:
                 command = command.split(' ', 1)
@@ -223,15 +207,182 @@ class TUI:
                 else:
                     self.console.print('Command not found.')
 
+    def parse_cli(self):
+        self.args = sys.argv[1:]
+        if len(self.args) >= 2 and self.args[0].lower() == '--client':
+            self.clientArg = self.args[1]
+            self.args = self.args[2:]
+
+    def detect_clients(self):
+        cwd = Path.cwd()
+        # Single client mode: executable is placed inside the client directory
+        if (glob.glob('World*.app') or glob.glob('Wow*.exe')) and os.path.isdir(Path('Interface/AddOns')) and \
+                os.path.isdir('WTF'):
+            flavor = os.environ.get('CURSEBREAKER_FLAVOR', cwd.name)
+            if flavor not in FLAVORS:
+                self.handle_shutdown('[bold red]This client release is currently unsupported by CurseBreaker.[/bold r'
+                                     'ed]\n')
+            if self.clientArg and self.client_id(self.clientArg) != self.client_id(flavor):
+                self.handle_shutdown('[bold red]Parameter --client can be used only when CurseBreaker is placed in the '
+                                     'main World of Warcraft directory.[/bold red]\n')
+            clienttype = FLAVORS[flavor][0]
+            if clienttype != 'retail':
+                set_terminal_title(f'CurseBreaker v{__version__} - {self.flavor_title(clienttype)}')
+            self.cores[flavor] = Core(self.shared, cwd, clienttype)
+            self.activeClient = flavor
+            self.core = self.cores[flavor]
+        # Root mode: executable is placed in the main WoW directory next to the launcher
+        elif (glob.glob('World of Warcraft Launcher*') or os.path.isfile('.build.info')) and \
+                (detected := [flavor for flavor in FLAVORS if os.path.isdir(cwd / flavor / 'Interface' / 'AddOns')
+                              and os.path.isdir(cwd / flavor / 'WTF')]):
+            self.rootMode = True
+            self.detected = detected
+            for flavor in detected:
+                if os.path.isfile(cwd / flavor / 'WTF' / 'CurseBreaker.json'):
+                    self.cores[flavor] = Core(self.shared, cwd / flavor, FLAVORS[flavor][0])
+        else:
+            self.handle_shutdown('[bold red]This executable should be placed in the same directory where Wow.exe, WowCl'
+                                 'assic.exe or World of Warcraft.app is located, or in the main World of Warcraft direc'
+                                 'tory to manage multiple clients. Additionally, make sure that this WoW installation w'
+                                 'as started at least once.[/bold red]\n')
+
+    def check_write_access(self, paths, shutdown=True):
+        for path in dict.fromkeys(paths):
+            try:
+                with open(path / 'PermissionTest', 'w'):
+                    pass
+                os.remove(path / 'PermissionTest')
+            except OSError:
+                location = 'the current directory' if path == Path.cwd() else f'the {path} directory'
+                message = (f'[bold red]CurseBreaker doesn\'t have write rights for {location}.\nTry starting it with ad'
+                           f'ministrative privileges.[/bold red]\n')
+                if not shutdown:
+                    self.console.print(message, highlight=False)
+                    return False
+                self.handle_shutdown(message)
+        return True
+
+    def add_default_clients(self):
+        selected = [flavor for flavor in self.detected if not FLAVORS[flavor][2]] or self.detected
+        self.check_write_access([Path.cwd() / flavor for flavor in selected])
+        self.cores = {flavor: Core(self.shared, Path.cwd() / flavor, FLAVORS[flavor][0]) for flavor in selected}
+
+    def init_configs(self):
+        for flavor, core in self.cores.items():
+            try:
+                core.init_config()
+            except RuntimeError:
+                location = f' of {FLAVORS[flavor][1]}' if self.rootMode else ''
+                self.handle_shutdown(f'[bold red]The config file{location} is corrupted. Restore the earlier version fr'
+                                     f'om backup.[/bold red]\n')
+        if self.rootMode:
+            self.sync_shared()
+            if self.clientArg:
+                if (flavor := self.find_client(self.clientArg)) not in self.cores:
+                    self.handle_shutdown(f'[bold red]Client "{self.clientArg}" is not managed by CurseBreaker. Managed '
+                                         f'clients: {", ".join(self.client_id(f) for f in self.cores)}[/bold red]\n')
+            else:
+                flavor = '_retail_' if '_retail_' in self.cores else next(iter(self.cores))
+            self.set_client(flavor)
+
+    def sync_shared(self):
+        # Values of API keys are taken from the first client that has them set, other options from the first client
+        cores = list(self.cores.values())
+        values = {}
+        for key in SHARED_KEYS:
+            if key in API_KEYS:
+                values[key] = next((core.config[key] for core in cores if core.config[key] != ''), '')
+            else:
+                values[key] = cores[0].config[key]
+        for core in cores:
+            if changed := {key: value for key, value in values.items() if core.config[key] != value}:
+                core.config.update(copy.deepcopy(changed))
+                core.save_config()
+
+    def set_shared(self, key, value):
+        for core in self.cores.values():
+            core.config[key] = copy.deepcopy(value)
+            core.save_config()
+
+    def set_client(self, flavor):
+        self.activeClient = flavor
+        self.core = self.cores[flavor]
+        if self.rootMode:
+            set_terminal_title(f'CurseBreaker v{__version__} - {FLAVORS[flavor][1]}')
+
+    def select_client(self, candidates):
+        if not self.rootMode or self.clientArg or not candidates:
+            return
+        if len(candidates) > 1:
+            self.console.print('[green]Select the client:[/green]')
+            for i, flavor in enumerate(candidates, 1):
+                self.console.print(f'[bold white]{i}[/bold white] - {FLAVORS[flavor][1]}', highlight=False)
+            choice = self.prompt_client('Client', default='1', choices=[str(i) for i in range(1, len(candidates) + 1)])
+            self.console.print('')
+            self.set_client(candidates[int(choice) - 1])
+        else:
+            self.set_client(candidates[0])
+
+    def prompt_client(self, message, **kwargs):
+        try:
+            return Prompt.ask(message, console=self.console, **kwargs)
+        except (KeyboardInterrupt, EOFError):
+            self.console.print('')
+            self.shared.http.close()
+            sys.exit(0)
+
+    def find_client(self, name):
+        flavor = f'_{self.client_id(name)}_'
+        return flavor if flavor in self.detected else None
+
+    def client_id(self, name):
+        return name.strip().lower().strip('_')
+
+    def flavor_title(self, clienttype):
+        return next(name for ctype, name, test in FLAVORS.values() if ctype == clienttype and not test)
+
+    def run_for_clients(self, clients, action):
+        active = self.activeClient
+        for i, flavor in enumerate(clients):
+            self.set_client(flavor)
+            if len(clients) > 1:
+                if i > 0:
+                    self.console.print('')
+                self.console.print(Rule(f'[bold yellow]{FLAVORS[flavor][1]}[/bold yellow]', style='yellow'))
+            self.setup_table()
+            try:
+                action()
+            except Exception as e:
+                self.handle_exception(e)
+        self.set_client(active)
+
+    def _auto_update_client(self):
+        self.c_update(None, True)
+        if self.core.backup_check():
+            self.setup_table()
+            self.console.print(f'\n[green]Backing up WTF directory{"!" if self.headless else ":"}[/green]')
+            self.core.backup_wtf(None if self.headless else self.console)
+        if self.core.config['WAUsername'] != 'DISABLED':
+            self.console.print('')
+            with nullcontext() if self.headless else self.console.status('Processing Wago data'):
+                self.setup_table()
+                self.c_wago_update(None, False)
+
+    def prompt_message(self):
+        if self.rootMode:
+            return HTML(f'<ansibrightgreen>CB</ansibrightgreen> <ansiyellow>[{FLAVORS[self.activeClient][1]}]'
+                        f'</ansiyellow><ansibrightgreen>></ansibrightgreen> ')
+        return HTML('<ansibrightgreen>CB></ansibrightgreen> ')
+
     def _auto_update_cleanup(self):
         self.print_log()
-        self.core.http.close()
+        self.shared.http.close()
         self.handle_keypress('Press any button to continue...', 0, False)
 
     def _auto_update_install(self, url, changelog):
         self.console.print('[green]Updating CurseBreaker...[/green]')
         shutil.move(sys.executable, f'{sys.executable}.old')
-        payload = self.core.http.get(url)
+        payload = self.shared.http.get(url)
         if self.os == 'Darwin':
             zipfile.ZipFile(io.BytesIO(payload.content)).extractall(path=os.path.dirname(
                 os.path.abspath(sys.executable)))
@@ -256,7 +407,7 @@ class TUI:
                 with suppress(PermissionError):
                     os.remove(f'{sys.executable}.old')
             try:
-                payload = self.core.http.get('https://api.github.com/repos/AcidWeb/CurseBreaker/releases/latest').json()
+                payload = self.shared.http.get('https://api.github.com/repos/AcidWeb/CurseBreaker/releases/latest').json()
             except httpx.RequestError:
                 return
             if 'name' in payload and 'body' in payload and 'assets' in payload:
@@ -284,10 +435,13 @@ class TUI:
                                      'recommended. https://aka.ms/terminal', title='WARNING', border_style='red'))
             self.console.print('')
         else:
-            payload = self.core.http.get('https://cursebreaker.acidweb.dev/motd')
-            if payload.status_code == 200:
-                self.console.print(Panel(payload.content.decode('UTF-8'), title=':megaphone: MOTD :megaphone:',
-                                         border_style='red'))
+            try:
+                payload = self.shared.http.get('https://cursebreaker.acidweb.dev/motd')
+                motd = payload.content.decode('UTF-8') if payload.status_code == 200 else None
+            except (httpx.HTTPError, UnicodeDecodeError):
+                return
+            if motd is not None:
+                self.console.print(Panel(motd, title=':megaphone: MOTD :megaphone:', border_style='red'))
                 self.console.print('')
 
     def handle_exception(self, e, table=True):
@@ -334,7 +488,7 @@ class TUI:
         return keypress
 
     def handle_shutdown(self, message=''):
-        self.core.http.close()
+        self.shared.http.close()
         if not message:
             self.handle_keypress('\nWaiting for {} seconds, press any button to continue...', 5, True)
             sys.exit(0)
@@ -348,7 +502,7 @@ class TUI:
             self.console.print(f'[bold green]CurseBreaker[/bold green] [bold red]v{__version__}[/bold red] | '
                                f'[yellow]{datetime.now()}[/yellow]', highlight=False)
         else:
-            if len(sys.argv) == 1:
+            if not self.args:
                 clear()
             self.console.print(Rule(f'[bold green]CurseBreaker[/bold green] [bold red]v{__version__}[/bold red]'))
             self.console.print('')
@@ -362,7 +516,9 @@ class TUI:
     def print_author_reminder(self):
         if random.randint(1, 10) != 1:
             return
-        addon = random.choice(self.core.config['Addons'])
+        if not (addons := [addon for core in self.cores.values() for addon in core.config['Addons']]):
+            return
+        addon = random.choice(addons)
         project_url = addon['URL']
         if not project_url.startswith('https://'):
             project_url = project_url.lower()
@@ -391,7 +547,7 @@ class TUI:
         if not self.slugs:
             try:
                 self.slugs = json.load(gzip.open(io.BytesIO(
-                    self.core.http.get('https://cursebreaker.acidweb.dev/slugs-v2.json.gz').content)))
+                    self.shared.http.get('https://cursebreaker.acidweb.dev/slugs-v2.json.gz').content)))
             except (StopIteration, UnicodeDecodeError, json.JSONDecodeError, httpx.RequestError,
                     gzip.BadGzipFile, EOFError):
                 self.slugs = {'wa': [], 'wowi': [], 'gh': [], 'custom': []}
@@ -409,6 +565,11 @@ class TUI:
         for item in self.slugs['custom']:
             slugs.append(f'{item}')
         accounts = list(self.core.detect_accounts())
+        clients = {}
+        if self.rootMode:
+            clients = {self.client_id(flavor): None for flavor in self.cores}
+            clients['add'] = {self.client_id(flavor): None for flavor in self.detected if flavor not in self.cores} \
+                or None
         self.completer = NestedCompleter.from_nested_dict({
             'install': WordCompleter(slugs, ignore_case=True, match_middle=True, WORD=True),
             'uninstall': WordCompleter(addons, ignore_case=True),
@@ -435,6 +596,7 @@ class TUI:
                     'wago_wow_account': WordCompleter(accounts, ignore_case=True, sentence=True),
                     'gh_api': None},
             'uri_integration': None,
+            **({'client': clients} if self.rootMode else {}),
             'help': None,
             'exit': None
         })
@@ -721,28 +883,27 @@ class TUI:
             if args == self.core.config['WAUsername']:
                 self.console.print(f'Wago version check is now: [green]ENABLED[/green]\nEntries created by [bold white]'
                                    f'{self.core.config["WAUsername"]}[/bold white] are now included.')
-                self.core.config['WAUsername'] = ''
+                self.set_shared('WAUsername', '')
             else:
-                self.core.config['WAUsername'] = args.strip()
+                self.set_shared('WAUsername', args.strip())
                 self.console.print(f'Wago version check is now: [green]ENABLED[/green]\nEntries created by [bold white]'
                                    f'{self.core.config["WAUsername"]}[/bold white] are now ignored.')
         elif self.core.config['WAUsername'] == 'DISABLED':
-            self.core.config['WAUsername'] = ''
+            self.set_shared('WAUsername', '')
             self.console.print('Wago version check is now: [green]ENABLED[/green]')
         else:
-            self.core.config['WAUsername'] = 'DISABLED'
-            shutil.rmtree(Path('Interface/AddOns/CurseBreakerCompanion'), ignore_errors=True)
+            self.set_shared('WAUsername', 'DISABLED')
+            for core in self.cores.values():
+                shutil.rmtree(core.path / 'CurseBreakerCompanion', ignore_errors=True)
             self.console.print('Wago version check is now: [red]DISABLED[/red]')
-        self.core.save_config()
 
     def _c_toggle_parse(self, option, inside=None):
         if inside:
-            self.core.config[option][inside] = not self.core.config[option][inside]
-            self.core.save_config()
-            return self.core.config[option][inside]
+            value = {**self.core.config[option], inside: not self.core.config[option][inside]}
+            self.set_shared(option, value)
+            return value[inside]
         else:
-            self.core.config[option] = not self.core.config[option]
-            self.core.save_config()
+            self.set_shared(option, not self.core.config[option])
             return self.core.config[option]
 
     def c_toggle(self, args):
@@ -799,8 +960,7 @@ class TUI:
 
     def _c_set_parse(self, msg, key, value):
         self.console.print(msg)
-        self.core.config[key] = value.strip()
-        self.core.save_config()
+        self.set_shared(key, value.strip())
 
     def c_set(self, args):
         if not args:
@@ -839,8 +999,7 @@ class TUI:
                 self.console.print('[green]Usage:[/green]\n\tThis command accepts API key as an argument.')
         elif option == 'wago_wow_account':
             if value:
-                if os.path.isfile(Path(f'WTF/Account/{value}/SavedVariables/WeakAuras.lua')) or \
-                        os.path.isfile(Path(f'WTF/Account/{value}/SavedVariables/Plater.lua')):
+                if self.core.is_wago_account(value):
                     self.console.print(f'WoW account name set to: [bold white]{value}[/bold white]')
                     self.core.config['WAAccountName'] = value
                     self.core.save_config()
@@ -883,13 +1042,13 @@ class TUI:
             self.console.print(f'[link={aura[1]}]{aura[0]}[/link]', highlight=False)
 
     def c_wago_update(self, _, verbose=True, flush=True):
-        if not os.path.isdir(Path('Interface/AddOns/WeakAuras')) and not os.path.isdir(Path('Interface/AddOns/Plater')):
+        if not os.path.isdir(self.core.path / 'WeakAuras') and not os.path.isdir(self.core.path / 'Plater'):
             if verbose:
                 self.console.print('No compatible addon is installed.')
             return
         if not self._c_wago_update_init(flush, verbose):
             return
-        wago = WagoUpdater(self.core.config, self.core.http)
+        wago = WagoUpdater(self.core.config, self.shared.http, self.core.root)
         if Version(__version__) >= Version(self.core.masterConfig['ConfigVersion']) and \
                 self.core.masterConfig['CBCompanionVersion'] > self.core.config['CBCompanionVersion']:
             self.core.config['CBCompanionVersion'] = self.core.masterConfig['CBCompanionVersion']
@@ -957,6 +1116,74 @@ class TUI:
         pyperclip.copy(payload)
         self.console.print(f'{payload}\n\nThe command above was copied to the clipboard.', highlight=False)
 
+    def client_help(self):
+        return ('[green]client[/green]\n\tLists all detected WoW clients.\n'
+                '[green]client [Name][/green]\n\tSwitches the active client.\n\tOther commands affect only the active '
+                'client. Settings are shared by all clients.\n'
+                '[green]client add [Name][/green]\n\tStarts managing the provided client.\n\tTo stop managing a client '
+                'delete its WTF/CurseBreaker.json file.')
+
+    def _c_client_add(self, name):
+        flavor = self.find_client(name)
+        if not flavor:
+            self.console.print('Unknown client. Use the [green]client[/green] command to see the detected clients.')
+        elif flavor in self.cores:
+            self.console.print(f'{FLAVORS[flavor][1]} is already managed by CurseBreaker.')
+        elif self.check_write_access([Path.cwd() / flavor], False):
+            core = Core(self.shared, Path.cwd() / flavor, FLAVORS[flavor][0])
+            try:
+                core.init_config()
+            except RuntimeError:
+                self.console.print(f'[bold red]The config file of {FLAVORS[flavor][1]} is corrupted. Restore the earl'
+                                   f'ier version from backup.[/bold red]')
+                return
+            for key in SHARED_KEYS:
+                core.config[key] = copy.deepcopy(self.core.config[key])
+            core.save_config()
+            self.cores[flavor] = core
+            self.cores = {f: self.cores[f] for f in self.detected if f in self.cores}
+            self.set_client(flavor)
+            self.console.print(f'{FLAVORS[flavor][1]} is now managed by CurseBreaker and set as the active client.\n'
+                               f'Command [green]import[/green] might be used to detect already installed addons.')
+
+    def c_client(self, args):
+        if not self.rootMode:
+            self.console.print('This command is available only when CurseBreaker is placed in the main World of Warcraf'
+                               't directory.')
+            return
+        option, _, value = (args or '').strip().partition(' ')
+        if option.lower() == 'add':
+            if value.strip():
+                self._c_client_add(value)
+            else:
+                self.console.print('[green]Usage:[/green]\n\tThis command accepts a client name as an argument.')
+        elif option:
+            flavor = self.find_client(option)
+            if flavor in self.cores:
+                self.set_client(flavor)
+                self.console.print(f'Active client: [bold white]{FLAVORS[flavor][1]}[/bold white]')
+            elif flavor:
+                self.console.print(f'{FLAVORS[flavor][1]} is not managed by CurseBreaker. Use [green]client add '
+                                   f'{self.client_id(flavor)}[/green] command to start managing it.')
+            else:
+                self.console.print('Unknown client.')
+        else:
+            table = Table(box=box.SQUARE)
+            table.add_column('Status', header_style='bold white', no_wrap=True, justify='center')
+            table.add_column('Client', header_style='bold white', no_wrap=True)
+            table.add_column('Name', header_style='bold white')
+            table.add_column('Addons', header_style='bold white', justify='center')
+            for flavor in self.detected:
+                if flavor == self.activeClient:
+                    status = '[green]Active[/green]'
+                elif flavor in self.cores:
+                    status = '[yellow]Managed[/yellow]'
+                else:
+                    status = '[bold black]Not managed[/bold black]'
+                addons = str(len(self.cores[flavor].config['Addons'])) if flavor in self.cores else ''
+                table.add_row(status, self.client_id(flavor), FLAVORS[flavor][1], addons)
+            self.console.print(table)
+
     def c_help(self, _):
         self.console.print('[green]install [URL][/green]\n\tCommand accepts a space-separated list of links.\n\t[bold w'
                            'hite]Flags:[/bold white]\n\t'
@@ -1009,7 +1236,9 @@ class TUI:
                            '_api [API key][/green]\n\tSets GitHub API key. Might be needed to get around API rate limit'
                            's.\n'
                            '[green]uri_integration[/green]\n\tEnables integration with Wago Addons and Wago page.\n\t"D'
-                           'ownload with Wago App" and "Send to WeakAura Companion App" buttons.\n\n[bold green]Support'
+                           'ownload with Wago App" and "Send to WeakAura Companion App" buttons.\n' +
+                           (self.client_help() + '\n' if self.rootMode else '') +
+                           '\n[bold green]Support'
                            'ed URL:[/bold green]\n\thttps://addons.wago.io/addons/\\[addon_name] [bold white]|[/bold wh'
                            'ite] wa:\\[addon_name]\n\thttps://www.wowinterface.com/downloads/\\[addon_name] [bold white'
                            ']|[/bold white] wowi:\\[addon_id]\n\thttps://github.com/\\[username]/\\[repository_name] [b'
@@ -1017,7 +1246,7 @@ class TUI:
                            'hite] Tukui\n\t' + self.parse_custom_addons(), highlight=False)
 
     def c_exit(self, _):
-        self.core.http.close()
+        self.shared.http.close()
         sys.exit(0)
 
 

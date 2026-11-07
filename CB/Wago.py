@@ -43,15 +43,14 @@ class BaseParser:
 
 
 class WeakAuraParser(BaseParser):
-    def __init__(self, accountname):
+    def __init__(self, variables):
         super().__init__()
-        self.accountName = accountname
+        self.variables = variables
         self.api = 'weakauras'
         self.parse_storage()
 
     def parse_storage(self):
-        with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua'), encoding='utf-8',
-                  errors='ignore') as file:
+        with open(self.variables / 'WeakAuras.lua', encoding='utf-8', errors='ignore') as file:
             data = file.read().replace('WeakAurasSaved = {', '{')
         wadata = loads(data)
         for wa in wadata['displays']:
@@ -65,9 +64,9 @@ class WeakAuraParser(BaseParser):
 
 
 class PlaterParser(BaseParser):
-    def __init__(self, accountname):
+    def __init__(self, variables):
         super().__init__()
-        self.accountName = accountname
+        self.variables = variables
         self.api = 'plater'
         self.parse_storage()
 
@@ -81,8 +80,7 @@ class PlaterParser(BaseParser):
                     self.list[search.group(1)] = int(search.group(2))
 
     def parse_storage(self):
-        with open(Path(f'WTF/Account/{self.accountName}/SavedVariables/Plater.lua'), encoding='utf-8',
-                  errors='ignore') as file:
+        with open(self.variables / 'Plater.lua', encoding='utf-8', errors='ignore') as file:
             data = file.read()
         storage = re.search(r'PlaterDB = {\n.*?}\n', data, re.DOTALL)
         if not storage:
@@ -103,12 +101,14 @@ class PlaterParser(BaseParser):
 
 
 class WagoUpdater:
-    def __init__(self, config, http):
+    def __init__(self, config, http, root):
         self.http = http
         self.auth = WagoAPIAuth(config['WAAPIKey'])
         self.username = config['WAUsername']
         self.accountName = config['WAAccountName']
         self.stash = config['WAStash']
+        self.addonsPath = Path(root, 'Interface', 'AddOns')
+        self.variablesPath = Path(root, 'WTF', 'Account', self.accountName, 'SavedVariables')
         self.bbParser = bbcode.Parser()
         Markdown.output_formats['plain'] = markdown_unmark_element
         self.mdParser = Markdown(output_format='plain')
@@ -192,7 +192,7 @@ class WagoUpdater:
         addon.data['slugs'].append(self.build_entry(entry, raw, self.parse_changelog(entry)))
 
     def install_data(self, wadata, platerdata):
-        with open(Path('Interface/AddOns/CurseBreakerCompanion/Data.lua'), 'w', newline='\n', encoding='utf-8') as out:
+        with open(self.addonsPath / 'CurseBreakerCompanion' / 'Data.lua', 'w', newline='\n', encoding='utf-8') as out:
             out.write('CurseBreakerCompanion = {\n'
                       '  WeakAuras = {\n'
                       '    slugs = {\n'
@@ -213,21 +213,19 @@ class WagoUpdater:
                       '}')
 
     def install_companion(self, force):
-        target_path = Path('Interface/AddOns/CurseBreakerCompanion')
+        target_path = self.addonsPath / 'CurseBreakerCompanion'
         if not os.path.isdir(target_path) or force:
             shutil.rmtree(target_path, ignore_errors=True)
             ZipFile(BytesIO(self.http.get('https://cursebreaker.acidweb.dev/CurseBreakerCompanion.zip')
-                            .content)).extractall(target_path / '..')
+                            .content)).extractall(self.addonsPath)
 
     def update(self):
-        if os.path.isdir(Path('Interface/AddOns/WeakAuras')) and os.path.isfile(
-                Path(f'WTF/Account/{self.accountName}/SavedVariables/WeakAuras.lua')):
-            wa = WeakAuraParser(self.accountName)
+        if os.path.isdir(self.addonsPath / 'WeakAuras') and os.path.isfile(self.variablesPath / 'WeakAuras.lua'):
+            wa = WeakAuraParser(self.variablesPath)
         else:
             wa = BaseParser()
-        if os.path.isdir(Path('Interface/AddOns/Plater')) and os.path.isfile(
-                Path(f'WTF/Account/{self.accountName}/SavedVariables/Plater.lua')):
-            plater = PlaterParser(self.accountName)
+        if os.path.isdir(self.addonsPath / 'Plater') and os.path.isfile(self.variablesPath / 'Plater.lua'):
+            plater = PlaterParser(self.variablesPath)
         else:
             plater = BaseParser()
         statuswa = self.check_updates(wa)
