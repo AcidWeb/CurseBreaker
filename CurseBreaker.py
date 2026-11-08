@@ -15,6 +15,7 @@ import zipfile
 import logging
 import platform
 import pyperclip
+import functools
 import subprocess
 from csv import reader
 from shlex import split
@@ -35,7 +36,8 @@ from rich.control import Control
 from rich.progress import Progress, BarColumn
 from rich.traceback import Traceback, install
 from prompt_toolkit import PromptSession, HTML
-from prompt_toolkit.completion import WordCompleter, NestedCompleter
+from prompt_toolkit.document import Document
+from prompt_toolkit.completion import Completer, Completion, WordCompleter, NestedCompleter
 from packaging.version import Version
 from CB import __version__, FLAVORS, SHARED_KEYS, API_KEYS
 from CB.Core import Core, Shared
@@ -47,6 +49,27 @@ if platform.system() == 'Windows':
     from ctypes import windll, wintypes
 
 ALL_CLIENTS_COMMANDS = ('update', 'status', 'orphans', 'backup', 'wago_update')
+
+
+class ClientCompleter(Completer):
+    # Completes @client prefixes and passes the rest of the line to the completer of the selected client
+    def __init__(self, completer, targets):
+        self.completer = completer
+        self.targets = targets
+
+    def get_completions(self, document, complete_event):
+        text = document.text_before_cursor.lstrip()
+        if not text.startswith('@'):
+            yield from self.completer.get_completions(document, complete_event)
+            return
+        target, separator, rest = text.partition(' ')
+        if not separator:
+            for name in self.targets:
+                if name.startswith(target.lower()):
+                    yield Completion(name, start_position=-len(target))
+        elif completer := self.targets.get(target.lower()):
+            rest = rest.lstrip()
+            yield from completer.get_completions(Document(rest, len(rest)), complete_event)
 
 
 class TUI:
@@ -170,9 +193,8 @@ class TUI:
                            'tion.\n')
         if self.rootMode:
             self.console.print(f'Managed clients: [bold white]'
-                               f'{", ".join(FLAVORS[flavor][1] for flavor in self.cores)}[/bold white]\nCommand [green]'
-                               f'client[/green] can be used to switch the active client or to manage additional one'
-                               f's.\n', highlight=False)
+                               f'{", ".join(FLAVORS[flavor][1] for flavor in self.cores)}[/bold white]\n',
+                               highlight=False)
         if len(self.core.config['Addons']) == 0:
             self.console.print('To enable Wago Addons support API key needs to be provided.\nIt can be obtained here: ['
                                'link=https://addons.wago.io/patreon]https://addons.wago.io/patreon[/link]\nAfter that i'
@@ -196,14 +218,25 @@ class TUI:
                 self.shared.http.close()
                 break
             else:
+                targets = None
+                if self.rootMode and command.lstrip().startswith('@'):
+                    target, _, command = command.lstrip().partition(' ')
+                    command = command.lstrip()
+                    if not (targets := self.parse_targets(target[1:])):
+                        continue
                 command = command.split(' ', 1)
-                if getattr(self, f'c_{command[0].lower()}', False):
-                    try:
-                        self.setup_table()
-                        getattr(self, f'c_{command[0].lower()}')(command[1].strip() if len(command) > 1 else False)
+                if handler := getattr(self, f'c_{command[0].lower()}', False):
+                    argument = command[1].strip() if len(command) > 1 else False
+                    if targets:
+                        self.run_for_clients(targets, functools.partial(handler, argument))
                         self.setup_completer()
-                    except Exception as e:
-                        self.handle_exception(e)
+                    else:
+                        try:
+                            self.setup_table()
+                            handler(argument)
+                            self.setup_completer()
+                        except Exception as e:
+                            self.handle_exception(e)
                 else:
                     self.console.print('Command not found.')
 
@@ -309,6 +342,18 @@ class TUI:
         self.core = self.cores[flavor]
         if self.rootMode:
             set_terminal_title(f'CurseBreaker v{__version__} - {FLAVORS[flavor][1]}')
+
+    def parse_targets(self, name):
+        if name.lower() == 'all':
+            return list(self.cores)
+        if (flavor := self.find_client(name)) in self.cores:
+            return [flavor]
+        if flavor:
+            self.console.print(f'{FLAVORS[flavor][1]} is not managed by CurseBreaker. Use [green]client add '
+                               f'{self.client_id(flavor)}[/green] command to start managing it.')
+        else:
+            self.console.print('Unknown client.')
+        return None
 
     def select_client(self, candidates):
         if not self.rootMode or self.clientArg or not candidates:
@@ -551,9 +596,6 @@ class TUI:
             except (StopIteration, UnicodeDecodeError, json.JSONDecodeError, httpx.RequestError,
                     gzip.BadGzipFile, EOFError):
                 self.slugs = {'wa': [], 'wowi': [], 'gh': [], 'custom': []}
-        addons = []
-        for addon in sorted(self.core.config['Addons'], key=lambda k: k['Name'].lower()):
-            addons.append(addon['Name'])
         slugs = ['ElvUI', 'Tukui']
         if self.core.config['WAAAPIKey'] != '':
             for item in self.slugs['wa']:
@@ -564,13 +606,28 @@ class TUI:
             slugs.append(f'gh:{item}')
         for item in self.slugs['custom']:
             slugs.append(f'{item}')
-        accounts = list(self.core.detect_accounts())
-        clients = {}
         if self.rootMode:
             clients = {self.client_id(flavor): None for flavor in self.cores}
             clients['add'] = {self.client_id(flavor): None for flavor in self.detected if flavor not in self.cores} \
                 or None
-        self.completer = NestedCompleter.from_nested_dict({
+            targets = {f'@{self.client_id(flavor)}':
+                       NestedCompleter.from_nested_dict(self.completer_commands(core, slugs))
+                       for flavor, core in self.cores.items()}
+            targets['@all'] = NestedCompleter.from_nested_dict(self.completer_commands(None, slugs))
+            self.completer = ClientCompleter(NestedCompleter.from_nested_dict(
+                self.completer_commands(self.core, slugs, clients)), targets)
+        else:
+            self.completer = NestedCompleter.from_nested_dict(self.completer_commands(self.core, slugs))
+
+    def completer_commands(self, core, slugs, clients=None):
+        if core:
+            addons = [addon['Name'] for addon in sorted(core.config['Addons'], key=lambda k: k['Name'].lower())]
+            accounts = list(core.detect_accounts())
+        else:
+            addons = sorted({addon['Name'] for c in self.cores.values() for addon in c.config['Addons']},
+                            key=str.lower)
+            accounts = []
+        return {
             'install': WordCompleter(slugs, ignore_case=True, match_middle=True, WORD=True),
             'uninstall': WordCompleter(addons, ignore_case=True),
             'update': WordCompleter(addons, ignore_case=True),
@@ -596,10 +653,10 @@ class TUI:
                     'wago_wow_account': WordCompleter(accounts, ignore_case=True, sentence=True),
                     'gh_api': None},
             'uri_integration': None,
-            **({'client': clients} if self.rootMode else {}),
+            **({'client': clients} if clients is not None else {}),
             'help': None,
             'exit': None
-        })
+        }
 
     def setup_table(self, sources=False):
         self.table = Table(box=box.SQUARE)
@@ -1121,7 +1178,10 @@ class TUI:
                 '[green]client [Name][/green]\n\tSwitches the active client.\n\tOther commands affect only the active '
                 'client. Settings are shared by all clients.\n'
                 '[green]client add [Name][/green]\n\tStarts managing the provided client.\n\tTo stop managing a client '
-                'delete its WTF/CurseBreaker.json file.')
+                'delete its WTF/CurseBreaker.json file.\n'
+                '[green]@[Name] [Command][/green]\n\tExecutes a single command for the provided client without switchi'
+                'ng to it.\n'
+                '[green]@all [Command][/green]\n\tExecutes a single command for all managed clients.')
 
     def _c_client_add(self, name):
         flavor = self.find_client(name)
