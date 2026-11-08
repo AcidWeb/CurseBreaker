@@ -186,6 +186,8 @@ class TUI:
             self.shared.http.close()
             sys.exit(1)
         # Interactive mode initialization
+        if self.rootMode and not self.clientArg:
+            self.set_client(self.last_played_client())
         self.setup_completer()
         self.print_header()
         self.console.print('Use command [green]help[/green] or press [green]TAB[/green] to see a list of available comm'
@@ -375,6 +377,20 @@ class TUI:
             self.console.print('')
             self.shared.http.close()
             sys.exit(0)
+
+    def last_played_client(self):
+        # WoW writes Logs/*.log when the client starts and closes and WTF/Config.wtf when it closes,
+        # so the newest of these files belongs to the running or most recently closed client
+        played = {}
+        for flavor, core in self.cores.items():
+            times = []
+            for path in [core.wtfPath / 'Config.wtf', *(core.root / 'Logs').glob('*.log')]:
+                with suppress(OSError):
+                    if path.is_file():
+                        times.append(path.stat().st_mtime)
+            if times:
+                played[flavor] = max(times)
+        return max(played, key=played.get) if played else self.activeClient
 
     def find_client(self, name):
         flavor = f'_{self.client_id(name)}_'
