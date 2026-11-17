@@ -49,6 +49,8 @@ if platform.system() == 'Windows':
     from ctypes import windll, wintypes
 
 ALL_CLIENTS_COMMANDS = ('update', 'status', 'orphans', 'backup', 'wago_update')
+GLOBAL_COMMANDS = ('client', 'help', 'exit', 'uri_integration')
+CLIENT_OPTIONS = {'toggle': ('channel', 'pinning'), 'set': ('wago_wow_account',)}
 
 
 class ClientCompleter(Completer):
@@ -84,6 +86,9 @@ class TUI:
         self.rootMode = False
         self.args = []
         self.clientArg = None
+        self.notice = None
+        self.accounts = {}
+        self.exported = []
         self.session = PromptSession(reserve_space_for_menu=6, complete_in_thread=True)
         self.headless = False
         self.console = None
@@ -229,30 +234,32 @@ class TUI:
                 command = command.split(' ', 1)
                 if handler := getattr(self, f'c_{command[0].lower()}', False):
                     argument = command[1].strip() if len(command) > 1 else False
-                    if targets:
-                        self.run_for_clients(targets, functools.partial(handler, argument))
-                        self.setup_completer()
-                    else:
-                        try:
+                    self.exported = []
+                    try:
+                        if targets and not self.is_global_command(command[0].lower(), argument):
+                            self.run_for_clients(targets, functools.partial(handler, argument))
+                        else:
                             self.setup_table()
                             handler(argument)
-                            self.setup_completer()
-                        except Exception as e:
-                            self.handle_exception(e)
+                        self.setup_completer()
+                    except Exception as e:
+                        self.handle_exception(e)
                 else:
                     self.console.print('Command not found.')
 
     def parse_cli(self):
         self.args = sys.argv[1:]
-        if len(self.args) >= 2 and self.args[0].lower() == '--client':
-            self.clientArg = self.args[1]
-            self.args = self.args[2:]
+        for i, arg in enumerate(self.args[:-1]):
+            if arg.lower() == '--client':
+                self.clientArg = self.args[i + 1]
+                self.args = self.args[:i] + self.args[i + 2:]
+                break
 
     def detect_clients(self):
         cwd = Path.cwd()
         # Single client mode: executable is placed inside the client directory
-        if (glob.glob('World*.app') or glob.glob('Wow*.exe')) and os.path.isdir(Path('Interface/AddOns')) and \
-                os.path.isdir('WTF'):
+        if ([app for app in glob.glob('World*.app') if 'Launcher' not in app] or glob.glob('Wow*.exe')) and \
+                os.path.isdir(Path('Interface/AddOns')) and os.path.isdir('WTF'):
             flavor = os.environ.get('CURSEBREAKER_FLAVOR', cwd.name)
             if flavor not in FLAVORS:
                 self.handle_shutdown('[bold red]This client release is currently unsupported by CurseBreaker.[/bold r'
@@ -274,7 +281,7 @@ class TUI:
             self.detected = detected
             for flavor in detected:
                 if os.path.isfile(cwd / flavor / 'WTF' / 'CurseBreaker.json'):
-                    self.cores[flavor] = Core(self.shared, cwd / flavor, FLAVORS[flavor][0])
+                    self.cores[flavor] = self.make_core(flavor)
         else:
             self.handle_shutdown('[bold red]This executable should be placed in the same directory where Wow.exe, WowCl'
                                  'assic.exe or World of Warcraft.app is located, or in the main World of Warcraft direc'
@@ -297,25 +304,35 @@ class TUI:
                 self.handle_shutdown(message)
         return True
 
+    def make_core(self, flavor):
+        return Core(self.shared, Path.cwd() / flavor, FLAVORS[flavor][0])
+
+    def config_error(self, flavor):
+        location = f' of {FLAVORS[flavor][1]}' if self.rootMode else ''
+        return f'[bold red]The config file{location} is corrupted. Restore the earlier version from backup.[/bold red]'
+
+    def check_client_arg(self, flavors):
+        if self.clientArg and self.find_client(self.clientArg) not in flavors:
+            self.handle_shutdown(f'[bold red]Client "{self.clientArg}" is not managed by CurseBreaker. Managed client'
+                                 f's: {", ".join(self.client_id(f) for f in flavors)}[/bold red]\n')
+
     def add_default_clients(self):
         selected = [flavor for flavor in self.detected if not FLAVORS[flavor][2]] or self.detected
+        self.check_client_arg(selected)
         self.check_write_access([Path.cwd() / flavor for flavor in selected])
-        self.cores = {flavor: Core(self.shared, Path.cwd() / flavor, FLAVORS[flavor][0]) for flavor in selected}
+        self.cores = {flavor: self.make_core(flavor) for flavor in selected}
 
     def init_configs(self):
         for flavor, core in self.cores.items():
             try:
                 core.init_config()
             except RuntimeError:
-                location = f' of {FLAVORS[flavor][1]}' if self.rootMode else ''
-                self.handle_shutdown(f'[bold red]The config file{location} is corrupted. Restore the earlier version fr'
-                                     f'om backup.[/bold red]\n')
+                self.handle_shutdown(f'{self.config_error(flavor)}\n')
         if self.rootMode:
             self.sync_shared()
+            self.check_client_arg(self.cores)
             if self.clientArg:
-                if (flavor := self.find_client(self.clientArg)) not in self.cores:
-                    self.handle_shutdown(f'[bold red]Client "{self.clientArg}" is not managed by CurseBreaker. Managed '
-                                         f'clients: {", ".join(self.client_id(f) for f in self.cores)}[/bold red]\n')
+                flavor = self.find_client(self.clientArg)
             else:
                 flavor = '_retail_' if '_retail_' in self.cores else next(iter(self.cores))
             self.set_client(flavor)
@@ -329,10 +346,21 @@ class TUI:
                 values[key] = next((core.config[key] for core in cores if core.config[key] != ''), '')
             else:
                 values[key] = cores[0].config[key]
-        for core in cores:
+        merged = []
+        for flavor, core in self.cores.items():
             if changed := {key: value for key, value in values.items() if core.config[key] != value}:
                 core.config.update(copy.deepcopy(changed))
                 core.save_config()
+                if changed.get('WAUsername') == 'DISABLED':
+                    shutil.rmtree(core.path / 'CurseBreakerCompanion', ignore_errors=True)
+                if any(key not in API_KEYS for key in changed):
+                    merged.append(FLAVORS[flavor][1])
+        if merged:
+            self.notice = (f'[yellow]Settings of {", ".join(merged)} were replaced with the settings of '
+                           f'{FLAVORS[next(iter(self.cores))][1]}. Settings are shared by all managed clients.'
+                           f'[/yellow]\n')
+            if self.args:
+                self.print_notice()
 
     def set_shared(self, key, value):
         for core in self.cores.values():
@@ -348,8 +376,11 @@ class TUI:
     def parse_targets(self, name):
         if name.lower() == 'all':
             return list(self.cores)
+        return [flavor] if (flavor := self.resolve_client(name)) else None
+
+    def resolve_client(self, name):
         if (flavor := self.find_client(name)) in self.cores:
-            return [flavor]
+            return flavor
         if flavor:
             self.console.print(f'{FLAVORS[flavor][1]} is not managed by CurseBreaker. Use [green]client add '
                                f'{self.client_id(flavor)}[/green] command to start managing it.')
@@ -361,10 +392,13 @@ class TUI:
         if not self.rootMode or self.clientArg or not candidates:
             return
         if len(candidates) > 1:
+            last = self.last_played_client()
+            default = str(candidates.index(last) + 1) if last in candidates else '1'
             self.console.print('[green]Select the client:[/green]')
             for i, flavor in enumerate(candidates, 1):
                 self.console.print(f'[bold white]{i}[/bold white] - {FLAVORS[flavor][1]}', highlight=False)
-            choice = self.prompt_client('Client', default='1', choices=[str(i) for i in range(1, len(candidates) + 1)])
+            choice = self.prompt_client('Client', default=default,
+                                        choices=[str(i) for i in range(1, len(candidates) + 1)])
             self.console.print('')
             self.set_client(candidates[int(choice) - 1])
         else:
@@ -401,6 +435,11 @@ class TUI:
 
     def flavor_title(self, clienttype):
         return next(name for ctype, name, test in FLAVORS.values() if ctype == clienttype and not test)
+
+    def is_global_command(self, command, argument):
+        if command in CLIENT_OPTIONS:
+            return (argument or '').strip().partition(' ')[0] not in CLIENT_OPTIONS[command]
+        return command in GLOBAL_COMMANDS
 
     def run_for_clients(self, clients, action):
         active = self.activeClient
@@ -567,6 +606,12 @@ class TUI:
                 clear()
             self.console.print(Rule(f'[bold green]CurseBreaker[/bold green] [bold red]v{__version__}[/bold red]'))
             self.console.print('')
+            self.print_notice()
+
+    def print_notice(self):
+        if self.notice:
+            self.console.print(self.notice, highlight=False)
+            self.notice = None
 
     def print_log(self):
         if self.headless:
@@ -638,7 +683,9 @@ class TUI:
     def completer_commands(self, core, slugs, clients=None):
         if core:
             addons = [addon['Name'] for addon in sorted(core.config['Addons'], key=lambda k: k['Name'].lower())]
-            accounts = list(core.detect_accounts())
+            if core.root not in self.accounts:
+                self.accounts[core.root] = core.detect_accounts()
+            accounts = self.accounts[core.root]
         else:
             addons = sorted({addon['Name'] for c in self.cores.values() for addon in c.config['Addons']},
                             key=str.lower)
@@ -998,10 +1045,8 @@ class TUI:
         args = args.strip()
         option, _, value = args.partition(' ')
         value = value.strip()
-        if option == 'channel':
-            self._c_toggle_channel(value)
-        elif option == 'pinning':
-            self._c_toggle_pinning(value)
+        if option in CLIENT_OPTIONS['toggle']:
+            getattr(self, f'_c_toggle_{option}')(value)
         elif option == 'wago':
             self._c_toggle_wago(value)
         elif args == 'authors':
@@ -1049,7 +1094,9 @@ class TUI:
             return
         option, _, value = args.strip().partition(' ')
         value = value.strip()
-        if option == 'wago_addons_api':
+        if option in CLIENT_OPTIONS['set']:
+            getattr(self, f'_c_set_{option}')(value)
+        elif option == 'wago_addons_api':
             if value:
                 self._c_set_parse('Wago Addons API key is now set.', 'WAAAPIKey', value)
             elif self.core.config['WAAAPIKey'] != '':
@@ -1070,19 +1117,19 @@ class TUI:
                 self._c_set_parse('GitHub API key is now removed.', 'GHAPIKey', '')
             else:
                 self.console.print('[green]Usage:[/green]\n\tThis command accepts API key as an argument.')
-        elif option == 'wago_wow_account':
-            if value:
-                if self.core.is_wago_account(value):
-                    self.console.print(f'WoW account name set to: [bold white]{value}[/bold white]')
-                    self.core.config['WAAccountName'] = value
-                    self.core.save_config()
-                else:
-                    self.console.print('Incorrect WoW account name.')
-            else:
-                self.console.print('[green]Usage:[/green]\n\tThis command accepts the WoW account name as an'
-                                   ' argument.')
         else:
             self.console.print('Unknown option.')
+
+    def _c_set_wago_wow_account(self, value):
+        if value:
+            if self.core.is_wago_account(value):
+                self.console.print(f'WoW account name set to: [bold white]{value}[/bold white]')
+                self.core.config['WAAccountName'] = value
+                self.core.save_config()
+            else:
+                self.console.print('Incorrect WoW account name.')
+        else:
+            self.console.print('[green]Usage:[/green]\n\tThis command accepts the WoW account name as an argument.')
 
     def _c_wago_update_init(self, flush, verbose):
         accounts = self.core.detect_accounts()
@@ -1121,7 +1168,8 @@ class TUI:
             return
         if not self._c_wago_update_init(flush, verbose):
             return
-        wago = WagoUpdater(self.core.config, self.shared.http, self.core.root)
+        wago = WagoUpdater(self.core.config, self.shared.http, self.core.path,
+                           self.core.variables_path(self.core.config['WAAccountName']))
         if Version(__version__) >= Version(self.core.masterConfig['ConfigVersion']) and \
                 self.core.masterConfig['CBCompanionVersion'] > self.core.config['CBCompanionVersion']:
             self.core.config['CBCompanionVersion'] = self.core.masterConfig['CBCompanionVersion']
@@ -1186,7 +1234,8 @@ class TUI:
 
     def c_export(self, _):
         payload = self.core.export_addons()
-        pyperclip.copy(payload)
+        self.exported.append(payload)
+        pyperclip.copy('\n'.join(self.exported))
         self.console.print(f'{payload}\n\nThe command above was copied to the clipboard.', highlight=False)
 
     def client_help(self):
@@ -1206,12 +1255,11 @@ class TUI:
         elif flavor in self.cores:
             self.console.print(f'{FLAVORS[flavor][1]} is already managed by CurseBreaker.')
         elif self.check_write_access([Path.cwd() / flavor], False):
-            core = Core(self.shared, Path.cwd() / flavor, FLAVORS[flavor][0])
+            core = self.make_core(flavor)
             try:
                 core.init_config()
             except RuntimeError:
-                self.console.print(f'[bold red]The config file of {FLAVORS[flavor][1]} is corrupted. Restore the earl'
-                                   f'ier version from backup.[/bold red]')
+                self.console.print(self.config_error(flavor))
                 return
             for key in SHARED_KEYS:
                 core.config[key] = copy.deepcopy(self.core.config[key])
@@ -1234,15 +1282,9 @@ class TUI:
             else:
                 self.console.print('[green]Usage:[/green]\n\tThis command accepts a client name as an argument.')
         elif option:
-            flavor = self.find_client(option)
-            if flavor in self.cores:
+            if flavor := self.resolve_client(option):
                 self.set_client(flavor)
                 self.console.print(f'Active client: [bold white]{FLAVORS[flavor][1]}[/bold white]')
-            elif flavor:
-                self.console.print(f'{FLAVORS[flavor][1]} is not managed by CurseBreaker. Use [green]client add '
-                                   f'{self.client_id(flavor)}[/green] command to start managing it.')
-            else:
-                self.console.print('Unknown client.')
         else:
             table = Table(box=box.SQUARE)
             table.add_column('Status', header_style='bold white', no_wrap=True, justify='center')

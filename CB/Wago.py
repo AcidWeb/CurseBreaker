@@ -4,7 +4,6 @@ import httpx
 import shutil
 import bbcode
 from io import StringIO, BytesIO
-from pathlib import Path
 from zipfile import ZipFile
 from markdown import Markdown
 from urllib.parse import quote_plus
@@ -101,14 +100,13 @@ class PlaterParser(BaseParser):
 
 
 class WagoUpdater:
-    def __init__(self, config, http, root):
+    def __init__(self, config, http, addonspath, variablespath):
         self.http = http
         self.auth = WagoAPIAuth(config['WAAPIKey'])
         self.username = config['WAUsername']
-        self.accountName = config['WAAccountName']
         self.stash = config['WAStash']
-        self.addonsPath = Path(root, 'Interface', 'AddOns')
-        self.variablesPath = Path(root, 'WTF', 'Account', self.accountName, 'SavedVariables')
+        self.addonsPath = addonspath
+        self.variablesPath = variablespath
         self.bbParser = bbcode.Parser()
         Markdown.output_formats['plain'] = markdown_unmark_element
         self.mdParser = Markdown(output_format='plain')

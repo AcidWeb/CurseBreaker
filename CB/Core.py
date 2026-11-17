@@ -12,6 +12,7 @@ import datetime
 import concurrent.futures
 from pathlib import Path
 from collections import Counter
+from contextlib import suppress
 from checksumdir import dirhash
 from urllib.parse import quote_plus
 from rich.progress import Progress, BarColumn
@@ -93,8 +94,6 @@ class Core:
                            'ShowSources': False,
                            'AutoUpdateDelay': True}
             self.save_config()
-        if not os.path.isdir(self.backupPath) and self.config['Backup']['Enabled']:
-            os.mkdir(self.backupPath)
         self.update_config()
 
     def save_config(self):
@@ -460,20 +459,16 @@ class Core:
                     break
                 suffix += 1
         zipf = zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED)
-        filecount = 0
-        for _, _, files in os.walk(self.wtfPath, topdown=True, followlinks=True):
-            files = [f for f in files if f[0] != '.']
-            filecount += len(files)
-        if filecount > 0:
+        files = [Path(root, f) for root, _, names in os.walk(self.wtfPath, topdown=True, followlinks=True)
+                 for f in names if f[0] != '.']
+        if files:
             with Progress('{task.completed}/{task.total}', '|', BarColumn(bar_width=None), '|',
                           console=console) as progress:
-                task = progress.add_task('', total=filecount)
-                while not progress.finished:
-                    for root, _, files in os.walk(self.wtfPath, topdown=True, followlinks=True):
-                        files = [f for f in files if f[0] != '.']
-                        for f in files:
-                            zipf.write(Path(root, f), arcname=Path(root, f).relative_to(self.root))
-                            progress.update(task, advance=1)
+                task = progress.add_task('', total=len(files))
+                for file in files:
+                    with suppress(FileNotFoundError):
+                        zipf.write(file, arcname=file.relative_to(self.root))
+                    progress.update(task, advance=1)
         zipf.close()
 
     def find_orphans(self):
@@ -652,8 +647,11 @@ class Core:
                 accounts_processed.append(account)
         return accounts_processed
 
+    def variables_path(self, account):
+        return self.wtfPath / 'Account' / account / 'SavedVariables'
+
     def is_wago_account(self, account):
-        variables = self.wtfPath / 'Account' / account / 'SavedVariables'
+        variables = self.variables_path(account)
         return os.path.isfile(variables / 'WeakAuras.lua') or os.path.isfile(variables / 'Plater.lua')
 
     def detect_addons(self):
