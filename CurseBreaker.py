@@ -443,17 +443,18 @@ class TUI:
 
     def run_for_clients(self, clients, action):
         active = self.activeClient
-        for i, flavor in enumerate(clients):
-            self.set_client(flavor)
-            if len(clients) > 1:
-                if i > 0:
-                    self.console.print('')
-                self.console.print(Rule(f'[bold yellow]{FLAVORS[flavor][1]}[/bold yellow]', style='yellow'))
-            self.setup_table()
-            try:
-                action()
-            except Exception as e:
-                self.handle_exception(e)
+        with self.shared.batch([self.cores[flavor] for flavor in clients]) if len(clients) > 1 else nullcontext():
+            for i, flavor in enumerate(clients):
+                self.set_client(flavor)
+                if len(clients) > 1:
+                    if i > 0:
+                        self.console.print('')
+                    self.console.print(Rule(f'[bold yellow]{FLAVORS[flavor][1]}[/bold yellow]', style='yellow'))
+                self.setup_table()
+                try:
+                    action()
+                except Exception as e:
+                    self.handle_exception(e)
         self.set_client(active)
 
     def _auto_update_client(self):

@@ -12,7 +12,7 @@ import datetime
 import concurrent.futures
 from pathlib import Path
 from collections import Counter
-from contextlib import suppress
+from contextlib import contextmanager, suppress
 from checksumdir import dirhash
 from urllib.parse import quote_plus
 from rich.progress import Progress, BarColumn
@@ -32,6 +32,26 @@ class Shared:
         self.githubCache = {}
         self.githubPackagerCache = {}
         self.tukuiCache = None
+        self.checked = None
+        self.archives = None
+        self.projects = set()
+
+    @contextmanager
+    def batch(self, cores=()):
+        if self.checked is not None:
+            yield
+            return
+        self.checked = set()
+        self.archives = {}
+        # Only packages of projects installed in more than one of these clients are kept for reuse
+        counts = Counter(addon['URL'] for core in cores for addon in core.config['Addons'])
+        self.projects = {url for url, count in counts.items() if count > 1}
+        try:
+            yield
+        finally:
+            self.checked = None
+            self.archives = None
+            self.projects = set()
 
     def init_master_config(self):
         try:
@@ -278,7 +298,7 @@ class Core:
         new = self.parse_url(url)
         if new.ignoreUpdate:
             raise RuntimeError(f'{new.name}.\nThe newest file is still awaiting approval on WoWInterface.')
-        new.get_addon()
+        self.get_addon(new, url)
         if addon := self.check_if_installed_dirs(new.directories):
             return False, addon['Name'], addon['Version']
         self.cleanup(new.directories)
@@ -292,6 +312,15 @@ class Core:
                                       'Signatures': signatures})
         self.save_config()
         return True, new.name, new.currentVersion
+
+    def get_addon(self, new, url):
+        if self.shared.archives is None or url not in self.shared.projects or not new.downloadUrl:
+            new.get_addon()
+        elif cached := self.shared.archives.get(new.downloadUrl):
+            new.archive, new.directories = cached[0], list(cached[1])
+        else:
+            new.get_addon()
+            self.shared.archives[new.downloadUrl] = new.archive, list(new.directories)
 
     def add_addon(self, url, ignore):
         if url.endswith(':'):
@@ -338,7 +367,7 @@ class Core:
         new = self.parse_url(old['URL'])
         if not new.ignoreUpdate and (force or (new.currentVersion != old['Version'] and update
                                                and not modified and not blocked)):
-            new.get_addon()
+            self.get_addon(new, old['URL'])
             self.cleanup(old['Directories'])
             new.install(self.path)
             checksums, signatures = self.directory_checksums(new.directories)
@@ -556,12 +585,21 @@ class Core:
                 ids_wago.append({'slug': addon['URL'].replace('https://addons.wago.io/addons/', ''), 'id': ''})
             elif addon['URL'].startswith('https://github.com/'):
                 ids_gh.append(addon['URL'].replace('https://github.com/', ''))
-        if ids_wowi:
+        if ids_wowi := self.unchecked('wowi', ids_wowi):
             self.bulk_wowi_check(ids_wowi)
         if ids_wago and self.config['WAAAPIKey'] != '':
             self.bulk_wago_check(ids_wago)
-        if ids_gh and self.config['GHAPIKey'] != '':
+        if (ids_gh := self.unchecked('gh', ids_gh)) and self.config['GHAPIKey'] != '':
             self.bulk_gh_check(ids_gh)
+
+    def unchecked(self, source, ids):
+        if self.shared.checked is None:
+            return ids
+        return [i for i in ids if (source, i) not in self.shared.checked]
+
+    def mark_checked(self, source, ids):
+        if self.shared.checked is not None:
+            self.shared.checked.update((source, i) for i in ids)
 
     def bulk_wowi_check(self, ids):
         payload = self.http.get(f'https://api.mmoui.com/v3/game/WOW/filedetails/{",".join(ids)}.json',
@@ -569,6 +607,7 @@ class Core:
         if 'ERROR' not in payload:
             for addon in payload:
                 self.wowiCache[str(addon['UID'])] = addon
+            self.mark_checked('wowi', ids)
 
     def bulk_wago_check(self, ids):
         if not self.wagoIdCache:
@@ -631,6 +670,7 @@ class Core:
                     pass
                 else:
                     self.githubPackagerCache[output[0]] = output[1]
+        self.mark_checked('gh', ids)
 
     @retry(custom_error='Failed to parse Tukui API data')
     def bulk_tukui_check(self):
