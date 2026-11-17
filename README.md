@@ -13,6 +13,7 @@ Windows 10+, Ubuntu 22.04+, Debian 12+ and macOS 15+ are supported.
 
 ## USAGE
 Place **CurseBreaker** binary inside the directory containing `Wow.exe`, `WowClassic.exe` or `World of Warcraft.app`.\
+To manage multiple clients with a single binary place it in the main World of Warcraft directory instead.\
 Read the instructions at the top of the screen.
 
 Already installed addons will not be recognized by **CurseBreaker**, and they need to be reinstalled.\
@@ -27,9 +28,18 @@ By default **CurseBreaker** will create backups of the entire `WTF` directory.
 - On Windows command `uri_integration` can be used to enable integration with the Wago Addons and Wago page.
 - Most of the commands support the space-separated list of addons.
 - `install` command has an optional `-i` flag that can be used to disable the client version check.
-- Environment variable `CURSEBREAKER_PATH` can be used to set the custom location of WoW client.
+- Environment variable `CURSEBREAKER_PATH` can be used to set the custom location of WoW client (or the main World of Warcraft directory).
 - The application can be run in non-interactive mode by providing commands directly as a parameter.
 - When the application is started with a `headless` parameter entire addon and Wago upgrade process plus WTF backup should be executed in the background. Log file _CurseBreaker.html_ will be created in the same directory as the application.
+
+## MULTIPLE CLIENTS
+When **CurseBreaker** is placed in the main World of Warcraft directory (next to `World of Warcraft Launcher.exe` or `World of Warcraft Launcher.app`) it can manage multiple clients at once.
+- On the first start all detected clients except the test ones (PTR, Beta) are managed automatically. Additional clients can be added later with the `client add` command. A client is managed when its `WTF/CurseBreaker.json` file exists.
+- Automatic addon update, WTF backup and Wago update are executed for every managed client.
+- Command `client` lists the detected clients and switches the active one. The active client is displayed in the prompt and all other commands affect only it. Interactive mode starts with the running (or most recently played) client set as active.
+- Prefixing a command with `@[client]` executes it once for that client without switching to it, e.g. `@forever status`. Prefix `@all` executes it for every managed client, e.g. `@all update`.
+- API keys and settings changed with `toggle` and `set` commands are shared by all managed clients. The exceptions are per-addon options (`toggle channel`, `toggle pinning`) and `set wago_wow_account`. Each client still keeps its own `WTF/CurseBreaker.json`.
+- In non-interactive mode `update`, `status`, `orphans`, `backup` and `wago_update` commands are executed for every managed client. Other commands affect the _Retail_ client (or the first managed one). Parameter `--client` limits any command to the selected client, e.g. `CurseBreaker --client forever install wa:details`.
 
 ## SUPPORTED URL
 - Wago Addons: `https://addons.wago.io/addons/[addon_name]`, `wa:[addon_name]`
