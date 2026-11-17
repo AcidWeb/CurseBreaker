@@ -755,8 +755,7 @@ class TUI:
             authors = f' [bold black]by {", ".join(authors)}[/bold black]'
         else:
             authors = ''
-        if uiversion and uiversion not in \
-                [v['CurrentVersion'] for _, v in self.core.masterConfig['ClientTypes'].items()]:
+        if uiversion and uiversion != self.core.masterConfig['ClientTypes'][self.core.clientType]['CurrentVersion']:
             uiversion = ' [bold yellow][!][/bold yellow]'
         else:
             uiversion = ''

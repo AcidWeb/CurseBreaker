@@ -380,7 +380,8 @@ class Core:
         if force:
             modified = False
             blocked = False
-        return new.name, new.author, new.currentVersion, oldversion, new.uiVersion, modified, blocked, source, \
+        uiversion = None if old['URL'] in self.config['IgnoreClientVersion'] else new.uiVersion
+        return new.name, new.author, new.currentVersion, oldversion, uiversion, modified, blocked, source, \
             sourceurl, new.changelogUrl, dev, new.ignoreUpdate
 
     def directory_signature(self, directory):
