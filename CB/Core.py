@@ -28,6 +28,8 @@ class Shared:
         self.http = httpx.Client(headers={'User-Agent': f'CurseBreaker/{__version__}'},
                                  timeout=10, http2=True, follow_redirects=True)
         self.masterConfig = None
+        self.flavors = {}
+        self.packageSuffixes = ()
         self.wowiCache = {}
         self.githubCache = {}
         self.githubPackagerCache = {}
@@ -61,6 +63,20 @@ class Shared:
                 gzip.BadGzipFile, EOFError) as e:
             raise RuntimeError('Failed to fetch the master config file. '
                                'Check your connectivity to Google Cloud.') from e
+        self.init_client_definitions()
+
+    def init_client_definitions(self):
+        # Client directories and client types come from the master config, so new clients need no application update
+        clienttypes = self.masterConfig.get('ClientTypes', {})
+        folders = self.masterConfig.get('ClientFolders', [])
+        if not folders or any(key not in data for data in clienttypes.values()
+                              for key in ('Name', 'PackagerFlavor', 'PackageSuffix')) \
+                or any(key not in entry for entry in folders for key in ('Folder', 'Type', 'Name', 'Test')):
+            raise RuntimeError('The master config file is missing the client definitions.')
+        self.flavors = {entry['Folder']: (entry['Type'], entry['Name'], entry['Test'])
+                        for entry in folders if entry['Type'] in clienttypes}
+        self.packageSuffixes = (*(data['PackageSuffix'] for data in clienttypes.values() if data['PackageSuffix']),
+                                *self.masterConfig.get('LegacyPackageSuffixes', []))
 
 
 class Core:
@@ -251,8 +267,10 @@ class Core:
         elif url.startswith('https://www.wowinterface.com/downloads/'):
             return WoWInterfaceAddon(url, self.wowiCache, self.http)
         elif url.startswith('https://github.com/'):
-            return GitHubAddon(url, self.githubCache, self.githubPackagerCache, self.clientType,
-                               self.config['GHAPIKey'], self.http)
+            clienttype = self.masterConfig['ClientTypes'][self.clientType]
+            return GitHubAddon(url, self.githubCache, self.githubPackagerCache, clienttype['PackagerFlavor'],
+                               clienttype['PackageSuffix'], self.shared.packageSuffixes, self.config['GHAPIKey'],
+                               self.http)
         elif url.lower() == 'elvui':
             self.bulk_tukui_check()
             return TukuiAddon('elvui', self.shared.tukuiCache,

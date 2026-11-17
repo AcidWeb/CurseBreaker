@@ -7,20 +7,6 @@ __license__ = 'GPLv3'
 __copyright__ = '2019-2026, Paweł Jastrzębski <pawelj@iosphe.re>'
 __docformat__ = 'restructuredtext en'
 
-FLAVORS = {
-    '_retail_': ('retail', 'Retail', False),
-    '_ptr_': ('retail', 'Retail PTR', True),
-    '_ptr2_': ('retail', 'Retail PTR 2', True),
-    '_beta_': ('retail', 'Retail Beta', True),
-    '_xptr_': ('retail', 'Retail XPTR', True),
-    '_classic_': ('mop', 'Mists of Pandaria Classic', False),
-    '_classic_ptr_': ('mop', 'Mists of Pandaria Classic PTR', True),
-    '_classic_beta_': ('mop', 'Mists of Pandaria Classic Beta', True),
-    '_classic_era_': ('classic', 'Classic', False),
-    '_classic_era_ptr_': ('classic', 'Classic PTR', True),
-    '_anniversary_': ('bc', 'Anniversary', False),
-    '_forever_': ('forever', 'Forever', False),
-}
 SHARED_KEYS = ('WAAAPIKey', 'WAAPIKey', 'GHAPIKey', 'WAUsername', 'Backup', 'AutoUpdate', 'AutoUpdateDelay',
                'CompactMode', 'ShowAuthors', 'ShowSources')
 API_KEYS = ('WAAAPIKey', 'WAAPIKey', 'GHAPIKey')

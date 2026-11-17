@@ -7,7 +7,7 @@ from . import parse_directories, retry, APIAuth
 
 class GitHubAddon:
     @retry()
-    def __init__(self, url, checkcache, packagercache, clienttype, apikey, http):
+    def __init__(self, url, checkcache, packagercache, packagerflavor, packagesuffix, packagesuffixes, apikey, http):
         project = url.replace('https://github.com/', '')
         self.http = http
         self.apiKey = apikey
@@ -39,7 +39,9 @@ class GitHubAddon:
             raise RuntimeError(f'{url}\nThis integration supports only the projects that provide packaged'
                                f' releases.')
         self.name = project.split('/')[1]
-        self.clientType = clienttype
+        self.packagerFlavor = packagerflavor
+        self.packageSuffix = packagesuffix
+        self.packageSuffixes = packagesuffixes
         self.currentVersion = None
         self.uiVersion = None
         self.downloadUrl = None
@@ -77,18 +79,10 @@ class GitHubAddon:
 
     def get_latest_package(self):
         targetfile = None
-        if self.clientType == 'retail':
-            targetflavor = 'mainline'
-        elif self.clientType == 'mop':
-            targetflavor = 'mists'
-        elif self.clientType == 'bc':
-            targetflavor = 'bcc'
-        else:
-            targetflavor = self.clientType
         for release in self.metadata['releases']:
             if not release['nolib']:
                 for flavor in release['metadata']:
-                    if flavor['flavor'] == targetflavor:
+                    if flavor['flavor'] == self.packagerFlavor:
                         targetfile = release['filename']
                         if 'name' in release:
                             self.name = release['name']
@@ -109,38 +103,16 @@ class GitHubAddon:
 
     def get_latest_package_nometa(self):
         latest = None
-        latestclassic = None
-        latestmop = None
-        latestbc = None
-        latestforever = None
+        latestflavor = None
         for release in self.payloads[self.releaseDepth]['assets']:
             if release['name'] and release['name'].endswith('.zip') and '-nolib' not in release['name'] \
                     and release['content_type'] in ['application/x-zip-compressed', 'application/zip', 'raw']:
-                if not latest and not release['name'].endswith(('-classic.zip', '-bc.zip', '-bcc.zip', '-wrath.zip',
-                                                                '-cata.zip', '-mists.zip', '-forever.zip')):
+                if not latest and not release['name'].endswith(self.packageSuffixes):
                     latest = release['url']
-                elif not latestclassic and release['name'].endswith('-classic.zip'):
-                    latestclassic = release['url']
-                elif not latestmop and release['name'].endswith('-mists.zip'):
-                    latestmop = release['url']
-                elif not latestbc and release['name'].endswith('-bcc.zip'):
-                    latestbc = release['url']
-                elif not latestforever and release['name'].endswith('-forever.zip'):
-                    latestforever = release['url']
-        if (self.clientType == 'retail' and latest) \
-                or (self.clientType == 'classic' and latest and not latestclassic) \
-                or (self.clientType == 'mop' and latest and not latestmop) \
-                or (self.clientType == 'bc' and latest and not latestbc) \
-                or (self.clientType == 'forever' and latest and not latestforever):
-            self.downloadUrl = latest
-        elif self.clientType == 'classic' and latestclassic:
-            self.downloadUrl = latestclassic
-        elif self.clientType == 'mop' and latestmop:
-            self.downloadUrl = latestmop
-        elif self.clientType == 'bc' and latestbc:
-            self.downloadUrl = latestbc
-        elif self.clientType == 'forever' and latestforever:
-            self.downloadUrl = latestforever
+                elif not latestflavor and self.packageSuffix and release['name'].endswith(self.packageSuffix):
+                    latestflavor = release['url']
+        if latestflavor or latest:
+            self.downloadUrl = latestflavor or latest
         else:
             self.releaseDepth += 1
             self.parse()
